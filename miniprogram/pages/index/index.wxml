@@ -1,0 +1,21 @@
+<!--index.wxml-->
+<view class="container">
+  <view class="product-list">
+    <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
+      <image class="product-image" src="{{item.images[0]}}" mode="aspectFit"></image>
+      <view class="product-info">
+        <text class="product-title">型号: {{item.frame_model}}</text>
+        <text class="product-price">￥{{item.price}}</text>
+        <view class="product-specs">
+          <text>镜片尺寸: {{item.lens_size}}mm</text>
+          <text>重量: {{item.weight}}g</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 加载更多 -->
+  <view class="load-more" wx:if="{{hasMore}}">
+    <text bindtap="loadMore">加载更多</text>
+  </view>
+</view>

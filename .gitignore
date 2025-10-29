@@ -1,0 +1,43 @@
+# General
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.python-version
+
+# Environments
+env/
+venv/
+.venv/
+.env
+backend/.env
+.env.*
+
+# Node / WeChat Mini Program
+node_modules/
+**/node_modules/
+npm-debug.log*
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# OS/Editor
+*.swp
+*.swo
+*.tmp
+
+# Images/output caches (if any tooling generates)
+.cache/
