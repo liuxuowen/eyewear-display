@@ -1,5 +1,5 @@
 App({
   globalData: {
-    apiBaseUrl: 'http://localhost:5000/api'
+    apiBaseUrl: 'http://124.223.217.73:5000/api'
   }
 })

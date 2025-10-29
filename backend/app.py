@@ -1,5 +1,12 @@
 import os
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
+
+# 在导入任何依赖于环境变量的模块之前，先加载 .env
+envfile = Path(__file__).with_name('.env')
+load_dotenv(dotenv_path=envfile)
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
@@ -54,6 +61,34 @@ def handle_error(e, message="An error occurred"):
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
     return jsonify({'status': 'error', 'message': str(e)}), 500
 
+def _build_public_image_url(path: str) -> str:
+    """将数据库中的图片相对路径/文件名转换为可被前端直接访问的完整 URL。
+    规则：
+    - 若 path 已是 http(s) 开头，原样返回；
+    - 若 IMAGE_URL_PREFIX 以 http(s) 开头，返回 prefix + path；
+    - 否则使用当前请求的 host_url + 相对前缀 组合为绝对 URL。
+    """
+    if not path:
+        return path
+    lower = path.lower()
+    if lower.startswith('http://') or lower.startswith('https://'):
+        return path
+
+    prefix = app.config.get('IMAGE_URL_PREFIX', '/static/images/') or '/static/images/'
+    # 统一去除/添加，避免重复斜杠
+    if prefix.lower().startswith('http://') or prefix.lower().startswith('https://'):
+        return prefix.rstrip('/') + '/' + path.lstrip('/')
+    # 相对前缀，基于当前请求构造绝对 URL
+    base = request.host_url.rstrip('/')
+    rel = '/' + prefix.strip('/') + '/' + path.lstrip('/')
+    return base + rel
+
+def _serialize_product_with_public_images(product: Product) -> dict:
+    d = product.to_dict()
+    imgs = d.get('images', []) or []
+    d['images'] = [_build_public_image_url(p) for p in imgs]
+    return d
+
 @app.errorhandler(404)
 def handle_404(_):
     return jsonify({'status': 'error', 'message': 'Not found'}), 404
@@ -74,7 +109,7 @@ def get_products():
         return jsonify({
             'status': 'success',
             'data': {
-                'items': [product.to_dict() for product in products.items],
+                'items': [_serialize_product_with_public_images(product) for product in products.items],
                 'total': products.total,
                 'pages': products.pages,
                 'current_page': products.page
@@ -93,7 +128,7 @@ def get_product(frame_model):
 
         return jsonify({
             'status': 'success',
-            'data': product.to_dict()
+            'data': _serialize_product_with_public_images(product)
         })
     except Exception as e:
         return handle_error(e, f"Error getting product {frame_model}")
