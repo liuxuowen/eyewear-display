@@ -60,6 +60,6 @@ class Product(db.Model):
             image = getattr(self, f'image{i}')
             if image:
                 # 拼接为完整 URL
-                result['images'].append(f"http://localhost:5000/static/{image}")
+                result['images'].append(f"{image}")
         print(result['images'])   
         return result

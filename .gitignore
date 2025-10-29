@@ -5,6 +5,7 @@ Thumbs.db
 .vscode/
 *.log
 infos
+nginx.conf
 
 # Python
 __pycache__/

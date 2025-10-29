@@ -1,8 +1,10 @@
 {
+  "entryPagePath": "pages/index/index",
   "pages": [
     "pages/index/index",
     "pages/product/detail",
-    "pages/category/index"
+    "pages/category/index",
+    "pages/login/login"
   ],
   "window": {
     "backgroundTextStyle": "light",
