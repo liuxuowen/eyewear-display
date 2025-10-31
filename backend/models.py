@@ -38,7 +38,7 @@ class Product(db.Model):
     notes = db.Column(db.String(500), nullable=True, comment='备注信息')
     
     def to_dict(self):
-        print("to_dict" + self.frame_model)
+        #print("to_dict" + self.frame_model)
         result = {
             'frame_model': self.frame_model,
             'lens_size': self.lens_size,
@@ -61,5 +61,5 @@ class Product(db.Model):
             if image:
                 # 拼接为完整 URL
                 result['images'].append(f"{image}")
-        print(result['images'])   
+        #print(result['images'])   
         return result

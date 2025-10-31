@@ -3,15 +3,38 @@
   "pages": [
     "pages/index/index",
     "pages/product/detail",
-    "pages/category/index",
-    "pages/login/login"
+    "pages/recommendations/index",
+    "pages/user/user"
   ],
+
   "window": {
-    "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "眼镜展示",
     "navigationBarTextStyle": "black"
   },
+
+  "tabBar": {
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "商品",
+        "iconPath": "images/index.png",
+        "selectedIconPath": "images/index_sel.png"
+      },
+      {
+        "pagePath": "pages/recommendations/index",
+        "text": "收藏",
+        "iconPath": "images/recommendations.png",
+        "selectedIconPath": "images/recommendations_sel.png"
+      },
+      {
+        "pagePath": "pages/user/user",
+        "text": "个人",
+        "iconPath": "images/user.png",
+        "selectedIconPath": "images/user_sel.png"
+      }
+    ]
+  },
   "style": "v2",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
 }

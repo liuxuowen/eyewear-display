@@ -4,7 +4,8 @@ Page({
   data: {
     products: [],
     page: 1,
-    hasMore: true
+    hasMore: true,
+    isLoading: false
   },
 
   onLoad() {
@@ -12,7 +13,10 @@ Page({
   },
 
   loadProducts() {
-    const { page } = this.data
+    const { page, isLoading, hasMore } = this.data
+    if (isLoading) return
+    if (!hasMore) return
+    this.setData({ isLoading: true })
     wx.request({
       url: `${app.globalData.apiBaseUrl}/products`,
       data: {
@@ -23,7 +27,7 @@ Page({
         if (res.data.status === 'success') {
           const { items, total, pages } = res.data.data
           this.setData({
-            products: [...this.data.products, ...items],
+            products: this.data.products.concat(items || []),
             hasMore: page < pages
           })
         } else {
@@ -38,6 +42,9 @@ Page({
           title: '网络错误',
           icon: 'none'
         })
+      },
+      complete: () => {
+        this.setData({ isLoading: false })
       }
     })
   },
@@ -50,6 +57,11 @@ Page({
         this.loadProducts()
       })
     }
+  },
+
+  // 触底自动加载下一页
+  onReachBottom() {
+    this.loadMore()
   },
 
   goToDetail(e) {

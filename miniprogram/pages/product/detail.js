@@ -42,11 +42,11 @@ Page({
   },
 
   previewImage(e) {
-    const { current } = e.target.dataset
-    const { images } = this.data.product
-    
+    const { current } = e.currentTarget.dataset || {}
+    const { images } = this.data.product || {}
+    if (!images || images.length === 0) return
     wx.previewImage({
-      current,
+      current: current || images[0],
       urls: images
     })
   }

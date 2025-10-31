@@ -1,21 +1,24 @@
 <!--index.wxml-->
+<wxs src="../../utils/filters.wxs" module="f"></wxs>
 <view class="container">
   <view class="product-list">
     <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
-      <image class="product-image" src="{{item.images[0]}}" mode="aspectFit"></image>
+      <image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
       <view class="product-info">
-        <text class="product-title">型号: {{item.frame_model}}</text>
-        <text class="product-price">￥{{item.price}}</text>
+        <text class="product-title">型号: {{f.display(item.frame_model)}}</text>
+        <text class="product-price">￥{{f.display(item.price)}}</text>
         <view class="product-specs">
-          <text>镜片尺寸: {{item.lens_size}}mm</text>
-          <text>重量: {{item.weight}}g</text>
+          <text>镜片尺寸: {{f.unit(item.lens_size, 'mm')}}</text>
+          <text>重量: {{f.unit(item.weight, 'g')}} </text>
         </view>
       </view>
     </view>
   </view>
   
   <!-- 加载更多 -->
-  <view class="load-more" wx:if="{{hasMore}}">
+  <view class="load-more" wx:if="{{hasMore && !isLoading}}">
     <text bindtap="loadMore">加载更多</text>
   </view>
+  <view class="loading" wx:if="{{isLoading}}">加载中...</view>
+  <view class="no-more" wx:if="{{!hasMore && products.length > 0 && !isLoading}}">没有更多了</view>
 </view>

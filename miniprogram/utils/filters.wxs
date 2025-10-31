@@ -1,0 +1,40 @@
+var _trimLower = function(s){
+  if (s === undefined || s === null) return ''
+  var start = 0
+  var end = s.length - 1
+  var c
+  // 左侧去空白: 空格(32) \t(9) \n(10) \r(13)
+  while (start <= end) {
+    c = s.charCodeAt(start)
+    if (c === 32 || c === 9 || c === 10 || c === 13) { start++ } else { break }
+  }
+  // 右侧去空白
+  while (end >= start) {
+    c = s.charCodeAt(end)
+    if (c === 32 || c === 9 || c === 10 || c === 13) { end-- } else { break }
+  }
+  return s.slice(start, end + 1).toLowerCase()
+}
+
+var isNil = function(v){
+  if (v === undefined || v === null) return true
+  if (typeof v === 'string') {
+    var s = _trimLower(v)
+    // 兼容后端把空/None/null/Nan 当作字符串返回的情况
+    if (s === '' || s === 'none' || s === 'null' || s === 'nan') return true
+  }
+  return false
+}
+
+module.exports = {
+  display: function(v){
+    return isNil(v) ? '--' : v
+  },
+  unit: function(v, u){
+    return isNil(v) ? '--' : ('' + v + u)
+  },
+  firstImage: function(list){
+    if (!list || list.length === 0) return ''
+    return list[0]
+  }
+}

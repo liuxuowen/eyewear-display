@@ -1,59 +1,65 @@
 <!--detail.wxml-->
+<wxs src="../../utils/filters.wxs" module="f"></wxs>
 <view class="container">
-  <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{true}}">
+  <swiper class="product-swiper"
+    indicator-dots="{{true}}"
+    autoplay="{{true}}"
+    circular="{{true}}"
+    interval="3000"
+  >
     <swiper-item wx:for="{{product.images}}" wx:key="*this">
-      <image src="{{item}}" mode="aspectFit" class="product-image"></image>
+      <image src="{{item}}" mode="aspectFit" class="product-image" bindtap="previewImage" data-current="{{item}}"></image>
     </swiper-item>
   </swiper>
 
   <view class="product-info">
     <view class="basic-info">
-      <text class="model">型号：{{product.frame_model}}</text>
-      <text class="price">￥{{product.price}}</text>
+      <text class="model">型号：{{f.display(product.frame_model)}}</text>
+      <text class="price">￥{{f.display(product.price)}}</text>
     </view>
 
     <view class="specs-info">
       <view class="spec-item">
         <text class="label">镜片尺寸：</text>
-        <text class="value">{{product.lens_size}}mm</text>
+        <text class="value">{{f.unit(product.lens_size, 'mm')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">鼻梁宽度：</text>
-        <text class="value">{{product.nose_bridge_width}}mm</text>
+        <text class="value">{{f.unit(product.nose_bridge_width, 'mm')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">镜腿长度：</text>
-        <text class="value">{{product.temple_length}}mm</text>
+        <text class="value">{{f.unit(product.temple_length, 'mm')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">镜架总长：</text>
-        <text class="value">{{product.frame_total_length}}mm</text>
+        <text class="value">{{f.unit(product.frame_total_length, 'mm')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">镜架高度：</text>
-        <text class="value">{{product.frame_height}}mm</text>
+        <text class="value">{{f.unit(product.frame_height, 'mm')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">包边厚度：</text>
-        <text class="value">{{product.frame_thickness}}mm</text>
+        <text class="value">{{f.unit(product.frame_thickness, 'mm')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">重量：</text>
-        <text class="value">{{product.weight}}g</text>
+        <text class="value">{{f.unit(product.weight, 'g')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">材料：</text>
-        <text class="value">{{product.frame_material}}</text>
+        <text class="value">{{f.display(product.frame_material)}}</text>
       </view>
-      <view class="spec-item" wx:if="{{product.brand}}">
+      <view class="spec-item">
         <text class="label">品牌：</text>
-        <text class="value">{{product.brand}}</text>
+        <text class="value">{{f.display(product.brand)}}</text>
       </view>
     </view>
 
-    <view class="notes" wx:if="{{product.notes}}">
+    <view class="notes">
       <text class="notes-title">备注信息</text>
-      <text class="notes-content">{{product.notes}}</text>
+      <text class="notes-content">{{f.display(product.notes)}}</text>
     </view>
   </view>
 </view>

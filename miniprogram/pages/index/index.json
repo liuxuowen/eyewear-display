@@ -1,5 +1,8 @@
 {
   "usingComponents": {},
   "enablePullDownRefresh": true,
-  "backgroundColor": "#f6f6f6"
+  "onReachBottomDistance": 50,
+  "backgroundColor": "#f6f6f6",
+  "backgroundTextStyle": "dark",
+  "navigationBarTitleText": "商品列表"
 }
