@@ -5,11 +5,13 @@
     <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
       <image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
       <view class="product-info">
-        <text class="product-title">型号: {{f.display(item.frame_model)}}</text>
-        <text class="product-price">￥{{f.display(item.price)}}</text>
+        <text class="product-title">型号：{{f.display(item.frame_model)}}</text>
         <view class="product-specs">
-          <text>镜片尺寸: {{f.unit(item.lens_size, 'mm')}}</text>
-          <text>重量: {{f.unit(item.weight, 'g')}} </text>
+          <text>镜架尺寸：{{f.unit(item.lens_size, '')}}-{{f.unit(item.nose_bridge_width, '')}}-{{f.unit(item.temple_length, '')}}</text>
+          <text>价格：￥{{f.display(item.price)}}</text>
+          <text>镜架总长：{{f.unit(item.frame_total_length, '')}}</text>
+          <text>镜架高度：{{f.unit(item.frame_height, '')}}</text>
+          <text>重量：{{f.unit(item.weight, 'g')}}</text>
         </view>
       </view>
     </view>

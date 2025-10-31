@@ -26,17 +26,55 @@
   margin-bottom: 20rpx;
 }
 
-.model {
-  font-size: 32rpx;
-  font-weight: bold;
-  display: block;
+.model { /* legacy, kept for compatibility */ }
+
+.model-spec-row {
+  display: flex;
+  align-items: baseline;
+  gap: 24rpx; /* 留出一些距离 */
+  flex-wrap: nowrap; /* 固定为一行 */
   margin-bottom: 10rpx;
+}
+
+.model-inline {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;      /* 更深的颜色 */
+  font-weight: 600;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.spec-inline {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;      /* 更深的颜色 */
+  font-weight: 600;
+  flex: 1 1 0;      /* 两侧各占一半 */
+  min-width: 0;
+}
+
+.total-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 24rpx;        /* 与 model-spec-row 保持一致的间距 */
+  flex-wrap: nowrap; /* 固定为一行 */
+}
+
+/* total 与 price 同理处理为 50/50 */
+.total {
+  font-size: 28rpx;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .price {
   color: #e74c3c;
-  font-size: 36rpx;
-  font-weight: bold;
+  font-size: 32rpx;
+  /* 颜色与字号保持不变 */
+  /* 改为与 total 50/50 分栏，并在本栏内右对齐 */
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .specs-info {
@@ -79,4 +117,30 @@
   font-size: 26rpx;
   color: #666;
   line-height: 1.6;
+}
+
+/* 底部图片顺序展示样式 */
+.section-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-top: 30rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #eee; /* 作为分隔线 */
+  margin-bottom: 10rpx;
+}
+
+.image-gallery {
+  margin-top: 0; /* 分隔线移动到标题上，避免重复 */
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx; /* 图片之间留白 */
+}
+
+.gallery-image {
+  width: 100%;
+  display: block;
+  border-radius: 12rpx; /* 圆角更美观 */
+  background: #f7f7f7; /* 加一点底色避免空白刺眼 */
 }

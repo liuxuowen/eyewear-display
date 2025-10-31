@@ -14,8 +14,14 @@
 
   <view class="product-info">
     <view class="basic-info">
-      <text class="model">型号：{{f.display(product.frame_model)}}</text>
-      <text class="price">￥{{f.display(product.price)}}</text>
+      <view class="model-spec-row">
+        <text class="model-inline">型号：{{f.display(product.frame_model)}}</text>
+        <text class="spec-inline">镜架尺寸：{{f.unit(product.lens_size, '')}}-{{f.unit(product.nose_bridge_width, '')}}-{{f.unit(product.temple_length, '')}}</text>
+      </view>
+      <view class="total-price-row">
+        <text class="total">总长：{{f.unit(product.frame_total_length, 'mm')}}</text>
+        <text class="price">售价：￥{{f.display(product.price)}}</text>
+      </view>
     </view>
 
     <view class="specs-info">
@@ -30,10 +36,6 @@
       <view class="spec-item">
         <text class="label">镜腿长度：</text>
         <text class="value">{{f.unit(product.temple_length, 'mm')}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">镜架总长：</text>
-        <text class="value">{{f.unit(product.frame_total_length, 'mm')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">镜架高度：</text>
@@ -60,6 +62,22 @@
     <view class="notes">
       <text class="notes-title">备注信息</text>
       <text class="notes-content">{{f.display(product.notes)}}</text>
+    </view>
+
+    <!-- 底部顺序展示所有轮播图 -->
+    <view wx:if="{{product.images && product.images.length}}" class="image-gallery-section">
+      <text class="section-title">镜架展示</text>
+      <view class="image-gallery">
+        <block wx:for="{{product.images}}" wx:key="*this">
+          <image
+            src="{{item}}"
+            mode="widthFix"
+            class="gallery-image"
+            bindtap="previewImage"
+            data-current="{{item}}"
+          ></image>
+        </block>
+      </view>
     </view>
   </view>
 </view>
