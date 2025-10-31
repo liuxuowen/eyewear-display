@@ -219,7 +219,6 @@ def track_pageview():
 
 
 # === 微信 code2session ===
-
 @app.route('/api/wechat/code2session', methods=['POST'])
 def wechat_code2session():
     """通过 wx.login code 获取 openid 和 session_key。

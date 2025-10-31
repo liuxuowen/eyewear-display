@@ -2,11 +2,13 @@ const app = getApp()
 
 Page({
   data: {
-    product: null
+    product: null,
+    model: ''
   },
 
   onLoad(options) {
     const { model } = options
+    this.setData({ model: model || '' })
     this.loadProduct(model)
   },
 
@@ -39,6 +41,23 @@ Page({
         wx.hideLoading()
       }
     })
+  },
+
+  onShow() {
+    const pagePath = '/pages/product/detail' + (this.data.model ? `?model=${this.data.model}` : '')
+    const track = (oid) => {
+      if (!oid) return
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/analytics/pageview`,
+        method: 'POST',
+        data: { open_id: oid, page: pagePath }
+      })
+    }
+    if (app.globalData.openId) {
+      track(app.globalData.openId)
+    } else if (app.loginIfNeeded) {
+      app.loginIfNeeded().then(track).catch(() => {})
+    }
   },
 
   previewImage(e) {

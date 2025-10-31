@@ -3,12 +3,27 @@ const app = getApp()
 
 Page({
   data: {
-    openId: ''
+    openId: '',
+    nickname: '',
+    avatarUrl: ''
   },
 
   onLoad() {
     const oid = app.globalData.openId || ''
-    if (oid) this.setData({ openId: oid })
+    if (oid) {
+      this.setData({ openId: oid })
+    } else if (app.loginIfNeeded) {
+      app.loginIfNeeded().then((id) => {
+        this.setData({ openId: id })
+      }).catch(() => {})
+    }
+    // 从本地读取已保存的昵称、头像
+    try {
+      const nn = wx.getStorageSync('nickname')
+      const av = wx.getStorageSync('avatarUrl')
+      if (nn) this.setData({ nickname: nn })
+      if (av) this.setData({ avatarUrl: av })
+    } catch (e) {}
   },
 
   onShow() {
@@ -44,6 +59,12 @@ Page({
               app.globalData.openId = oid
               try { wx.setStorageSync('openId', oid) } catch (e) {}
               this.setData({ openId: oid })
+              // 同步到后端用户表（占位 upsert）
+              wx.request({
+                url: `${app.globalData.apiBaseUrl}/users/upsert`,
+                method: 'POST',
+                data: { open_id: oid }
+              })
             } else {
               wx.showToast({ title: '获取openid失败', icon: 'none' })
             }
@@ -52,6 +73,36 @@ Page({
         })
       },
       fail: () => wx.showToast({ title: 'wx.login失败', icon: 'none' })
+    })
+  },
+
+  getProfile() {
+    if (!wx.getUserProfile) {
+      wx.showModal({ title: '提示', content: '微信版本过低，不支持获取用户信息，请升级微信版本', showCancel: false })
+      return
+    }
+    wx.getUserProfile({
+      desc: '用于完善个人资料',
+      success: (res) => {
+        const info = res && res.userInfo
+        if (!info) return
+        const nn = info.nickName || ''
+        const av = info.avatarUrl || ''
+        this.setData({ nickname: nn, avatarUrl: av })
+        try { wx.setStorageSync('nickname', nn); wx.setStorageSync('avatarUrl', av) } catch (e) {}
+        const ensureLogin = app.loginIfNeeded ? app.loginIfNeeded() : Promise.resolve(app.globalData.openId)
+        ensureLogin.then((oid) => {
+          if (!oid) return
+          wx.request({
+            url: `${app.globalData.apiBaseUrl}/users/upsert`,
+            method: 'POST',
+            data: { open_id: oid, nickname: nn, avatar_url: av }
+          })
+        }).catch(() => {})
+      },
+      fail: () => {
+        wx.showToast({ title: '用户未授权', icon: 'none' })
+      }
     })
   }
 })

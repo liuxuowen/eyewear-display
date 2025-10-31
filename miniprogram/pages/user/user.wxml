@@ -1,6 +1,15 @@
 <!--pages/user/user.wxml-->
 <view class="container">
 	<view class="card">
+		<view class="avatar-row">
+			<image class="avatar" src="{{avatarUrl}}" mode="aspectFill" wx:if="{{avatarUrl}}"/>
+			<view class="avatar-placeholder" wx:if="{{!avatarUrl}}">无头像</view>
+		</view>
+		<view class="row">
+			<text class="label">昵称：</text>
+			<text class="value">{{nickname || '--'}}
+			</text>
+		</view>
 		<view class="row">
 			<text class="label">OpenID：</text>
 			<text class="value">{{openId || '--'}}</text>
@@ -8,10 +17,11 @@
 		<view class="actions">
 			<button type="default" size="mini" bindtap="fetchOpenId">获取 OpenID</button>
 			<button type="primary" size="mini" bindtap="copyOpenId" disabled="{{!openId}}">复制</button>
+			<button type="default" size="mini" bindtap="getProfile">获取昵称头像</button>
 		</view>
 	</view>
 	<view class="tips">
-		<text>说明：首次需点击“获取 OpenID”完成登录换取；后续会自动保存并显示。</text>
+		<text>说明：首次需点击“获取 OpenID”完成登录换取；“获取昵称头像”需用户主动授权。</text>
 	</view>
   
 </view>

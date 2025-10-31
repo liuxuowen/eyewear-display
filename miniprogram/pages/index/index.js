@@ -2,16 +2,19 @@ const app = getApp()
 
 Page({
   onShow() {
-    const openId = app.globalData.openId
-    if (!openId) return
-    wx.request({
-      url: `${app.globalData.apiBaseUrl}/analytics/pageview`,
-      method: 'POST',
-      data: {
-        open_id: openId,
-        page: '/pages/index/index' // 或者动态传 this.route
-      }
-    })
+    const track = (oid) => {
+      if (!oid) return
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/analytics/pageview`,
+        method: 'POST',
+        data: { open_id: oid, page: '/pages/index/index' }
+      })
+    }
+    if (app.globalData.openId) {
+      track(app.globalData.openId)
+    } else if (app.loginIfNeeded) {
+      app.loginIfNeeded().then(track).catch(() => {})
+    }
   },
 
   data: {
