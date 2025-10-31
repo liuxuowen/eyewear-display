@@ -1,2 +1,17 @@
 <!--pages/user/user.wxml-->
-<text>我还没想好要做啥。。。</text>
+<view class="container">
+	<view class="card">
+		<view class="row">
+			<text class="label">OpenID：</text>
+			<text class="value">{{openId || '--'}}</text>
+		</view>
+		<view class="actions">
+			<button type="default" size="mini" bindtap="fetchOpenId">获取 OpenID</button>
+			<button type="primary" size="mini" bindtap="copyOpenId" disabled="{{!openId}}">复制</button>
+		</view>
+	</view>
+	<view class="tips">
+		<text>说明：首次需点击“获取 OpenID”完成登录换取；后续会自动保存并显示。</text>
+	</view>
+  
+</view>

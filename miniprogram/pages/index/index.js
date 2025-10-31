@@ -1,6 +1,19 @@
 const app = getApp()
 
 Page({
+  onShow() {
+    const openId = app.globalData.openId
+    if (!openId) return
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/analytics/pageview`,
+      method: 'POST',
+      data: {
+        open_id: openId,
+        page: '/pages/index/index' // 或者动态传 this.route
+      }
+    })
+  },
+
   data: {
     products: [],
     page: 1,

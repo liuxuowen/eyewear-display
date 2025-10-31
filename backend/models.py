@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 
 db = SQLAlchemy()
 
@@ -63,3 +64,49 @@ class Product(db.Model):
                 result['images'].append(f"{image}")
         #print(result['images'])   
         return result
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+
+    # 以微信 open_id 作为主键
+    open_id = db.Column(db.String(64), primary_key=True, comment='微信 open_id')
+    nickname = db.Column(db.String(100), nullable=True, comment='昵称')
+    avatar_url = db.Column(db.String(255), nullable=True, comment='头像 URL')
+    created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self):
+        return {
+            'open_id': self.open_id,
+            'nickname': self.nickname,
+            'avatar_url': self.avatar_url,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class PageView(db.Model):
+    __tablename__ = 'page_views'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    open_id = db.Column(db.String(64), db.ForeignKey('users.open_id'), index=True, nullable=False)
+    page = db.Column(db.String(255), nullable=False, comment='页面路径或标识')
+    referer = db.Column(db.String(512), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    ip = db.Column(db.String(64), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
+
+    # 关系（可选）
+    user = db.relationship('User', backref=db.backref('page_views', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'open_id': self.open_id,
+            'page': self.page,
+            'referer': self.referer,
+            'user_agent': self.user_agent,
+            'ip': self.ip,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }

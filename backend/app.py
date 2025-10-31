@@ -2,6 +2,7 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+import requests
 
 # 在导入任何依赖于环境变量的模块之前，先加载 .env
 envfile = Path(__file__).with_name('.env')
@@ -10,7 +11,7 @@ load_dotenv(dotenv_path=envfile)
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
-from models import db, Product
+from models import db, Product, User, PageView
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -35,6 +36,11 @@ if app.config.get('ENV') == 'production':
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
     if app.config.get('JWT_SECRET_KEY') in (None, '', 'your-secret-key'):
         raise RuntimeError('In production, JWT_SECRET_KEY must be set via environment variable and not use the default!')
+
+# 可选：自动创建缺失的数据表（仅在设置环境变量 AUTO_CREATE_DB=1 时执行）
+if os.getenv('AUTO_CREATE_DB', '0').lower() in ('1', 'true', 'yes'):
+    with app.app_context():
+        db.create_all()
 
 @app.after_request
 def set_security_headers(resp):
@@ -89,6 +95,16 @@ def _serialize_product_with_public_images(product: Product) -> dict:
     d['images'] = [_build_public_image_url(p) for p in imgs]
     return d
 
+
+def _client_ip() -> str:
+    # 在 ProxyFix 之后，request.access_route 会包含真实链路
+    try:
+        if request.access_route:
+            return request.access_route[0]
+    except Exception:
+        pass
+    return request.remote_addr or ''
+
 @app.errorhandler(404)
 def handle_404(_):
     return jsonify({'status': 'error', 'message': 'Not found'}), 404
@@ -132,6 +148,118 @@ def get_product(frame_model):
         })
     except Exception as e:
         return handle_error(e, f"Error getting product {frame_model}")
+
+
+# === 用户与访问记录 API ===
+
+@app.route('/api/users/upsert', methods=['POST'])
+def upsert_user():
+    """创建或更新用户（以微信 open_id 为主键）。
+    Body JSON: { open_id: string, nickname?: string, avatar_url?: string }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        open_id = (data.get('open_id') or '').strip()
+        if not open_id:
+            return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+
+        nickname = (data.get('nickname') or '').strip() or None
+        avatar_url = (data.get('avatar_url') or '').strip() or None
+
+        user = User.query.get(open_id)
+        if not user:
+            user = User(open_id=open_id, nickname=nickname, avatar_url=avatar_url)
+            db.session.add(user)
+        else:
+            # 仅当传入新值时更新
+            if nickname is not None:
+                user.nickname = nickname
+            if avatar_url is not None:
+                user.avatar_url = avatar_url
+        db.session.commit()
+        return jsonify({'status': 'success', 'data': user.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error upserting user')
+
+
+@app.route('/api/analytics/pageview', methods=['POST'])
+def track_pageview():
+    """记录用户访问页面。
+    Body JSON: { open_id: string, page: string }
+    附加自动采集：referer、user_agent、ip
+    若用户不存在，将以 open_id 自动创建一个占位用户。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        open_id = (data.get('open_id') or '').strip()
+        page = (data.get('page') or '').strip()
+        if not open_id or not page:
+            return jsonify({'status': 'error', 'message': 'open_id and page are required'}), 400
+
+        # 确保用户存在（占位创建）
+        user = User.query.get(open_id)
+        if not user:
+            user = User(open_id=open_id)
+            db.session.add(user)
+
+        pv = PageView(
+            open_id=open_id,
+            page=page,
+            referer=request.headers.get('Referer'),
+            user_agent=request.headers.get('User-Agent'),
+            ip=_client_ip(),
+        )
+        db.session.add(pv)
+        db.session.commit()
+        return jsonify({'status': 'success', 'data': pv.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error tracking pageview')
+
+
+# === 微信 code2session ===
+
+@app.route('/api/wechat/code2session', methods=['POST'])
+def wechat_code2session():
+    """通过 wx.login code 获取 openid 和 session_key。
+    Body JSON: { code: string }
+    需要在环境变量中配置 WECHAT_APPID 和 WECHAT_SECRET。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        code = (data.get('code') or '').strip()
+        if not code:
+            return jsonify({'status': 'error', 'message': 'code is required'}), 400
+
+        appid = os.getenv('WECHAT_APPID')
+        secret = os.getenv('WECHAT_SECRET')
+        if not appid or not secret:
+            return jsonify({'status': 'error', 'message': 'WECHAT_APPID/WECHAT_SECRET not configured'}), 500
+
+        params = {
+            'appid': appid,
+            'secret': secret,
+            'js_code': code,
+            'grant_type': 'authorization_code'
+        }
+        resp = requests.get('https://api.weixin.qq.com/sns/jscode2session', params=params, timeout=5)
+        resp.raise_for_status()
+        payload = resp.json()
+        # 正常返回包含 openid 和 session_key；错误包含 errcode/errmsg
+        if 'errcode' in payload and payload['errcode'] != 0:
+            return jsonify({'status': 'error', 'message': payload.get('errmsg', 'code2session error'), 'errcode': payload.get('errcode')}), 400
+
+        data_out = {
+            'openid': payload.get('openid'),
+            'session_key': payload.get('session_key'),
+            'unionid': payload.get('unionid')
+        }
+        return jsonify({'status': 'success', 'data': data_out})
+    except requests.RequestException as re:
+        return handle_error(re, 'WeChat code2session request failed')
+    except Exception as e:
+        return handle_error(e, 'Error in code2session')
 
 if __name__ == '__main__':
     # 仅用于开发。生产请使用 WSGI 服务器（如 gunicorn/uwsgi/waitress）并在反向代理后运行

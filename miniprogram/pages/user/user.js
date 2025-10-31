@@ -1,66 +1,57 @@
 // pages/user/user.js
+const app = getApp()
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    openId: ''
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad(options) {
-
+  onLoad() {
+    const oid = app.globalData.openId || ''
+    if (oid) this.setData({ openId: oid })
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
   onShow() {
-
+    if (app.globalData.openId && app.globalData.openId !== this.data.openId) {
+      this.setData({ openId: app.globalData.openId })
+    }
   },
 
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
+  copyOpenId() {
+    if (!this.data.openId) return
+    wx.setClipboardData({
+      data: this.data.openId,
+      success: () => wx.showToast({ title: '已复制', icon: 'none' })
+    })
   },
 
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
+  fetchOpenId() {
+    // 通过 wx.login 获取 code，调用后端 /api/wechat/code2session 获取 openid
+    wx.login({
+      success: (res) => {
+        const code = res.code
+        if (!code) {
+          wx.showToast({ title: '获取code失败', icon: 'none' })
+          return
+        }
+        wx.request({
+          url: `${app.globalData.apiBaseUrl}/wechat/code2session`,
+          method: 'POST',
+          data: { code },
+          success: (r) => {
+            if (r.data && r.data.status === 'success' && r.data.data && r.data.data.openid) {
+              const oid = r.data.data.openid
+              app.globalData.openId = oid
+              try { wx.setStorageSync('openId', oid) } catch (e) {}
+              this.setData({ openId: oid })
+            } else {
+              wx.showToast({ title: '获取openid失败', icon: 'none' })
+            }
+          },
+          fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+        })
+      },
+      fail: () => wx.showToast({ title: 'wx.login失败', icon: 'none' })
+    })
   }
 })
