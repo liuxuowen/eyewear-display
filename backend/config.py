@@ -40,3 +40,9 @@ class Config:
     # 图片文件配置
     IMAGE_SAVE_DIR = os.getenv('IMAGE_SAVE_DIR', 'D:/data/eyewear/images')
     IMAGE_URL_PREFIX = os.getenv('IMAGE_URL_PREFIX', '/static/images/')
+
+    # 搜索配置
+    ALLOWED_SEARCH_FIELDS = [
+        'frame_model',
+    ]
+    DEFAULT_SEARCH_FIELD = os.getenv('DEFAULT_SEARCH_FIELD', 'frame_model')

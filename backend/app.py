@@ -120,7 +120,22 @@ def get_products():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
 
-        products = paginate_query(Product.query.filter_by(is_active='是'), page, per_page)
+        # 搜索参数（精确匹配）
+        search_field = (request.args.get('search_field') or '').strip()
+        search_value = (request.args.get('search_value') or '').strip()
+        allowed_fields = getattr(app.config, 'ALLOWED_SEARCH_FIELDS', None) or app.config.get('ALLOWED_SEARCH_FIELDS', ['frame_model'])
+
+        query = Product.query.filter_by(is_active='是')
+        if search_value:
+            # 如果未传字段或字段不在白名单，使用默认字段
+            if not search_field or search_field not in allowed_fields:
+                search_field = app.config.get('DEFAULT_SEARCH_FIELD', 'frame_model')
+            # 安全访问模型属性
+            col = getattr(Product, search_field, None)
+            if col is not None:
+                query = query.filter(col == search_value)
+
+        products = paginate_query(query, page, per_page)
 
         return jsonify({
             'status': 'success',

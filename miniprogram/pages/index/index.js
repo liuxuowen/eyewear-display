@@ -1,4 +1,5 @@
 const app = getApp()
+const config = require('../../config.js')
 
 Page({
   onShow() {
@@ -21,7 +22,9 @@ Page({
     products: [],
     page: 1,
     hasMore: true,
-    isLoading: false
+    isLoading: false,
+    searchQuery: '',
+    searchField: (config && config.defaultSearchField) || 'frame_model'
   },
 
   onLoad() {
@@ -35,10 +38,15 @@ Page({
     this.setData({ isLoading: true })
     wx.request({
       url: `${app.globalData.apiBaseUrl}/products`,
-      data: {
-        page: page,
-        per_page: 10
-      },
+      data: (() => {
+        const d = { page, per_page: 10 }
+        const q = (this.data.searchQuery || '').trim()
+        if (q) {
+          d.search_field = this.data.searchField
+          d.search_value = q
+        }
+        return d
+      })(),
       success: (res) => {
         if (res.data.status === 'success') {
           const { items, total, pages } = res.data.data
@@ -96,5 +104,28 @@ Page({
       this.loadProducts()
       wx.stopPullDownRefresh()
     })
+  },
+
+  // 导航栏搜索框事件（微信内置）
+  onNavigationBarSearchInputChanged(e) {
+    const v = (e && (e.detail && (e.detail.value || e.detail.text))) || e.text || ''
+    this.setData({ searchQuery: v })
+  },
+
+  onNavigationBarSearchInputConfirmed() {
+    this._doSearch()
+  },
+
+  onNavigationBarSearchInputClicked() {
+    // 可选：点击时展开搜索或展示历史
+  },
+
+  _doSearch() {
+    // 重置分页并按条件重新加载
+    this.setData({
+      products: [],
+      page: 1,
+      hasMore: true
+    }, () => this.loadProducts())
   }
 })

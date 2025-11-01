@@ -1,5 +1,6 @@
 <!--index.wxml-->
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
+
 <view class="container">
   <view class="product-list">
     <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
