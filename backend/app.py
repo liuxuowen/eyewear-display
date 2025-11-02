@@ -139,6 +139,30 @@ def get_products():
         query = Product.query.filter_by(is_active='是')
         numeric_fields = {'lens_size', 'nose_bridge_width', 'temple_length', 'frame_total_length', 'frame_height'}
 
+        def _parse_range_or_number(s: str):
+            """解析数值或范围字符串，支持：
+            - 单值: "42" -> (42.0, 42.0)
+            - 范围: "40-45" / "40 - 45" -> (40.0, 45.0)
+            返回: (lo, hi) 或抛出 ValueError
+            """
+            if s is None:
+                raise ValueError('empty')
+            text = str(s).strip()
+            # 兼容中文破折号、全角连字符
+            text = text.replace('－', '-').replace('—', '-').replace('–', '-')
+            if '-' in text:
+                parts = [p.strip() for p in text.split('-', 1)]
+                if len(parts) != 2 or parts[0] == '' or parts[1] == '':
+                    raise ValueError('invalid range')
+                lo = float(parts[0])
+                hi = float(parts[1])
+                if lo > hi:
+                    lo, hi = hi, lo
+                return (lo, hi)
+            # 单值
+            v = float(text)
+            return (v, v)
+
         if multi_filters:
             # 同时应用多字段过滤（AND）
             for f, v in multi_filters.items():
@@ -147,10 +171,13 @@ def get_products():
                     continue
                 if f in numeric_fields:
                     try:
-                        value_num = float(v)
+                        lo, hi = _parse_range_or_number(v)
                         eps = 1e-4
-                        query = query.filter(col.between(value_num - eps, value_num + eps))
-                        logger.debug("apply numeric filter %s ~= %s (eps=%s)", f, value_num, eps)
+                        query = query.filter(col.between(lo - eps, hi + eps))
+                        if lo == hi:
+                            logger.debug("apply numeric filter %s ~= %s (eps=%s)", f, lo, eps)
+                        else:
+                            logger.debug("apply numeric filter %s in [%s, %s] (eps=%s)", f, lo, hi, eps)
                     except ValueError:
                         # 非法数值，令整体结果为空
                         query = query.filter(False)
@@ -170,10 +197,13 @@ def get_products():
             if col is not None:
                 if search_field in numeric_fields:
                     try:
-                        value_num = float(search_value)
+                        lo, hi = _parse_range_or_number(search_value)
                         eps = 1e-4
-                        query = query.filter(col.between(value_num - eps, value_num + eps))
-                        logger.debug("apply numeric single filter %s ~= %s (eps=%s)", search_field, value_num, eps)
+                        query = query.filter(col.between(lo - eps, hi + eps))
+                        if lo == hi:
+                            logger.debug("apply numeric single filter %s ~= %s (eps=%s)", search_field, lo, eps)
+                        else:
+                            logger.debug("apply numeric single filter %s in [%s, %s] (eps=%s)", search_field, lo, hi, eps)
                     except ValueError:
                         query = query.filter(False)
                         logger.debug("invalid numeric single filter %s: %s", search_field, search_value)
