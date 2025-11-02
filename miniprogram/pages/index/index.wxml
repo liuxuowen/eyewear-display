@@ -5,7 +5,8 @@
 <view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
   <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
     <view class="search-box" style="height: {{menuHeight}}px;" bindtap="openSearchPage">
-      <input class="search-input" style="height: 100%;" placeholder="{{(require('../../config.js').searchPlaceholder)||'搜索镜架型号（精确匹配）'}}" value="{{searchDisplay}}" bindtap="openSearchPage"/>
+      <input class="search-input" style="height: 100%;" placeholder="{{(require('../../config.js').searchPlaceholder)||'搜索（支持镜架型号，镜架尺寸/总长/高度）'}}" value="{{searchDisplay}}"/>
+      <view wx:if="{{searchDisplay}}" class="search-clear" catchtap="clearSearch">清空</view>
     </view>
   </view>
 </view>

@@ -101,6 +101,15 @@ Page({
     wx.navigateBack({ delta: 1 })
   },
 
+  onInputMulti(e) {
+    const field = e.currentTarget.dataset.field
+    const v = (e.detail && e.detail.value) || ''
+    if (!field) return
+    const filters = Object.assign({}, this.data.filters)
+    filters[field] = v
+    this.setData({ filters })
+  },
+
   _emitAndBack(field, value) {
     const ec = this.getOpenerEventChannel && this.getOpenerEventChannel()
     if (ec && ec.emit) {
@@ -119,7 +128,12 @@ Page({
       if (val !== '') { params[k] = val; count++ }
     })
     if (count === 0) {
-      wx.showToast({ title: '请至少填写一个条件', icon: 'none' })
+      // 无条件，视为“查看全部”。直接清空筛选并返回。
+      const ec = this.getOpenerEventChannel && this.getOpenerEventChannel()
+      if (ec && ec.emit) {
+        ec.emit('search', { filters: {} })
+      }
+      wx.navigateBack({ delta: 1 })
       return
     }
     try { wx.showLoading({ title: '检查中...', mask: true }) } catch (e) {}
@@ -208,9 +222,5 @@ Page({
     } catch (e) {}
   },
 
-
-  getFieldLabel(field) {
-    const opt = this.data.fieldOptions.find(o => o.value === field)
-    return opt ? opt.label : field
-  }
+  
 })

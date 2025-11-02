@@ -4,7 +4,7 @@
     "pages/index/index",
     "pages/search/index",
     "pages/product/detail",
-    "pages/recommendations/index",
+    "pages/watchlist/index",
     "pages/user/user"
   ],
 
@@ -22,10 +22,10 @@
         "selectedIconPath": "images/index_sel.png"
       },
       {
-        "pagePath": "pages/recommendations/index",
+        "pagePath": "pages/watchlist/index",
         "text": "收藏",
-        "iconPath": "images/recommendations.png",
-        "selectedIconPath": "images/recommendations_sel.png"
+        "iconPath": "images/watchlist.png",
+        "selectedIconPath": "images/watchlist_sel.png"
       },
       {
         "pagePath": "pages/user/user",

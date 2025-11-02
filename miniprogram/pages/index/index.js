@@ -165,6 +165,16 @@ Page({
     // 可选：点击时展开搜索或展示历史
   },
 
+  clearSearch() {
+    this.setData({
+      filters: null,
+      searchQuery: ''
+    }, () => {
+      this._updateSearchDisplay()
+      this._doSearch()
+    })
+  },
+
   _doSearch() {
     // 重置分页并按条件重新加载
     this.setData({

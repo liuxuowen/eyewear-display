@@ -22,7 +22,7 @@
   gap: 12rpx;
   background: #f6f6f6;
   border-radius: 9999rpx;
-  padding: 0 14rpx; /* 垂直方向不再额外增加高度 */
+  padding: 0 90rpx 0 14rpx; /* 右侧预留空间放“清空”按钮 */
   width: 100%;
   box-sizing: border-box;
   position: relative; /* 供覆盖层定位 */
@@ -32,6 +32,18 @@
   flex: 1;
   font-size: 24rpx;
   min-width: 0; /* 允许在小屏时收缩，避免与按钮重叠 */
+}
+
+.search-clear {
+  position: absolute;
+  right: 20rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 24rpx;
+  padding: 4rpx 8rpx;
+  z-index: 2; /* 确保在输入框之上可点击 */
+  background: transparent;
 }
 
 .container {
