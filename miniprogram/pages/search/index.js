@@ -9,18 +9,6 @@ Page({
     navHeight: 64,
     capsuleRightWidth: 0,
     menuHeight: 32,
-    searchQuery: '',
-    fieldOptions: [
-      { label: '镜架型号', value: (config && config.defaultSearchField) || 'frame_model' },
-      { label: '镜片大小', value: 'lens_size' },
-      { label: '鼻梁宽度', value: 'nose_bridge_width' },
-      { label: '镜腿长度', value: 'temple_length' },
-      { label: '镜架总长', value: 'frame_total_length' },
-      { label: '镜架高度', value: 'frame_height' }
-      // 未来可扩展更多字段，如品牌、材料等
-    ],
-    fieldIndex: 0,
-    placeholder: (config && config.searchPlaceholder) || '搜索镜架型号（精确匹配）',
     history: [],
   helpText: `最近搜索保留 5 条
 支持按如下字段进行精确匹配搜索：
@@ -34,8 +22,6 @@ Page({
     // 无结果提示（可在界面展示，文案可改）
     noResult: false,
     noResultText: '未找到任何结果，请调整搜索条件后重试。',
-    // 输入框键盘类型：文本/数字
-    inputType: 'text',
     // 多字段筛选的输入值
     filters: {
       frame_model: '',
@@ -69,17 +55,8 @@ Page({
     if (ec && ec.on) {
       ec.on('init', (payload) => {
         if (!payload) return
-        const { searchField, searchQuery, filters } = payload
-        if (searchQuery) this.setData({ searchQuery })
-        if (searchField) {
-          const idx = this.data.fieldOptions.findIndex(o => o.value === searchField)
-          if (idx >= 0) this.setData({ fieldIndex: idx }, () => this._updateInputType())
-          else this._updateInputType()
-        } else {
-          this._updateInputType()
-        }
+        const filters = payload.filters
         if (filters && typeof filters === 'object') {
-          // 仅覆盖已知字段，避免污染
           const cur = this.data.filters
           this.setData({
             filters: {
@@ -96,36 +73,17 @@ Page({
     }
   },
 
-  onFieldChange(e) {
-    const idx = Number(e.detail.value || 0)
-    this.setData({ fieldIndex: idx }, () => this._updateInputType())
-  },
-
-  onInput(e) {
-    const v = (e.detail && e.detail.value) || ''
-    this.setData({ searchQuery: v })
-  },
-
-  onInputMulti(e) {
-    const field = e.currentTarget.dataset.field
-    const v = (e.detail && e.detail.value) || ''
-    if (!field) return
-    const filters = Object.assign({}, this.data.filters, { [field]: v })
-    this.setData({ filters })
-  },
-
-  onConfirm() {
-    const field = this.data.fieldOptions[this.data.fieldIndex].value
-    const value = (this.data.searchQuery || '').trim()
-    if (!value) {
-      wx.showToast({ title: '请输入搜索内容', icon: 'none' })
+  onTapHistory(e) {
+    const filters = e.currentTarget.dataset.filters
+    if (filters && typeof filters === 'object') {
+      // 组合搜索历史：直接回填并返回首页
+      const ec = this.getOpenerEventChannel && this.getOpenerEventChannel()
+      if (ec && ec.emit) {
+        ec.emit('search', { filters })
+      }
+      wx.navigateBack({ delta: 1 })
       return
     }
-    // 先校验后端是否有结果，有则返回首页并搜索；没有则停留当前页提示
-    this._checkAndProceed(field, value)
-  },
-
-  onTapHistory(e) {
     const field = e.currentTarget.dataset.field
     const value = e.currentTarget.dataset.value
     if (!value) return
@@ -174,8 +132,8 @@ Page({
         const data = ok && res.data.data
         const total = (data && (typeof data.total === 'number' ? data.total : (data.items && data.items.length))) || 0
         if (total > 0) {
-          // 保存每个非空条件到历史
-          Object.keys(params).forEach(k => this._saveHistory(k, params[k]))
+          // 保存为一个组合搜索历史项
+          this._saveHistoryCombined(params)
           const ec = this.getOpenerEventChannel && this.getOpenerEventChannel()
           if (ec && ec.emit) {
             ec.emit('search', { filters: params })
@@ -193,38 +151,39 @@ Page({
     })
   },
 
-  _checkAndProceed(field, value) {
-    try {
-      wx.showLoading({ title: '检查中...', mask: true })
-    } catch (e) {}
-    wx.request({
-      url: `${app.globalData.apiBaseUrl}/products`,
-      method: 'GET',
-      data: {
-        page: 1,
-        per_page: 1,         // 仅需判断是否有结果
-        search_field: field,
-        search_value: value
-      },
-      success: (res) => {
-        const ok = res && res.data && res.data.status === 'success'
-        const data = ok && res.data.data
-        const total = (data && (typeof data.total === 'number' ? data.total : (data.items && data.items.length))) || 0
-        if (total > 0) {
-          this._saveHistory(field, value)
-          this._emitAndBack(field, value)
-        } else {
-          this.setData({ noResult: true })
-          wx.showToast({ title: '没有找到匹配结果', icon: 'none' })
-        }
-      },
-      fail: () => {
-        wx.showToast({ title: '网络错误，请稍后再试', icon: 'none' })
-      },
-      complete: () => {
-        try { wx.hideLoading() } catch (e) {}
-      }
+  _normalizedFiltersObject(obj){
+    // 只保留已知字段，去空值，并按固定顺序返回新对象
+    const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height']
+    const out = {}
+    order.forEach(k => {
+      const v = (obj && obj[k] !== undefined && obj[k] !== null) ? (''+obj[k]).trim() : ''
+      if (v !== '') out[k] = v
     })
+    return out
+  },
+
+  _saveHistoryCombined(filters){
+    try {
+      const key = 'search_history_v1'
+      let arr = wx.getStorageSync(key) || []
+      if (!Array.isArray(arr)) arr = []
+      const nf = this._normalizedFiltersObject(filters)
+      // 生成去重签名
+      const signature = JSON.stringify(nf)
+      // 过滤掉相同组合的旧记录
+      arr = arr.filter(i => {
+        if (i && i.filters && typeof i.filters === 'object') {
+          try { return JSON.stringify(this._normalizedFiltersObject(i.filters)) !== signature } catch (e) { return true }
+        }
+        // 保留单字段历史，允许并存
+        return true
+      })
+      // 插入新纪录到顶部
+      arr.unshift({ type: 'multi', filters: nf })
+      if (arr.length > 5) arr = arr.slice(0, 5)
+      wx.setStorageSync(key, arr)
+      this.setData({ history: arr })
+    } catch (e) {}
   },
 
   _loadHistory() {
@@ -249,16 +208,6 @@ Page({
     } catch (e) {}
   },
 
-  _updateInputType() {
-    try {
-      const field = this.data.fieldOptions[this.data.fieldIndex].value
-      // 非型号字段使用数字键盘
-      const numeric = field !== 'frame_model'
-      this.setData({ inputType: numeric ? 'number' : 'text' })
-    } catch (e) {
-      this.setData({ inputType: 'text' })
-    }
-  },
 
   getFieldLabel(field) {
     const opt = this.data.fieldOptions.find(o => o.value === field)

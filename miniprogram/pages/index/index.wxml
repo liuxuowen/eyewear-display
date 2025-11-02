@@ -5,7 +5,7 @@
 <view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
   <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
     <view class="search-box" style="height: {{menuHeight}}px;" bindtap="openSearchPage">
-      <input class="search-input" style="height: 100%;" placeholder="{{(require('../../config.js').searchPlaceholder)||'搜索镜架型号（精确匹配）'}}" value="{{searchQuery}}" bindtap="openSearchPage"/>
+      <input class="search-input" style="height: 100%;" placeholder="{{(require('../../config.js').searchPlaceholder)||'搜索镜架型号（精确匹配）'}}" value="{{searchDisplay}}" bindtap="openSearchPage"/>
     </view>
   </view>
 </view>

@@ -27,6 +27,8 @@ Page({
     searchField: (config && config.defaultSearchField) || 'frame_model',
     // 多字段过滤条件（可为空对象/空值表示未启用）
     filters: null,
+    // 顶部搜索框显示文本（单字段或组合展示）
+    searchDisplay: '',
     // 自定义导航栏尺寸
     statusBarHeight: 20,
     navBarHeight: 44,
@@ -51,6 +53,7 @@ Page({
       const menuHeight = menu && menu.height ? menu.height : 32
       this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight })
     } catch (e) {}
+    this._updateSearchDisplay()
     this.loadProducts()
   },
 
@@ -179,13 +182,19 @@ Page({
           if (!payload) return
           const { searchField, searchValue, filters } = payload
           if (filters && typeof filters === 'object') {
-            this.setData({ filters, searchQuery: '' }, () => this._doSearch())
+            this.setData({ filters, searchQuery: '' }, () => {
+              this._updateSearchDisplay()
+              this._doSearch()
+            })
           } else {
             this.setData({
               filters: null,
               searchField: searchField || this.data.searchField,
               searchQuery: searchValue || ''
-            }, () => this._doSearch())
+            }, () => {
+              this._updateSearchDisplay()
+              this._doSearch()
+            })
           }
         }
       },
@@ -195,5 +204,34 @@ Page({
         }
       }
     })
+  }
+  ,
+  _updateSearchDisplay() {
+    const filters = this.data.filters
+    if (filters && typeof filters === 'object') {
+      const text = this._formatFiltersDisplay(filters)
+      this.setData({ searchDisplay: text })
+    } else {
+      this.setData({ searchDisplay: this.data.searchQuery || '' })
+    }
+  },
+  _formatFiltersDisplay(filters) {
+    const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height']
+    const labels = {
+      frame_model: '型号',
+      lens_size: '镜片',
+      nose_bridge_width: '鼻梁',
+      temple_length: '镜腿',
+      frame_total_length: '总长',
+      frame_height: '高度'
+    }
+    const parts = []
+    order.forEach(k => {
+      const v = filters && filters[k]
+      if (v !== undefined && v !== null && (''+v).trim() !== '') {
+        parts.push(`${labels[k]||k}：${v}`)
+      }
+    })
+    return parts.join('；')
   }
 })

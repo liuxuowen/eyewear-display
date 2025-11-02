@@ -51,5 +51,29 @@ module.exports = {
     }
     // 兜底：找不到则返回原字段名
     return map[field] || field
+  },
+  // 将组合 filters 对象格式化为可读字符串
+  // 例如 {frame_model:'98044', lens_size:'50'} -> "镜架型号：98044；镜片大小：50"
+  formatFilters: function(filters){
+    if (!filters) return ''
+    // 固定顺序，保证显示一致
+    var order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height']
+    var map = {
+      'frame_model': '镜架型号',
+      'lens_size': '镜片大小',
+      'nose_bridge_width': '鼻梁宽度',
+      'temple_length': '镜腿长度',
+      'frame_total_length': '镜架总长',
+      'frame_height': '镜架高度'
+    }
+    var parts = []
+    for (var i=0;i<order.length;i++){
+      var k = order[i]
+      var v = filters[k]
+      if (v !== undefined && v !== null && (''+v).trim() !== ''){
+        parts.push((map[k]||k) + '：' + v)
+      }
+    }
+    return parts.join('；')
   }
 }

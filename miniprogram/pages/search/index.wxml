@@ -5,21 +5,16 @@
 <view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
   <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
     <view class="search-box" style="height: {{menuHeight}}px;">
-  <input class="search-input" style="height: 100%;" type="{{inputType}}" placeholder="{{placeholder}}" value="{{searchQuery}}" confirm-type="search" focus="true" bindinput="onInput" bindconfirm="onConfirm" />
+      <input class="search-input" style="height: 100%;" disabled="true" placeholder="在下方填写条件后点击“搜索”" value="" />
     </view>
-    <text class="cancel-btn" style="height: {{menuHeight}}px; line-height: {{menuHeight}}px;" bindtap="onCancel">取消</text>
+    <text class="cancel-btn" style="height: {{menuHeight}}px; line-height: {{menuHeight}}px;" bindtap="onCancel">返回</text>
   </view>
 </view>
 <view style="height: {{navHeight}}px;"></view>
 
 <view class="search-page">
   <view wx:if="{{noResult}}" class="no-result">{{noResultText}}</view>
-  <view class="field-section">
-    <view class="section-title">搜索字段</view>
-    <picker mode="selector" range="{{fieldOptions}}" range-key="label" value="{{fieldIndex}}" bindchange="onFieldChange">
-      <view class="field-selector">{{fieldOptions[fieldIndex].label}}</view>
-    </picker>
-  </view>
+  
 
   <view class="history-section" wx:if="{{history && history.length}}">
     <view class="section-title">
@@ -28,8 +23,13 @@
     </view>
     <view class="history-list">
       <block wx:for="{{history}}" wx:key="index">
-        <view class="history-chip" bindtap="onTapHistory" data-field="{{item.field}}" data-value="{{item.value}}">
-          <text>{{f.getFieldLabel(item.field)}}：{{item.value}}</text>
+        <view class="history-chip" bindtap="onTapHistory" data-field="{{item.field}}" data-value="{{item.value}}" data-filters="{{item.filters}}" data-type="{{item.type}}">
+          <block wx:if="{{item && item.filters}}">
+            <text>{{f.formatFilters(item.filters)}}</text>
+          </block>
+          <block wx:else>
+            <text>{{f.getFieldLabel(item.field)}}：{{item.value}}</text>
+          </block>
         </view>
       </block>
     </view>
