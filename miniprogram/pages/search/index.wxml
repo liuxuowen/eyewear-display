@@ -1,0 +1,72 @@
+<!-- pages/search/index.wxml -->
+<wxs src="../../utils/filters.wxs" module="f"></wxs>
+
+<!-- 自定义导航栏：与首页一致的搜索框位置与风格 -->
+<view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
+  <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
+    <view class="search-box" style="height: {{menuHeight}}px;">
+  <input class="search-input" style="height: 100%;" type="{{inputType}}" placeholder="{{placeholder}}" value="{{searchQuery}}" confirm-type="search" focus="true" bindinput="onInput" bindconfirm="onConfirm" />
+    </view>
+    <text class="cancel-btn" style="height: {{menuHeight}}px; line-height: {{menuHeight}}px;" bindtap="onCancel">取消</text>
+  </view>
+</view>
+<view style="height: {{navHeight}}px;"></view>
+
+<view class="search-page">
+  <view wx:if="{{noResult}}" class="no-result">{{noResultText}}</view>
+  <view class="field-section">
+    <view class="section-title">搜索字段</view>
+    <picker mode="selector" range="{{fieldOptions}}" range-key="label" value="{{fieldIndex}}" bindchange="onFieldChange">
+      <view class="field-selector">{{fieldOptions[fieldIndex].label}}</view>
+    </picker>
+  </view>
+
+  <view class="history-section" wx:if="{{history && history.length}}">
+    <view class="section-title">
+      <text>最近搜索</text>
+      <text class="clear" bindtap="onClearHistory">清空</text>
+    </view>
+    <view class="history-list">
+      <block wx:for="{{history}}" wx:key="index">
+        <view class="history-chip" bindtap="onTapHistory" data-field="{{item.field}}" data-value="{{item.value}}">
+          <text>{{f.getFieldLabel(item.field)}}：{{item.value}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 多字段组合搜索（平铺输入） -->
+  <view class="advanced-section">
+    <view class="section-title">多字段组合搜索</view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('frame_model')}}</text>
+      <input class="field-input" type="text" placeholder="输入型号" value="{{filters.frame_model}}" data-field="frame_model" bindinput="onInputMulti" />
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('lens_size')}}</text>
+      <input class="field-input" type="number" placeholder="数字，例如 50" value="{{filters.lens_size}}" data-field="lens_size" bindinput="onInputMulti" />
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('nose_bridge_width')}}</text>
+      <input class="field-input" type="number" placeholder="数字，例如 18" value="{{filters.nose_bridge_width}}" data-field="nose_bridge_width" bindinput="onInputMulti" />
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('temple_length')}}</text>
+      <input class="field-input" type="number" placeholder="数字，例如 145" value="{{filters.temple_length}}" data-field="temple_length" bindinput="onInputMulti" />
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('frame_total_length')}}</text>
+      <input class="field-input" type="number" placeholder="数字，例如 140" value="{{filters.frame_total_length}}" data-field="frame_total_length" bindinput="onInputMulti" />
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('frame_height')}}</text>
+      <input class="field-input" type="number" placeholder="数字，例如 42" value="{{filters.frame_height}}" data-field="frame_height" bindinput="onInputMulti" />
+    </view>
+    <button class="btn-search" type="primary" bindtap="onSearchMulti">搜索</button>
+  </view>
+
+  <view class="help-section">
+    <view class="section-title">搜索说明</view>
+    <view class="help-text">{{helpText}}</view>
+  </view>
+</view>

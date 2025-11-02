@@ -1,4 +1,39 @@
 /* index.wxss */
+.custom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+}
+
+.nav-row {
+  height: 100%;
+  padding: 0 20rpx;
+  display: flex;
+  align-items: center;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #f6f6f6;
+  border-radius: 9999rpx;
+  padding: 0 14rpx; /* 垂直方向不再额外增加高度 */
+  width: 100%;
+  box-sizing: border-box;
+  position: relative; /* 供覆盖层定位 */
+}
+
+.search-input {
+  flex: 1;
+  font-size: 24rpx;
+  min-width: 0; /* 允许在小屏时收缩，避免与按钮重叠 */
+}
+
 .container {
   padding: 20rpx;
 }

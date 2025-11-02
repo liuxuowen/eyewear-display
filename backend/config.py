@@ -44,5 +44,10 @@ class Config:
     # 搜索配置
     ALLOWED_SEARCH_FIELDS = [
         'frame_model',
+        'lens_size',
+        'nose_bridge_width',
+        'temple_length',
+        'frame_total_length',
+        'frame_height',
     ]
     DEFAULT_SEARCH_FIELD = os.getenv('DEFAULT_SEARCH_FIELD', 'frame_model')

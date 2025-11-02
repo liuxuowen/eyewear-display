@@ -2,6 +2,7 @@
   "entryPagePath": "pages/index/index",
   "pages": [
     "pages/index/index",
+    "pages/search/index",
     "pages/product/detail",
     "pages/recommendations/index",
     "pages/user/user"

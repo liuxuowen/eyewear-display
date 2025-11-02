@@ -1,0 +1,122 @@
+/* pages/search/index.wxss */
+@import "../../pages/index/index.wxss";
+
+.search-page {
+  padding: 20rpx;
+}
+
+/* 搜索页头部采用与首页一致的自定义导航样式，直接沿用 index.wxss 中的
+   .custom-nav, .nav-row, .search-box, .search-input 定义 */
+
+.field-selector {
+  padding: 10rpx 16rpx;
+  background: #f6f6f6;
+  border-radius: 9999rpx;
+  font-size: 24rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 26rpx;
+}
+
+.section-title {
+  margin-top: 24rpx;
+  margin-bottom: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #333;
+  font-weight: 600;
+}
+
+.clear {
+  color: #999;
+  font-size: 24rpx;
+}
+
+.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.history-chip {
+  background: #fff;
+  border: 1rpx solid #eee;
+  border-radius: 9999rpx;
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  color: #333;
+}
+
+.help-section {
+  margin-top: 30rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  color: #666;
+}
+
+.help-text {
+  font-size: 24rpx;
+  line-height: 1.6;
+  white-space: pre-line; /* 识别字符串中的 \n 为换行 */
+  word-break: break-word; /* 避免长词溢出 */
+}
+
+/* 取消按钮样式（与微信常见配色相近） */
+.cancel-btn {
+  color: #576b95;
+  font-size: 26rpx;
+  padding: 0 8rpx;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* 覆盖首页样式：在搜索页中，搜索框与“取消”同一行，搜索框需可收缩并为主内容 */
+.custom-nav .nav-row .search-box {
+  width: auto;    /* 覆盖 index.wxss 的 width:100% */
+  flex: 1 1 auto; /* 占据剩余空间，可收缩 */
+}
+.custom-nav .nav-row .cancel-btn { margin-left: 12rpx; }
+
+.no-result {
+  margin-bottom: 16rpx;
+  color: #e67e22;
+  background: #fff7e6;
+  border: 1rpx solid #ffe7ba;
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+/* 多字段表单样式 */
+.advanced-section {
+  margin-top: 24rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 16rpx;
+}
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 10rpx 0;
+}
+.field-label {
+  width: 180rpx;
+  color: #333;
+  font-size: 26rpx;
+  flex: 0 0 auto;
+}
+.field-input {
+  flex: 1 1 auto;
+  background: #f6f6f6;
+  border-radius: 8rpx;
+  padding: 12rpx 16rpx;
+  font-size: 26rpx;
+}
+.btn-search {
+  margin-top: 16rpx;
+}

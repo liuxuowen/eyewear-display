@@ -36,5 +36,20 @@ module.exports = {
   firstImage: function(list){
     if (!list || list.length === 0) return ''
     return list[0]
+  },
+  // 将字段名转换为中文标签，用于展示
+  getFieldLabel: function(field){
+    if (isNil(field)) return ''
+    // 已知字段映射，可按需扩展
+    var map = {
+      'frame_model': '镜架型号',
+      'lens_size': '镜片大小',
+      'nose_bridge_width': '鼻梁宽度',
+      'temple_length': '镜腿长度',
+      'frame_total_length': '镜架总长',
+      'frame_height': '镜架高度'
+    }
+    // 兜底：找不到则返回原字段名
+    return map[field] || field
   }
 }

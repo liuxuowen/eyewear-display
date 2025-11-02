@@ -1,6 +1,17 @@
 <!--index.wxml-->
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
 
+<!-- 自定义导航栏（含搜索框） -->
+<view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
+  <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
+    <view class="search-box" style="height: {{menuHeight}}px;" bindtap="openSearchPage">
+      <input class="search-input" style="height: 100%;" placeholder="{{(require('../../config.js').searchPlaceholder)||'搜索镜架型号（精确匹配）'}}" value="{{searchQuery}}" bindtap="openSearchPage"/>
+    </view>
+  </view>
+</view>
+<!-- 占位，避免内容被导航栏遮挡 -->
+<view style="height: {{navHeight}}px;"></view>
+
 <view class="container">
   <view class="product-list">
     <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">

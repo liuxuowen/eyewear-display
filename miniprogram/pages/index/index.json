@@ -4,10 +4,6 @@
   "onReachBottomDistance": 50,
   "backgroundColor": "#f6f6f6",
   "backgroundTextStyle": "dark",
-  "navigationBarTitleText": "商品列表",
-  "navigationStyle": "default",
-  "navigationBarSearchInput": {
-    "placeholder": "搜索镜架型号（精确匹配）",
-    "disabled": false
-  }
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom"
 }

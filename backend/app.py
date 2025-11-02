@@ -16,6 +16,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 app.config.from_object(Config)
+logger = logging.getLogger(__name__)
 
 # 统一日志格式
 logging.basicConfig(
@@ -119,23 +120,77 @@ def get_products():
     try:
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
+        try:
+            logger.info("/api/products query start page=%s per_page=%s args=%s", page, per_page, dict(request.args))
+        except Exception:
+            pass
 
         # 搜索参数（精确匹配）
         search_field = (request.args.get('search_field') or '').strip()
         search_value = (request.args.get('search_value') or '').strip()
         allowed_fields = getattr(app.config, 'ALLOWED_SEARCH_FIELDS', None) or app.config.get('ALLOWED_SEARCH_FIELDS', ['frame_model'])
+        # 多字段并行过滤：从查询参数中抓取所有白名单字段
+        multi_filters = {}
+        for f in allowed_fields:
+            v = request.args.get(f, type=str)
+            if v is not None and str(v).strip() != '':
+                multi_filters[f] = str(v).strip()
 
         query = Product.query.filter_by(is_active='是')
-        if search_value:
-            # 如果未传字段或字段不在白名单，使用默认字段
+        numeric_fields = {'lens_size', 'nose_bridge_width', 'temple_length', 'frame_total_length', 'frame_height'}
+
+        if multi_filters:
+            # 同时应用多字段过滤（AND）
+            for f, v in multi_filters.items():
+                col = getattr(Product, f, None)
+                if col is None:
+                    continue
+                if f in numeric_fields:
+                    try:
+                        value_num = float(v)
+                        eps = 1e-4
+                        query = query.filter(col.between(value_num - eps, value_num + eps))
+                        logger.debug("apply numeric filter %s ~= %s (eps=%s)", f, value_num, eps)
+                    except ValueError:
+                        # 非法数值，令整体结果为空
+                        query = query.filter(False)
+                        logger.debug("invalid numeric filter for %s: %s", f, v)
+                else:
+                    query = query.filter(col == v)
+                    logger.debug("apply text filter %s = %s", f, v)
+            try:
+                logger.info("/api/products using multi filters: %s", multi_filters)
+            except Exception:
+                pass
+        elif search_value:
+            # 兼容旧的单字段搜索参数
             if not search_field or search_field not in allowed_fields:
                 search_field = app.config.get('DEFAULT_SEARCH_FIELD', 'frame_model')
-            # 安全访问模型属性
             col = getattr(Product, search_field, None)
             if col is not None:
-                query = query.filter(col == search_value)
+                if search_field in numeric_fields:
+                    try:
+                        value_num = float(search_value)
+                        eps = 1e-4
+                        query = query.filter(col.between(value_num - eps, value_num + eps))
+                        logger.debug("apply numeric single filter %s ~= %s (eps=%s)", search_field, value_num, eps)
+                    except ValueError:
+                        query = query.filter(False)
+                        logger.debug("invalid numeric single filter %s: %s", search_field, search_value)
+                else:
+                    query = query.filter(col == search_value)
+                    logger.debug("apply text single filter %s = %s", search_field, search_value)
+            try:
+                logger.info("/api/products using single filter: %s=%s", search_field, search_value)
+            except Exception:
+                pass
 
         products = paginate_query(query, page, per_page)
+
+        try:
+            logger.info("/api/products query done total=%s pages=%s current_page=%s count=%s", products.total, products.pages, products.page, len(products.items))
+        except Exception:
+            pass
 
         return jsonify({
             'status': 'success',
