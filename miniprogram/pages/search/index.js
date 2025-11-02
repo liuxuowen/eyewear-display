@@ -12,12 +12,12 @@ Page({
     history: [],
   helpText: `最近搜索保留 5 条
 支持按如下字段进行精确匹配搜索：
-镜架型号（frame_model）：如“98044”，搜索fm98044
-镜片大小（lens_size）：如“43mm”，搜索ls43
-鼻梁宽度（nose_bridge_width）：如“25mm”，搜索nw25
-镜腿长度（temple_length）：如“145mm”，搜索tl145
-镜架总长（frame_total_length）：如“140mm”，搜索fl140
-镜架高度（frame_height）：如“40mm”，搜索fh40
+镜架型号（frame_model）：如“98044”，搜索98044
+镜片大小（lens_size）：如“43mm”，搜索43
+鼻梁宽度（nose_bridge_width）：如“25mm”，搜索25
+镜腿长度（temple_length）：如“145mm”，搜索145
+镜架总长（frame_total_length）：如“140mm”，搜索140
+镜架高度（frame_height）：如“40mm”，搜索40
   `, // 可在此处自行调整文案
     // 无结果提示（可在界面展示，文案可改）
     noResult: false,
