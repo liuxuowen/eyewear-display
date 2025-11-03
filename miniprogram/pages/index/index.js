@@ -13,6 +13,7 @@ Page({
     }
     if (app.globalData.openId) {
       track(app.globalData.openId)
+      this._updateKfSessionFrom()
       // 每次显示首页时强制刷新收藏状态（解决在收藏页取消后返回仍显示“已收藏”的问题）
       this._loadFavoriteIds()
       this._loadUserRole()
@@ -21,6 +22,7 @@ Page({
       app.loginIfNeeded()
         .then((oid) => {
           track(oid)
+          this._updateKfSessionFrom()
           this._loadFavoriteIds()
           this._loadUserRole()
           this._applyPendingSkus()
@@ -49,6 +51,8 @@ Page({
     selectedCount: 0,
     // 分享落地待加入收藏的SKU
     pendingSkus: null,
+    // 客服会话来源参数
+    kfSessionFrom: '',
     // 自定义导航栏尺寸
     statusBarHeight: 20,
     navBarHeight: 44,
@@ -76,6 +80,7 @@ Page({
     this._updateSearchDisplay()
     this._loadFavoriteIds()
     this.loadProducts()
+    this._updateKfSessionFrom()
     // 处理分享落地参数（如 ?skus=a,b,c）
     if (options && options.skus) {
       try {
@@ -478,5 +483,19 @@ Page({
       }
     })
     return parts.join('；')
+  },
+  // 更新客服会话来源参数，便于在客服后台识别来源
+  _updateKfSessionFrom() {
+    try {
+      const oid = (getApp().globalData && getApp().globalData.openId) || ''
+      const o = oid ? oid.slice(-8) : 'anon'
+      const t = (Date.now() + '').slice(-8)
+      const p = 'idx'
+      // 长度控制在32字符内：o:XXXXXXXX|p:idx|t:YYYYYYYY
+      const s = `o:${o}|p:${p}|t:${t}`
+      this.setData({ kfSessionFrom: s })
+    } catch (e) {
+      this.setData({ kfSessionFrom: 'o:anon|p:idx' })
+    }
   }
 })

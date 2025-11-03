@@ -45,42 +45,6 @@ Page({
     })
   },
 
-  fetchOpenId() {
-    // 通过 wx.login 获取 code，调用后端 /api/wechat/code2session 获取 openid
-    wx.login({
-      success: (res) => {
-        const code = res.code
-        if (!code) {
-          wx.showToast({ title: '获取code失败', icon: 'none' })
-          return
-        }
-        wx.request({
-          url: `${app.globalData.apiBaseUrl}/wechat/code2session`,
-          method: 'POST',
-          data: { code },
-          success: (r) => {
-            if (r.data && r.data.status === 'success' && r.data.data && r.data.data.openid) {
-              const oid = r.data.data.openid
-              app.globalData.openId = oid
-              try { wx.setStorageSync('openId', oid) } catch (e) {}
-              this.setData({ openId: oid })
-              // 同步到后端用户表（占位 upsert）
-              wx.request({
-                url: `${app.globalData.apiBaseUrl}/users/upsert`,
-                method: 'POST',
-                data: { open_id: oid }
-              })
-            } else {
-              wx.showToast({ title: '获取openid失败', icon: 'none' })
-            }
-          },
-          fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
-        })
-      },
-      fail: () => wx.showToast({ title: 'wx.login失败', icon: 'none' })
-    })
-  },
-
   getProfile() {
     if (!wx.getUserProfile) {
       wx.showModal({ title: '提示', content: '微信版本过低，不支持获取用户信息，请升级微信版本', showCancel: false })

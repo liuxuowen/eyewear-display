@@ -82,3 +82,8 @@
   <view class="loading" wx:if="{{isLoading}}">加载中...</view>
   <view class="no-more" wx:if="{{!hasMore && products.length > 0 && !isLoading}}">没有更多了</view>
 </view>
+<!-- 悬浮客服入口 -->
+<button class="float-kf" open-type="contact" session-from="{{kfSessionFrom}}" hover-class="none">
+  <image class="float-kf-img" src="../../images/cs.png" mode="aspectFit"></image>
+  <!-- 无需文字，使用图标展示 -->
+</button>
