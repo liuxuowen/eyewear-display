@@ -50,6 +50,13 @@
   padding: 20rpx;
 }
 
+.sales-toolbar {
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
 .product-list {
   display: flex;
   flex-direction: column;
@@ -63,6 +70,7 @@
   display: flex;
   gap: 20rpx;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .product-image {
@@ -118,6 +126,21 @@
 }
 .price-row {
   margin-top: 4rpx;
+}
+
+.select-box {
+  position: absolute;
+  left: 12rpx;
+  top: 12rpx;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 6rpx;
+  border: 2rpx solid #ccc;
+  background: #fff;
+}
+.select-box.on {
+  border-color: #e74c3c;
+  background: #e74c3c;
 }
 
 .load-more {

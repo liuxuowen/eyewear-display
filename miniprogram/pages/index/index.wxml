@@ -14,8 +14,14 @@
 <view style="height: {{navHeight}}px;"></view>
 
 <view class="container">
+  <!-- 销售分享工具栏 -->
+  <view class="sales-toolbar" wx:if="{{isSales}}">
+    <button size="mini" type="{{selecting?'primary':'default'}}" bindtap="toggleSelecting">{{selecting ? ('完成(已选 '+selectedCount+'/10)') : '选择分享'}}</button>
+    <button size="mini" open-type="share" wx:if="{{selecting && selectedCount>0}}">打包转发</button>
+  </view>
   <view class="product-list">
     <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
+      <view class="select-box {{selectedMap[item.frame_model] ? 'on' : ''}}" wx:if="{{selecting}}" catchtap="toggleSelectItem" data-model="{{item.frame_model}}"></view>
       <image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
       <view class="product-info">
         <view class="product-title">

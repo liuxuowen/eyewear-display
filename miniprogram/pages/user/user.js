@@ -5,16 +5,20 @@ Page({
   data: {
     openId: '',
     nickname: '',
-    avatarUrl: ''
+    avatarUrl: '',
+    role: '', // 'sales' | 'user'
+    isSales: false
   },
 
   onLoad() {
     const oid = app.globalData.openId || ''
     if (oid) {
       this.setData({ openId: oid })
+      this._loadRole(oid)
     } else if (app.loginIfNeeded) {
       app.loginIfNeeded().then((id) => {
         this.setData({ openId: id })
+        this._loadRole(id)
       }).catch(() => {})
     }
     // 从本地读取已保存的昵称、头像
@@ -29,6 +33,7 @@ Page({
   onShow() {
     if (app.globalData.openId && app.globalData.openId !== this.data.openId) {
       this.setData({ openId: app.globalData.openId })
+      this._loadRole(app.globalData.openId)
     }
   },
 
@@ -102,6 +107,21 @@ Page({
       },
       fail: () => {
         wx.showToast({ title: '用户未授权', icon: 'none' })
+      }
+    })
+  },
+
+  _loadRole(openId) {
+    if (!openId) return
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/users/role`,
+      method: 'GET',
+      data: { open_id: openId },
+      success: (res) => {
+        if (res.data && res.data.status === 'success' && res.data.data) {
+          const role = res.data.data.role || 'user'
+          this.setData({ role, isSales: role === 'sales' })
+        }
       }
     })
   }

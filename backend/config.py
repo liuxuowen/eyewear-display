@@ -51,3 +51,6 @@ class Config:
         'frame_height',
     ]
     DEFAULT_SEARCH_FIELD = os.getenv('DEFAULT_SEARCH_FIELD', 'frame_model')
+
+    # 销售白名单（以逗号分隔的 open_id 列表）
+    SALES_OPENID_WHITELIST = [s.strip() for s in os.getenv('SALES_OPENID_WHITELIST', '').split(',') if s.strip()]

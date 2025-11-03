@@ -15,11 +15,15 @@ Page({
       track(app.globalData.openId)
       // 每次显示首页时强制刷新收藏状态（解决在收藏页取消后返回仍显示“已收藏”的问题）
       this._loadFavoriteIds()
+      this._loadUserRole()
+      this._applyPendingSkus()
     } else if (app.loginIfNeeded) {
       app.loginIfNeeded()
         .then((oid) => {
           track(oid)
           this._loadFavoriteIds()
+          this._loadUserRole()
+          this._applyPendingSkus()
         })
         .catch(() => {})
     }
@@ -38,6 +42,13 @@ Page({
     searchDisplay: '',
     // 当前用户已收藏的型号集合（用于按钮状态）
     favoriteIds: {},
+    // 角色与分享选择
+    isSales: false,
+    selecting: false,
+    selectedMap: {},
+    selectedCount: 0,
+    // 分享落地待加入收藏的SKU
+    pendingSkus: null,
     // 自定义导航栏尺寸
     statusBarHeight: 20,
     navBarHeight: 44,
@@ -46,7 +57,7 @@ Page({
     menuHeight: 32
   },
 
-  onLoad() {
+  onLoad(options) {
     // 计算状态栏与胶囊按钮，精确适配不同机型
     try {
       const sys = wx.getSystemInfoSync()
@@ -65,6 +76,16 @@ Page({
     this._updateSearchDisplay()
     this._loadFavoriteIds()
     this.loadProducts()
+    // 处理分享落地参数（如 ?skus=a,b,c）
+    if (options && options.skus) {
+      try {
+        const raw = decodeURIComponent(options.skus)
+        const list = raw.split(',').map(s => (s||'').trim()).filter(Boolean)
+        if (list && list.length) {
+          this.setData({ pendingSkus: list })
+        }
+      } catch (e) {}
+    }
   },
 
   loadProducts() {
@@ -318,6 +339,41 @@ Page({
 
     return Object.assign({}, item, { hl })
   },
+  _loadUserRole() {
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!oid) return
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/users/role`,
+      method: 'GET',
+      data: { open_id: oid },
+      success: (res) => {
+        if (res.data && res.data.status === 'success') {
+          const role = res.data.data && res.data.data.role
+          this.setData({ isSales: role === 'sales' })
+        }
+      }
+    })
+  },
+  _applyPendingSkus() {
+    const list = this.data.pendingSkus
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!list || !list.length || !oid) return
+    this.setData({ pendingSkus: null })
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/favorites/batch`,
+      method: 'POST',
+      data: { open_id: oid, frame_models: list.slice(0, 50) },
+      success: (res) => {
+        if (res.data && res.data.status === 'success') {
+          const added = (res.data.data && res.data.data.added) || 0
+          if (added > 0) {
+            this._loadFavoriteIds()
+            wx.showToast({ title: `已加入收藏${added}个`, icon: 'success' })
+          }
+        }
+      }
+    })
+  },
   _loadFavoriteIds() {
     const oid = (getApp().globalData && getApp().globalData.openId) || ''
     if (!oid) return
@@ -369,6 +425,40 @@ Page({
     } else {
       this.setData({ searchDisplay: this.data.searchQuery || '' })
     }
+  },
+  // 销售选择与分享
+  toggleSelecting() {
+    if (!this.data.isSales) return
+    const on = !this.data.selecting
+    this.setData({ selecting: on })
+    if (!on) this.setData({ selectedMap: {}, selectedCount: 0 })
+  },
+  toggleSelectItem(e) {
+    if (!this.data.isSales || !this.data.selecting) return
+    const model = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.model) || ''
+    if (!model) return
+    const map = Object.assign({}, this.data.selectedMap)
+    if (map[model]) {
+      delete map[model]
+    } else {
+      const cnt = this.data.selectedCount || 0
+      if (cnt >= 10) {
+        wx.showToast({ title: '最多选择10个', icon: 'none' })
+        return
+      }
+      map[model] = true
+    }
+    const count = Object.keys(map).length
+    this.setData({ selectedMap: map, selectedCount: count })
+  },
+  onShareAppMessage() {
+    let path = '/pages/index/index'
+    if (this.data.isSales && this.data.selecting && this.data.selectedCount > 0) {
+      const skus = Object.keys(this.data.selectedMap)
+      const enc = encodeURIComponent(skus.join(','))
+      path = `/pages/index/index?skus=${enc}`
+    }
+    return { title: this.data.selectedCount > 0 ? `推荐${this.data.selectedCount}款镜架` : '精品镜架推荐', path }
   },
   _formatFiltersDisplay(filters) {
     const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height']

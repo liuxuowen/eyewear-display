@@ -463,6 +463,80 @@ def wechat_code2session():
     except Exception as e:
         return handle_error(e, 'Error in code2session')
 
+
+@app.route('/api/users/role', methods=['GET'])
+def get_user_role():
+    """根据 open_id 返回角色信息。来源：环境配置中的销售白名单。
+    Query: open_id
+    Return: { role: 'sales' | 'user' }
+    """
+    try:
+        open_id = (request.args.get('open_id') or '').strip()
+        if not open_id:
+            return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+        whitelist = app.config.get('SALES_OPENID_WHITELIST', []) or []
+        role = 'sales' if open_id in whitelist else 'user'
+        return jsonify({'status': 'success', 'data': {'role': role}})
+    except Exception as e:
+        return handle_error(e, 'Error getting user role')
+
+
+@app.route('/api/favorites/batch', methods=['POST'])
+def add_favorites_batch():
+    """批量添加收藏（幂等）。Body: { open_id: str, frame_models: [str, ...] }
+    忽略无效或未上架的商品；返回成功加入的数量。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        open_id = (data.get('open_id') or '').strip()
+        items = data.get('frame_models') or []
+        if not open_id or not isinstance(items, list):
+            return jsonify({'status': 'error', 'message': 'open_id and frame_models(list) are required'}), 400
+
+        # 确保用户存在
+        user = User.query.get(open_id)
+        if not user:
+            user = User(open_id=open_id)
+            db.session.add(user)
+
+        # 去重并裁剪数量（上限 50，避免过载；前端会控制 10）
+        uniq = []
+        seen = set()
+        for m in items:
+            if not m or not isinstance(m, str):
+                continue
+            mm = m.strip()
+            if not mm or mm in seen:
+                continue
+            seen.add(mm)
+            uniq.append(mm)
+            if len(uniq) >= 50:
+                break
+
+        if not uniq:
+            return jsonify({'status': 'success', 'data': {'added': 0}})
+
+        # 查询有效商品
+        valid = Product.query.with_entities(Product.frame_model).filter(Product.is_active == '是', Product.frame_model.in_(uniq)).all()
+        valid_set = {row.frame_model for row in valid}
+
+        # 现有收藏
+        existing = Favorite.query.with_entities(Favorite.frame_model).filter(Favorite.open_id == open_id, Favorite.frame_model.in_(list(valid_set))).all()
+        exist_set = {row.frame_model for row in existing}
+
+        # 批量添加
+        added = 0
+        for fm in valid_set:
+            if fm in exist_set:
+                continue
+            db.session.add(Favorite(open_id=open_id, frame_model=fm))
+            added += 1
+        db.session.commit()
+        return jsonify({'status': 'success', 'data': {'added': added}})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error adding favorites batch')
+
 if __name__ == '__main__':
     # 仅用于开发。生产请使用 WSGI 服务器（如 gunicorn/uwsgi/waitress）并在反向代理后运行
     host = os.getenv('HOST', '0.0.0.0')
