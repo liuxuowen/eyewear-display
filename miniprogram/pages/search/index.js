@@ -12,12 +12,12 @@ Page({
     history: [],
   helpText: `最近搜索保留 5 条
 支持按如下字段进行精确匹配或范围匹配：
-镜架型号（frame_model）：如“98044”
-镜片大小（lens_size）：如“50”或“40-45”
-鼻梁宽度（nose_bridge_width）：如“18”或“16-20”
-镜腿长度（temple_length）：如“145”或“140-150”
-镜架总长（frame_total_length）：如“140”或“135-145”
-镜架高度（frame_height）：如“42”或“40-45”
+镜架型号（需精确匹配）：如“98044”或“T18981”
+镜片大小（范围35≤x≤70）：如“50”或“40-45”
+鼻梁宽度（范围10≤x≤35）：如“18”或“16-20”
+镜腿长度（范围120≤x≤170）：如“145”或“140-150”
+镜架总长（范围100≤x≤160）：如“140”或“135-145”
+镜架高度（范围20≤x≤60）：如“42”或“40-45”
   `, // 可在此处自行调整文案
     // 无结果提示（可在界面展示，文案可改）
     noResult: false,
@@ -25,6 +25,14 @@ Page({
     // 多字段筛选的输入值
     filters: {
       frame_model: '',
+      lens_size: '',
+      nose_bridge_width: '',
+      temple_length: '',
+      frame_total_length: '',
+      frame_height: ''
+    },
+    // 字段级错误提示（仅数值字段）
+    errors: {
       lens_size: '',
       nose_bridge_width: '',
       temple_length: '',
@@ -106,8 +114,15 @@ Page({
     const v = (e.detail && e.detail.value) || ''
     if (!field) return
     const filters = Object.assign({}, this.data.filters)
-    filters[field] = v
-    this.setData({ filters })
+    const errors = Object.assign({}, this.data.errors)
+    const norm = this._normalizeValue(v)
+    filters[field] = norm
+    // 仅对数值字段做校验
+    if (this._isNumericField(field)) {
+      const check = this._validateNumericOrRange(norm)
+      errors[field] = check.ok || norm === '' ? '' : '格式错误：请输入数字或范围（如 40 或 40-45）'
+    }
+    this.setData({ filters, errors })
   },
 
   _emitAndBack(field, value) {
@@ -123,10 +138,27 @@ Page({
     const f = this.data.filters || {}
     const params = {}
     let count = 0
+    // 搜索前进行一次集中校验
+    const errors = Object.assign({}, this.data.errors)
+    let firstErrorField = ''
     ;['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height'].forEach(k => {
       const val = (f[k] || '').toString().trim()
+      if (this._isNumericField(k)) {
+        const chk = this._validateNumericOrRange(val)
+        if (!chk.ok && val !== '') {
+          errors[k] = '格式错误：请输入数字或范围（如 40 或 40-45）'
+          if (!firstErrorField) firstErrorField = k
+        } else {
+          errors[k] = ''
+        }
+      }
       if (val !== '') { params[k] = val; count++ }
     })
+    if (firstErrorField) {
+      this.setData({ errors })
+      wx.showToast({ title: '请修正红色字段的格式', icon: 'none' })
+      return
+    }
     if (count === 0) {
       // 无条件，视为“查看全部”。直接清空筛选并返回。
       const ec = this.getOpenerEventChannel && this.getOpenerEventChannel()
@@ -163,6 +195,33 @@ Page({
       },
       complete: () => { try { wx.hideLoading() } catch (e) {} }
     })
+  },
+
+  // ===== 工具方法 =====
+  _isNumericField(field) {
+    return field === 'lens_size' || field === 'nose_bridge_width' || field === 'temple_length' || field === 'frame_total_length' || field === 'frame_height'
+  },
+  _normalizeValue(v){
+    if (v === undefined || v === null) return ''
+    const s = String(v).trim()
+    if (!s) return ''
+    // 统一中文破折号为半角连字符
+    return s.replace(/[－—–]/g, '-')
+  },
+  _validateNumericOrRange(s){
+    if (!s) return { ok: true }
+    const str = String(s)
+    // 单值：整数或小数
+    const numRe = /^[+-]?\d+(?:\.\d+)?$/
+    if (numRe.test(str)) return { ok: true }
+    // 范围：a-b，中间可有空格；a、b 都是数字
+    const rangeRe = /^\s*([+-]?\d+(?:\.\d+)?)\s*-\s*([+-]?\d+(?:\.\d+)?)\s*$/
+    const m = str.match(rangeRe)
+    if (m) {
+      // 合法范围，顺序不强制，后端会再矫正
+      return { ok: true }
+    }
+    return { ok: false, msg: 'invalid' }
   },
 
   _normalizedFiltersObject(obj){

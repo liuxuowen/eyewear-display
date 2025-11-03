@@ -120,6 +120,14 @@
   padding: 12rpx 16rpx;
   font-size: 26rpx;
 }
+.field-input.error {
+  border: 2rpx solid #e74c3c;
+  background: #fff5f5;
+}
+.field-error {
+  color: #e74c3c;
+  font-size: 22rpx;
+}
 .btn-search {
   margin-top: 16rpx;
 }
