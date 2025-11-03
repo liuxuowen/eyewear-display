@@ -18,13 +18,49 @@
     <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
       <image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
       <view class="product-info">
-        <text class="product-title">型号：{{f.display(item.frame_model)}}</text>
+        <view class="product-title">
+          <text>型号：</text>
+          <block wx:if="{{item.hl && item.hl.frame_model}}">
+            <block wx:for="{{item.hl.frame_model}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+          </block>
+          <block wx:else>
+            <text>{{f.display(item.frame_model)}}</text>
+          </block>
+        </view>
         <view class="product-specs">
-          <text>镜架尺寸：{{f.unit(item.lens_size, '')}}-{{f.unit(item.nose_bridge_width, '')}}-{{f.unit(item.temple_length, '')}}</text>
-          <text>价格：￥{{f.display(item.price)}}</text>
-          <text>镜架总长：{{f.unit(item.frame_total_length, '')}}</text>
-          <text>镜架高度：{{f.unit(item.frame_height, '')}}</text>
-          <text>重量：{{f.unit(item.weight, 'g')}}</text>
+          <view>
+            <text>镜架尺寸：</text>
+            <block wx:if="{{item.hl && item.hl.lens_size}}">
+              <block wx:for="{{item.hl.lens_size}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            </block>
+            <block wx:else><text>{{f.unit(item.lens_size, '')}}</text></block>
+            <text>-</text>
+            <block wx:if="{{item.hl && item.hl.nose_bridge_width}}">
+              <block wx:for="{{item.hl.nose_bridge_width}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            </block>
+            <block wx:else><text>{{f.unit(item.nose_bridge_width, '')}}</text></block>
+            <text>-</text>
+            <block wx:if="{{item.hl && item.hl.temple_length}}">
+              <block wx:for="{{item.hl.temple_length}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            </block>
+            <block wx:else><text>{{f.unit(item.temple_length, '')}}</text></block>
+          </view>
+          <view><text>价格：￥{{f.display(item.price)}}</text></view>
+          <view>
+            <text>镜架总长：</text>
+            <block wx:if="{{item.hl && item.hl.frame_total_length}}">
+              <block wx:for="{{item.hl.frame_total_length}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            </block>
+            <block wx:else><text>{{f.unit(item.frame_total_length, '')}}</text></block>
+          </view>
+          <view>
+            <text>镜架高度：</text>
+            <block wx:if="{{item.hl && item.hl.frame_height}}">
+              <block wx:for="{{item.hl.frame_height}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            </block>
+            <block wx:else><text>{{f.unit(item.frame_height, '')}}</text></block>
+          </view>
+          <view><text>重量：{{f.unit(item.weight, 'g')}}</text></view>
         </view>
       </view>
     </view>

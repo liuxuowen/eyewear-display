@@ -97,6 +97,12 @@
   color: #666;
 }
 
+/* 高亮匹配片段 */
+.hl {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
 .load-more {
   text-align: center;
   padding: 20rpx;

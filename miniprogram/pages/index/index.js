@@ -83,8 +83,9 @@ Page({
       success: (res) => {
         if (res.data.status === 'success') {
           const { items, total, pages } = res.data.data
+          const newItems = (items || []).map(it => this._withHighlights(it))
           this.setData({
-            products: this.data.products.concat(items || []),
+            products: this.data.products.concat(newItems),
             hasMore: page < pages
           })
         } else {
@@ -216,6 +217,96 @@ Page({
     })
   }
   ,
+  _withHighlights(item) {
+    const filters = this.data.filters
+    const isMulti = filters && typeof filters === 'object'
+    const sf = this.data.searchField
+    const sq = (this.data.searchQuery || '').trim()
+
+    const hl = {}
+    const v = (x) => (x === undefined || x === null) ? '' : ('' + x)
+
+    // 帮助函数：子串高亮
+    const highlightSubstring = (text, kw) => {
+      const src = v(text)
+      const key = v(kw)
+      if (!src) return [{ text: src, highlight: false }]
+      if (!key) return [{ text: src, highlight: false }]
+      const idx = src.indexOf(key)
+      if (idx < 0) return [{ text: src, highlight: false }]
+      const parts = []
+      if (idx > 0) parts.push({ text: src.slice(0, idx), highlight: false })
+      parts.push({ text: src.slice(idx, idx + key.length), highlight: true })
+      if (idx + key.length < src.length) parts.push({ text: src.slice(idx + key.length), highlight: false })
+      return parts
+    }
+
+    // 帮助函数：整段高亮
+    const highlightAll = (text) => [{ text: v(text), highlight: true }]
+
+    // 判断数值是否在范围内（字符串，可能是 a-b 或单值）
+    const inRange = (num, expr) => {
+      if (num === undefined || num === null) return false
+      const n = Number(num)
+      if (!expr) return false
+      const s = ('' + expr).replace(/[－—–]/g, '-')
+      const m = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*-\s*([+-]?\d+(?:\.\d+)?)\s*$/)
+      if (m) {
+        const a = Number(m[1]); const b = Number(m[2])
+        if (isNaN(a) || isNaN(b)) return false
+        const lo = Math.min(a, b), hi = Math.max(a, b)
+        return n >= lo && n <= hi
+      }
+      const single = Number(s)
+      if (isNaN(single)) return false
+      // 允许极小误差
+      return Math.abs(n - single) < 1e-4
+    }
+
+    // 计算各字段的高亮片段
+    if (isMulti) {
+      // frame_model：按子串高亮
+      if (filters.frame_model) {
+        hl.frame_model = highlightSubstring(item.frame_model, filters.frame_model)
+      }
+      // 数值字段：若为单值则子串高亮；若为范围且命中则整段高亮
+      const handleNumeric = (field, displayVal, rawVal) => {
+        const expr = filters[field]
+        if (!expr) return
+        const exprStr = ('' + expr)
+        const isRange = /-/.test(exprStr)
+        if (isRange) {
+          if (inRange(rawVal, exprStr)) {
+            hl[field] = highlightAll(displayVal)
+          }
+        } else {
+          hl[field] = highlightSubstring(displayVal, exprStr)
+        }
+      }
+      handleNumeric('lens_size', v(item.lens_size), item.lens_size)
+      handleNumeric('nose_bridge_width', v(item.nose_bridge_width), item.nose_bridge_width)
+      handleNumeric('temple_length', v(item.temple_length), item.temple_length)
+      handleNumeric('frame_total_length', v(item.frame_total_length), item.frame_total_length)
+      handleNumeric('frame_height', v(item.frame_height), item.frame_height)
+    } else if (sq) {
+      // 单字段
+      if (sf === 'frame_model') {
+        hl.frame_model = highlightSubstring(item.frame_model, sq)
+      } else if (sf === 'lens_size') {
+        hl.lens_size = highlightSubstring(v(item.lens_size), sq)
+      } else if (sf === 'nose_bridge_width') {
+        hl.nose_bridge_width = highlightSubstring(v(item.nose_bridge_width), sq)
+      } else if (sf === 'temple_length') {
+        hl.temple_length = highlightSubstring(v(item.temple_length), sq)
+      } else if (sf === 'frame_total_length') {
+        hl.frame_total_length = highlightSubstring(v(item.frame_total_length), sq)
+      } else if (sf === 'frame_height') {
+        hl.frame_height = highlightSubstring(v(item.frame_height), sq)
+      }
+    }
+
+    return Object.assign({}, item, { hl })
+  },
   _updateSearchDisplay() {
     const filters = this.data.filters
     if (filters && typeof filters === 'object') {
