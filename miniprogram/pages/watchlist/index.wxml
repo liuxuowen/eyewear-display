@@ -1,2 +1,29 @@
 <!--pages/watchlist/index.wxml-->
-<text>我还没想好要做啥。。。</text>
+<wxs src="../../utils/filters.wxs" module="f"></wxs>
+<view class="container">
+	<view wx:if="{{empty}}" class="empty">暂无收藏</view>
+	<view class="product-list" wx:else>
+			<view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
+				<image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
+				<view class="product-info">
+					<view class="product-title">
+						<text>型号：{{f.display(item.frame_model)}}</text>
+						<view class="fav-wrap">
+							<button class="fav-btn fav-on" size="mini" type="default" catchtap="removeFavorite" data-model="{{item.frame_model}}">取消收藏</button>
+						</view>
+					</view>
+				<view class="product-specs">
+					<text>镜架尺寸：{{f.unit(item.lens_size, '')}}-{{f.unit(item.nose_bridge_width, '')}}-{{f.unit(item.temple_length, '')}}</text>
+					<text>价格：￥{{f.display(item.price)}}</text>
+					<text>镜架总长：{{f.unit(item.frame_total_length, '')}}</text>
+					<text>镜架高度：{{f.unit(item.frame_height, '')}}</text>
+					<text>重量：{{f.unit(item.weight, 'g')}}</text>
+				</view>
+			</view>
+		</view>
+
+		<view class="load-more" wx:if="{{hasMore && !isLoading}}" bindtap="loadMore">加载更多</view>
+		<view class="loading" wx:if="{{isLoading}}">加载中...</view>
+		<view class="no-more" wx:if="{{!hasMore && products.length > 0 && !isLoading}}">没有更多了</view>
+	</view>
+</view>

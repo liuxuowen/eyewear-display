@@ -61,6 +61,13 @@
   padding: 16rpx;
   color: #666;
 }
+.help-section > .section-title {
+  /* 让“搜索说明”标题与“最近搜索”、“多字段组合搜索”左侧对齐 */
+  margin-left: -16rpx;
+  margin-right: -16rpx;
+  padding-left: 0;
+  padding-right: 0;
+}
 
 .help-text {
   font-size: 24rpx;

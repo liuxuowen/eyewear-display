@@ -81,6 +81,8 @@
 .product-title {
   font-size: 28rpx;
   font-weight: bold;
+  display: flex;
+  align-items: center;
 }
 
 .product-price {
@@ -101,6 +103,21 @@
 .hl {
   color: #e74c3c;
   font-weight: bold;
+}
+
+.fav-wrap {
+  margin-left: auto;
+}
+.fav-btn {
+  line-height: 1.8;
+  padding: 8rpx 16rpx;
+}
+.fav-on {
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+.price-row {
+  margin-top: 4rpx;
 }
 
 .load-more {

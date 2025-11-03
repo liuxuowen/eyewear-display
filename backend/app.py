@@ -11,7 +11,7 @@ load_dotenv(dotenv_path=envfile)
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
-from models import db, Product, User, PageView
+from models import db, Product, User, PageView, Favorite
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -248,6 +248,109 @@ def get_product(frame_model):
         })
     except Exception as e:
         return handle_error(e, f"Error getting product {frame_model}")
+
+
+# === 收藏（Watchlist / Favorites） ===
+
+@app.route('/api/favorites', methods=['GET'])
+def list_favorites():
+    """列出某用户收藏的商品（按加入时间倒序）。
+    Query: open_id (required), page, per_page
+    返回商品列表（仅展示 is_active=是 的商品）。
+    """
+    try:
+        open_id = (request.args.get('open_id') or '').strip()
+        if not open_id:
+            return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+
+        # 子查询获取用户收藏的 frame_model 列表，按收藏时间倒序
+        subq = Favorite.query.with_entities(Favorite.frame_model).filter_by(open_id=open_id).subquery()
+        # 只返回仍有效的商品
+        query = Product.query.filter(Product.frame_model.in_(subq)).filter_by(is_active='是')
+
+        products = paginate_query(query, page, per_page)
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'items': [_serialize_product_with_public_images(p) for p in products.items],
+                'total': products.total,
+                'pages': products.pages,
+                'current_page': products.page
+            }
+        })
+    except Exception as e:
+        return handle_error(e, 'Error listing favorites')
+
+
+@app.route('/api/favorites/ids', methods=['GET'])
+def list_favorite_ids():
+    """获取用户收藏的型号列表。
+    Query: open_id (required)
+    Return: { items: [frame_model, ...] }
+    """
+    try:
+        open_id = (request.args.get('open_id') or '').strip()
+        if not open_id:
+            return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+        ids = [row.frame_model for row in Favorite.query.with_entities(Favorite.frame_model).filter_by(open_id=open_id).all()]
+        return jsonify({'status': 'success', 'data': {'items': ids}})
+    except Exception as e:
+        return handle_error(e, 'Error listing favorite ids')
+
+
+@app.route('/api/favorites', methods=['POST'])
+def add_favorite():
+    """添加收藏（幂等）。Body: { open_id, frame_model }
+    如用户不存在，则占位创建用户。重复收藏不会报错。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        open_id = (data.get('open_id') or '').strip()
+        frame_model = (data.get('frame_model') or '').strip()
+        if not open_id or not frame_model:
+            return jsonify({'status': 'error', 'message': 'open_id and frame_model are required'}), 400
+
+        # 确保用户存在
+        user = User.query.get(open_id)
+        if not user:
+            user = User(open_id=open_id)
+            db.session.add(user)
+
+        # 检查商品存在
+        product = Product.query.filter_by(frame_model=frame_model, is_active='是').first()
+        if not product:
+            return jsonify({'status': 'error', 'message': '商品不存在或未上架'}), 404
+
+        # 幂等插入
+        exists = Favorite.query.filter_by(open_id=open_id, frame_model=frame_model).first()
+        if not exists:
+            fav = Favorite(open_id=open_id, frame_model=frame_model)
+            db.session.add(fav)
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error adding favorite')
+
+
+@app.route('/api/favorites', methods=['DELETE'])
+def remove_favorite():
+    """取消收藏。Body: { open_id, frame_model }"""
+    try:
+        data = request.get_json(silent=True) or {}
+        open_id = (data.get('open_id') or '').strip()
+        frame_model = (data.get('frame_model') or '').strip()
+        if not open_id or not frame_model:
+            return jsonify({'status': 'error', 'message': 'open_id and frame_model are required'}), 400
+        Favorite.query.filter_by(open_id=open_id, frame_model=frame_model).delete()
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error removing favorite')
 
 
 # === 用户与访问记录 API ===

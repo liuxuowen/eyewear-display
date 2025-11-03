@@ -1,66 +1,90 @@
-// pages/category/index.js
+const app = getApp()
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    products: [],
+    page: 1,
+    hasMore: true,
+    isLoading: false,
+    empty: false
   },
-
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad(options) {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
   onShow() {
-
+    // 每次切换到收藏页，刷新列表
+    this.setData({ products: [], page: 1, hasMore: true, empty: false }, () => this.loadFavorites())
   },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
+  loadFavorites() {
+    if (this.data.isLoading || !this.data.hasMore) return
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!oid) {
+      this.setData({ empty: true })
+      return
+    }
+    this.setData({ isLoading: true })
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/favorites`,
+      method: 'GET',
+      data: { open_id: oid, page: this.data.page, per_page: 10 },
+      success: (res) => {
+        if (res.data && res.data.status === 'success') {
+          const data = res.data.data || {}
+          const items = data.items || []
+          const pages = data.pages || 1
+          const page = data.current_page || this.data.page
+          const list = this.data.products.concat(items)
+          this.setData({
+            products: list,
+            hasMore: page < pages,
+            empty: list.length === 0
+          })
+        } else {
+          wx.showToast({ title: '加载失败', icon: 'none' })
+        }
+      },
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' }),
+      complete: () => this.setData({ isLoading: false })
+    })
   },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
-
+  loadMore() {
+    if (this.data.hasMore) {
+      this.setData({ page: this.data.page + 1 }, () => this.loadFavorites())
+    }
   },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
   onReachBottom() {
-
+    this.loadMore()
   },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
+  onPullDownRefresh() {
+    this.setData({ products: [], page: 1, hasMore: true, empty: false }, () => {
+      this.loadFavorites()
+      wx.stopPullDownRefresh()
+    })
+  },
+  goToDetail(e) {
+    const { model } = e.currentTarget.dataset
+    if (!model) return
+    wx.navigateTo({ url: `/pages/product/detail?model=${model}` })
+  },
+  removeFavorite(e) {
+    const model = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.model) || ''
+    if (!model) return
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!oid) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/favorites`,
+      method: 'DELETE',
+      data: { open_id: oid, frame_model: model },
+      success: (res) => {
+        if (res.data && res.data.status === 'success') {
+          const list = (this.data.products || []).filter(it => it.frame_model !== model)
+          this.setData({ products: list, empty: list.length === 0 })
+          wx.showToast({ title: '已取消收藏', icon: 'success' })
+        } else {
+          wx.showToast({ title: (res.data && res.data.message) || '操作失败', icon: 'none' })
+        }
+      },
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+    })
   }
 })

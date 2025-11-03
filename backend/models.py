@@ -110,3 +110,24 @@ class PageView(db.Model):
             'ip': self.ip,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class Favorite(db.Model):
+    __tablename__ = 'favorites'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    open_id = db.Column(db.String(64), db.ForeignKey('users.open_id'), index=True, nullable=False)
+    frame_model = db.Column(db.String(100), db.ForeignKey('products.frame_model'), index=True, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('open_id', 'frame_model', name='uq_fav_user_model'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'open_id': self.open_id,
+            'frame_model': self.frame_model,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }

@@ -26,6 +26,9 @@
           <block wx:else>
             <text>{{f.display(item.frame_model)}}</text>
           </block>
+          <view class="fav-wrap">
+            <button class="fav-btn {{favoriteIds[item.frame_model] ? 'fav-on' : ''}}" size="mini" type="default" catchtap="toggleFavorite" data-model="{{item.frame_model}}">{{favoriteIds[item.frame_model] ? '已收藏' : '收藏'}}</button>
+          </view>
         </view>
         <view class="product-specs">
           <view>
@@ -45,7 +48,7 @@
             </block>
             <block wx:else><text>{{f.unit(item.temple_length, '')}}</text></block>
           </view>
-          <view><text>价格：￥{{f.display(item.price)}}</text></view>
+          <view class="price-row"><text>价格：￥{{f.display(item.price)}}</text></view>
           <view>
             <text>镜架总长：</text>
             <block wx:if="{{item.hl && item.hl.frame_total_length}}">

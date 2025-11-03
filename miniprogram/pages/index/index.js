@@ -13,8 +13,15 @@ Page({
     }
     if (app.globalData.openId) {
       track(app.globalData.openId)
+      // 每次显示首页时强制刷新收藏状态（解决在收藏页取消后返回仍显示“已收藏”的问题）
+      this._loadFavoriteIds()
     } else if (app.loginIfNeeded) {
-      app.loginIfNeeded().then(track).catch(() => {})
+      app.loginIfNeeded()
+        .then((oid) => {
+          track(oid)
+          this._loadFavoriteIds()
+        })
+        .catch(() => {})
     }
   },
 
@@ -29,6 +36,8 @@ Page({
     filters: null,
     // 顶部搜索框显示文本（单字段或组合展示）
     searchDisplay: '',
+    // 当前用户已收藏的型号集合（用于按钮状态）
+    favoriteIds: {},
     // 自定义导航栏尺寸
     statusBarHeight: 20,
     navBarHeight: 44,
@@ -54,6 +63,7 @@ Page({
       this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight })
     } catch (e) {}
     this._updateSearchDisplay()
+    this._loadFavoriteIds()
     this.loadProducts()
   },
 
@@ -135,6 +145,7 @@ Page({
       page: 1,
       hasMore: true
     }, () => {
+      this._loadFavoriteIds()
       this.loadProducts()
       wx.stopPullDownRefresh()
     })
@@ -306,6 +317,49 @@ Page({
     }
 
     return Object.assign({}, item, { hl })
+  },
+  _loadFavoriteIds() {
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!oid) return
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/favorites/ids`,
+      method: 'GET',
+      data: { open_id: oid },
+      success: (res) => {
+        if (res.data && res.data.status === 'success') {
+          const arr = ((res.data.data && res.data.data.items) || [])
+          const map = {}
+          arr.forEach(m => { map[m] = true })
+          this.setData({ favoriteIds: map })
+        }
+      }
+    })
+  },
+  toggleFavorite(e) {
+    const model = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.model) || ''
+    if (!model) return
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!oid) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+    // 仅添加收藏（幂等）
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/favorites`,
+      method: 'POST',
+      data: { open_id: oid, frame_model: model },
+      success: (res) => {
+        if (res.data && res.data.status === 'success') {
+          const m = Object.assign({}, this.data.favoriteIds)
+          m[model] = true
+          this.setData({ favoriteIds: m })
+          wx.showToast({ title: '已收藏', icon: 'success' })
+        } else {
+          wx.showToast({ title: (res.data && res.data.message) || '收藏失败', icon: 'none' })
+        }
+      },
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+    })
   },
   _updateSearchDisplay() {
     const filters = this.data.filters

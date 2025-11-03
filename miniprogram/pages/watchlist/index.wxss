@@ -1,1 +1,8 @@
 /* pages/watchlist/index.wxss */
+@import "../../pages/index/index.wxss";
+
+.empty {
+	text-align: center;
+	color: #999;
+	padding: 40rpx 0;
+}
