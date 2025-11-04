@@ -11,7 +11,8 @@ load_dotenv(dotenv_path=envfile)
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
-from models import db, Product, User, PageView, Favorite
+from models import db, Product, User, PageView, Favorite, Salesperson
+from sqlalchemy import inspect, text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -42,6 +43,31 @@ if app.config.get('ENV') == 'production':
 if os.getenv('AUTO_CREATE_DB', '0').lower() in ('1', 'true', 'yes'):
     with app.app_context():
         db.create_all()
+
+# 轻量自检/自愈：确保 users 表存在 referrer_open_id / my_sales_open_id 字段（无迁移系统时的简易保障）
+try:
+    with app.app_context():
+        insp = inspect(db.engine)
+        if 'users' in insp.get_table_names():
+            cols = [c['name'] for c in insp.get_columns('users')]
+            if 'referrer_open_id' not in cols:
+                try:
+                    db.session.execute(text('ALTER TABLE users ADD COLUMN referrer_open_id VARCHAR(64)'))
+                    db.session.commit()
+                    logger.info('Added column users.referrer_open_id via ALTER TABLE')
+                except Exception as e:
+                    db.session.rollback()
+                    logger.warning('Ensure referrer_open_id failed (may already exist or unsupported): %s', e)
+            if 'my_sales_open_id' not in cols:
+                try:
+                    db.session.execute(text('ALTER TABLE users ADD COLUMN my_sales_open_id VARCHAR(64)'))
+                    db.session.commit()
+                    logger.info('Added column users.my_sales_open_id via ALTER TABLE')
+                except Exception as e:
+                    db.session.rollback()
+                    logger.warning('Ensure my_sales_open_id failed (may already exist or unsupported): %s', e)
+except Exception as e:
+    logger.warning('Startup column check skipped: %s', e)
 
 @app.after_request
 def set_security_headers(resp):
@@ -368,10 +394,14 @@ def upsert_user():
 
         nickname = (data.get('nickname') or '').strip() or None
         avatar_url = (data.get('avatar_url') or '').strip() or None
+        referrer_open_id = (data.get('referrer_open_id') or '').strip() or None
 
         user = User.query.get(open_id)
         if not user:
-            user = User(open_id=open_id, nickname=nickname, avatar_url=avatar_url)
+            # 创建新用户时可带上 referrer_open_id
+            if referrer_open_id == open_id:
+                referrer_open_id = None  # 自己不能作为自己的介绍人
+            user = User(open_id=open_id, nickname=nickname, avatar_url=avatar_url, referrer_open_id=referrer_open_id)
             db.session.add(user)
         else:
             # 仅当传入新值时更新
@@ -379,6 +409,18 @@ def upsert_user():
                 user.nickname = nickname
             if avatar_url is not None:
                 user.avatar_url = avatar_url
+            # 设置介绍人：只允许设置一次；若已存在且不同则拒绝覆盖；同值则幂等
+            if referrer_open_id is not None:
+                if referrer_open_id == open_id:
+                    return jsonify({'status': 'error', 'message': 'referrer cannot be self'}), 400
+                current = (user.referrer_open_id or '').strip()
+                incoming = referrer_open_id
+                if not current:
+                    user.referrer_open_id = incoming
+                elif current == incoming:
+                    pass  # 幂等：相同值不做更新
+                else:
+                    return jsonify({'status': 'error', 'message': 'referrer already set and cannot be changed'}), 400
         db.session.commit()
         return jsonify({'status': 'success', 'data': user.to_dict()})
     except Exception as e:
@@ -419,6 +461,83 @@ def track_pageview():
     except Exception as e:
         db.session.rollback()
         return handle_error(e, 'Error tracking pageview')
+
+
+# === 用户推荐关系（只允许设置一次） ===
+@app.route('/api/users/referrer', methods=['POST'])
+def set_user_referrer():
+    """设置用户的介绍人（仅允许设置一次）。
+    Body JSON: { open_id: string, referrer_open_id: string }
+    规则：
+    - open_id 与 referrer_open_id 不能相同；
+    - 若用户不存在，将占位创建；
+    - 若 referrer_open_id 已存在且与现有不同，则返回 400，拒绝覆盖；
+    - 若 referrer_open_id 已存在且与传入相同，则幂等成功；
+    - 若当前为空，则设置为传入值。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        open_id = (data.get('open_id') or '').strip()
+        referrer_open_id = (data.get('referrer_open_id') or '').strip()
+        if not open_id or not referrer_open_id:
+            return jsonify({'status': 'error', 'message': 'open_id and referrer_open_id are required'}), 400
+        if open_id == referrer_open_id:
+            return jsonify({'status': 'error', 'message': 'referrer cannot be self'}), 400
+
+        user = User.query.get(open_id)
+        if not user:
+            user = User(open_id=open_id)
+            db.session.add(user)
+
+        current = (user.referrer_open_id or '').strip()
+        if not current:
+            user.referrer_open_id = referrer_open_id
+            db.session.commit()
+            return jsonify({'status': 'success', 'data': user.to_dict()})
+        if current == referrer_open_id:
+            return jsonify({'status': 'success', 'data': user.to_dict()})  # 幂等
+        return jsonify({'status': 'error', 'message': 'referrer already set and cannot be changed'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error setting referrer')
+
+
+@app.route('/api/users/mysales', methods=['POST'])
+def set_user_my_sales():
+    """设置用户的“我的销售”（仅允许设置一次）。
+    Body JSON: { open_id: string, my_sales_open_id: string }
+    规则：
+    - open_id 与 my_sales_open_id 不能相同；
+    - 若用户不存在，将占位创建；
+    - 若 my_sales_open_id 已存在且与现有不同，则返回 400；
+    - 若相同则幂等成功；
+    - 若当前为空则设置。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        open_id = (data.get('open_id') or '').strip()
+        my_sales_open_id = (data.get('my_sales_open_id') or '').strip()
+        if not open_id or not my_sales_open_id:
+            return jsonify({'status': 'error', 'message': 'open_id and my_sales_open_id are required'}), 400
+        if open_id == my_sales_open_id:
+            return jsonify({'status': 'error', 'message': 'my_sales cannot be self'}), 400
+
+        user = User.query.get(open_id)
+        if not user:
+            user = User(open_id=open_id)
+            db.session.add(user)
+
+        current = (user.my_sales_open_id or '').strip()
+        if not current:
+            user.my_sales_open_id = my_sales_open_id
+            db.session.commit()
+            return jsonify({'status': 'success', 'data': user.to_dict()})
+        if current == my_sales_open_id:
+            return jsonify({'status': 'success', 'data': user.to_dict()})
+        return jsonify({'status': 'error', 'message': 'my_sales already set and cannot be changed'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error setting my sales')
 
 
 # === 微信 code2session ===
@@ -466,7 +585,7 @@ def wechat_code2session():
 
 @app.route('/api/users/role', methods=['GET'])
 def get_user_role():
-    """根据 open_id 返回角色信息。来源：环境配置中的销售白名单。
+    """根据 open_id 返回角色信息。来源：数据库 sales 表。
     Query: open_id
     Return: { role: 'sales' | 'user' }
     """
@@ -474,11 +593,59 @@ def get_user_role():
         open_id = (request.args.get('open_id') or '').strip()
         if not open_id:
             return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
-        whitelist = app.config.get('SALES_OPENID_WHITELIST', []) or []
-        role = 'sales' if open_id in whitelist else 'user'
+        is_sales = Salesperson.query.filter_by(open_id=open_id).first() is not None
+        role = 'sales' if is_sales else 'user'
         return jsonify({'status': 'success', 'data': {'role': role}})
     except Exception as e:
         return handle_error(e, 'Error getting user role')
+
+@app.route('/api/kf/context', methods=['GET'])
+def get_kf_context():
+    """提供客服会话所需的上下文：
+    输入：open_id（当前访客 B）
+    输出：
+      - referrer_nickname：用户 B 的推荐人 A 的昵称（数据库中 User.nickname；无则返回“自然”）
+      - sales_name：用户 B 的推荐人 A 的销售的姓名（通过 A.my_sales_open_id 关联 sales 表；无则返回“自然”）
+    """
+    try:
+        open_id = (request.args.get('open_id') or '').strip()
+        if not open_id:
+            return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+
+        referrer_name = '自然'
+        sales_name = '自然'
+
+        user = User.query.get(open_id)
+        if user and user.referrer_open_id:
+            ref_user = User.query.get(user.referrer_open_id)
+            if ref_user:
+                nn = (ref_user.nickname or '').strip()
+                if nn:
+                    referrer_name = nn
+                # 取推荐人 A 的销售姓名
+                msid = (ref_user.my_sales_open_id or '').strip()
+                if msid:
+                    sp = Salesperson.query.filter_by(open_id=msid).first()
+                    if sp and (sp.name or '').strip():
+                        sales_name = (sp.name or '').strip()
+
+        return jsonify({'status': 'success', 'data': {
+            'referrer_nickname': referrer_name,
+            'sales_name': sales_name
+        }})
+    except Exception as e:
+        return handle_error(e, 'Error getting kf context')
+
+@app.route('/api/sales', methods=['GET'])
+def list_sales():
+    """列出已登记的销售（用于校验/查看）。
+    Return: { items: [{id, open_id, name}, ...] }
+    """
+    try:
+        items = [s.to_dict() for s in Salesperson.query.order_by(Salesperson.id.asc()).all()]
+        return jsonify({'status': 'success', 'data': {'items': items}})
+    except Exception as e:
+        return handle_error(e, 'Error listing sales')
 
 
 @app.route('/api/favorites/batch', methods=['POST'])

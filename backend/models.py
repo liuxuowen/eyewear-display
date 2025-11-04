@@ -73,6 +73,10 @@ class User(db.Model):
     open_id = db.Column(db.String(64), primary_key=True, comment='微信 open_id')
     nickname = db.Column(db.String(100), nullable=True, comment='昵称')
     avatar_url = db.Column(db.String(255), nullable=True, comment='头像 URL')
+    # 介绍人 open_id，可为空
+    referrer_open_id = db.Column(db.String(64), nullable=True, index=True, comment='介绍人 open_id')
+    # 我的销售 open_id，可为空
+    my_sales_open_id = db.Column(db.String(64), nullable=True, index=True, comment='我的销售 open_id')
     created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -81,6 +85,8 @@ class User(db.Model):
             'open_id': self.open_id,
             'nickname': self.nickname,
             'avatar_url': self.avatar_url,
+            'referrer_open_id': self.referrer_open_id,
+            'my_sales_open_id': self.my_sales_open_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -130,4 +136,19 @@ class Favorite(db.Model):
             'open_id': self.open_id,
             'frame_model': self.frame_model,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class Salesperson(db.Model):
+    __tablename__ = 'sales'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    open_id = db.Column(db.String(64), unique=True, index=True, nullable=False, comment='销售微信 open_id')
+    name = db.Column(db.String(100), nullable=False, comment='销售姓名')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'open_id': self.open_id,
+            'name': self.name,
         }

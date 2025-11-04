@@ -31,6 +31,17 @@
 		</view>
 	</view>
 
+	<!-- 推荐给好友（转发）临时入口 -->
+	<view class="card">
+		<view class="row">
+			<text class="label">推荐：</text>
+			<text class="value">将小程序转发给好友，建立推荐关系</text>
+		</view>
+		<view class="actions">
+			<button type="primary" size="mini" open-type="share">推荐给好友</button>
+		</view>
+	</view>
+
 	<!-- 说明 -->
 	<view class="tips">
 			<text>说明：OpenID 会自动获取；点击 OpenID 可复制；“获取昵称头像”需用户主动授权。</text>

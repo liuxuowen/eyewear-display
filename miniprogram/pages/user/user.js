@@ -88,5 +88,16 @@ Page({
         }
       }
     })
+  },
+
+  // 转发：带上推荐人 open_id
+  onShareAppMessage() {
+    const oid = app.globalData.openId || this.data.openId || ''
+    const refParam = oid ? `?ref=${encodeURIComponent(oid)}` : ''
+    const path = `/pages/index/index${refParam}`
+    return {
+      title: '给你推荐一个眼镜展示小程序',
+      path
+    }
   }
 })

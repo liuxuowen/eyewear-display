@@ -18,6 +18,8 @@ Page({
       this._loadFavoriteIds()
       this._loadUserRole()
       this._applyPendingSkus()
+      this._applyPendingSales()
+      this._applyPendingReferrer()
     } else if (app.loginIfNeeded) {
       app.loginIfNeeded()
         .then((oid) => {
@@ -26,6 +28,8 @@ Page({
           this._loadFavoriteIds()
           this._loadUserRole()
           this._applyPendingSkus()
+          this._applyPendingSales()
+          this._applyPendingReferrer()
         })
         .catch(() => {})
     }
@@ -51,6 +55,12 @@ Page({
     selectedCount: 0,
     // 分享落地待加入收藏的SKU
     pendingSkus: null,
+  // 分享落地待关联的销售open_id
+  pendingSalesOpenId: '',
+  // 分享落地待绑定的推荐人 open_id
+  pendingReferrerOpenId: '',
+  // 是否在处理完分享落地后跳转收藏页
+  autoGoWatchlist: false,
     // 客服会话来源参数
     kfSessionFrom: '',
     // 自定义导航栏尺寸
@@ -81,15 +91,30 @@ Page({
     this._loadFavoriteIds()
     this.loadProducts()
     this._updateKfSessionFrom()
-    // 处理分享落地参数（如 ?skus=a,b,c）
-    if (options && options.skus) {
-      try {
-        const raw = decodeURIComponent(options.skus)
-        const list = raw.split(',').map(s => (s||'').trim()).filter(Boolean)
-        if (list && list.length) {
-          this.setData({ pendingSkus: list })
-        }
-      } catch (e) {}
+    // 处理分享落地参数（如 ?skus=a,b,c&sid=<sales_open_id>）
+    if (options) {
+      if (options.skus) {
+        try {
+          const raw = decodeURIComponent(options.skus)
+          const list = raw.split(',').map(s => (s||'').trim()).filter(Boolean)
+          if (list && list.length) {
+            this.setData({ pendingSkus: list, autoGoWatchlist: true })
+          }
+        } catch (e) {}
+      }
+      if (options.sid) {
+        try {
+          const sid = decodeURIComponent(options.sid)
+          if (sid) this.setData({ pendingSalesOpenId: sid })
+        } catch (e) {}
+      }
+      // 推荐关系：?ref=<referrer_open_id> 或 ?rid=<referrer_open_id>
+      if (options.ref || options.rid) {
+        try {
+          const rid = decodeURIComponent(options.ref || options.rid)
+          if (rid) this.setData({ pendingReferrerOpenId: rid })
+        } catch (e) {}
+      }
     }
   },
 
@@ -375,8 +400,41 @@ Page({
             this._loadFavoriteIds()
             wx.showToast({ title: `已加入收藏${added}个`, icon: 'success' })
           }
+          // 处理跳转逻辑（避免重复）
+          if (this.data.autoGoWatchlist) {
+            this.setData({ autoGoWatchlist: false })
+            wx.switchTab ? wx.switchTab({ url: '/pages/watchlist/index' }) : wx.navigateTo({ url: '/pages/watchlist/index' })
+          }
         }
       }
+    })
+  },
+  _applyPendingSales() {
+    const sid = (this.data.pendingSalesOpenId || '').trim()
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!sid || !oid) return
+    this.setData({ pendingSalesOpenId: '' })
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/users/mysales`,
+      method: 'POST',
+      data: { open_id: oid, my_sales_open_id: sid },
+      success: (res) => {
+        // 成功或幂等都无需提示，静默处理
+      }
+    })
+  },
+  _applyPendingReferrer() {
+    const rid = (this.data.pendingReferrerOpenId || '').trim()
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!rid || !oid) return
+    if (rid === oid) { this.setData({ pendingReferrerOpenId: '' }); return }
+    this.setData({ pendingReferrerOpenId: '' })
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/users/referrer`,
+      method: 'POST',
+      data: { open_id: oid, referrer_open_id: rid },
+      success: () => { /* 幂等或已设置均静默 */ },
+      fail: () => { /* 忽略错误 */ }
     })
   },
   _loadFavoriteIds() {
@@ -404,23 +462,44 @@ Page({
       wx.showToast({ title: '请先登录', icon: 'none' })
       return
     }
-    // 仅添加收藏（幂等）
-    wx.request({
-      url: `${app.globalData.apiBaseUrl}/favorites`,
-      method: 'POST',
-      data: { open_id: oid, frame_model: model },
-      success: (res) => {
-        if (res.data && res.data.status === 'success') {
-          const m = Object.assign({}, this.data.favoriteIds)
-          m[model] = true
-          this.setData({ favoriteIds: m })
-          wx.showToast({ title: '已收藏', icon: 'success' })
-        } else {
-          wx.showToast({ title: (res.data && res.data.message) || '收藏失败', icon: 'none' })
-        }
-      },
-      fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
-    })
+    const isFav = !!(this.data.favoriteIds && this.data.favoriteIds[model])
+    if (isFav) {
+      // 已收藏 -> 取消收藏
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/favorites`,
+        method: 'DELETE',
+        data: { open_id: oid, frame_model: model },
+        success: (res) => {
+          if (res.data && res.data.status === 'success') {
+            const m = Object.assign({}, this.data.favoriteIds)
+            delete m[model]
+            this.setData({ favoriteIds: m })
+            wx.showToast({ title: '已取消收藏', icon: 'success' })
+          } else {
+            wx.showToast({ title: (res.data && res.data.message) || '取消失败', icon: 'none' })
+          }
+        },
+        fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+      })
+    } else {
+      // 未收藏 -> 添加收藏（幂等）
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/favorites`,
+        method: 'POST',
+        data: { open_id: oid, frame_model: model },
+        success: (res) => {
+          if (res.data && res.data.status === 'success') {
+            const m = Object.assign({}, this.data.favoriteIds)
+            m[model] = true
+            this.setData({ favoriteIds: m })
+            wx.showToast({ title: '已收藏', icon: 'success' })
+          } else {
+            wx.showToast({ title: (res.data && res.data.message) || '收藏失败', icon: 'none' })
+          }
+        },
+        fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+      })
+    }
   },
   _updateSearchDisplay() {
     const filters = this.data.filters
@@ -461,7 +540,9 @@ Page({
     if (this.data.isSales && this.data.selecting && this.data.selectedCount > 0) {
       const skus = Object.keys(this.data.selectedMap)
       const enc = encodeURIComponent(skus.join(','))
-      path = `/pages/index/index?skus=${enc}`
+      const sid = (getApp().globalData && getApp().globalData.openId) || ''
+      const sidParam = sid ? `&sid=${encodeURIComponent(sid)}` : ''
+      path = `/pages/index/index?skus=${enc}${sidParam}`
     }
     return { title: this.data.selectedCount > 0 ? `推荐${this.data.selectedCount}款镜架` : '精品镜架推荐', path }
   },
@@ -488,14 +569,50 @@ Page({
   _updateKfSessionFrom() {
     try {
       const oid = (getApp().globalData && getApp().globalData.openId) || ''
-      const o = oid ? oid.slice(-8) : 'anon'
-      const t = (Date.now() + '').slice(-8)
-      const p = 'idx'
-      // 长度控制在32字符内：o:XXXXXXXX|p:idx|t:YYYYYYYY
-      const s = `o:${o}|p:${p}|t:${t}`
-      this.setData({ kfSessionFrom: s })
+      const now = new Date()
+      const mm = String(now.getMonth() + 1).padStart(2, '0')
+      const dd = String(now.getDate()).padStart(2, '0')
+      const HH = String(now.getHours()).padStart(2, '0')
+      const MM = String(now.getMinutes()).padStart(2, '0')
+      // t:MM/DD-HH:MM（例如 11/04-14:23）
+      const t = `${mm}/${dd}-${HH}:${MM}`
+
+      const sanitize = (s) => {
+        const x = (s || '').toString().replace(/[|]/g, '')
+        // 控制长度，避免 session-from 过长（微信建议上限较短）
+        return x.length > 8 ? x.slice(0, 8) : x
+      }
+
+      const apply = (salesName, refName) => {
+        const sal = sanitize(salesName || '自然')
+        const ref = sanitize(refName || '自然')
+        const s = `sal:${sal}|ref:${ref}|t:${t}`
+        this.setData({ kfSessionFrom: s })
+      }
+
+      if (!oid) {
+        // 未登录：先填充默认
+        apply('自然', '自然')
+        return
+      }
+      // 从后端查询上下文（推荐人昵称 + 推荐人的销售姓名）
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/kf/context`,
+        method: 'GET',
+        data: { open_id: oid },
+        success: (res) => {
+          if (res && res.data && res.data.status === 'success' && res.data.data) {
+            const salesName = res.data.data.sales_name || '自然'
+            const refName = res.data.data.referrer_nickname || '自然'
+            apply(salesName, refName)
+          } else {
+            apply('自然', '自然')
+          }
+        },
+        fail: () => apply('自然', '自然')
+      })
     } catch (e) {
-      this.setData({ kfSessionFrom: 'o:anon|p:idx' })
+      this.setData({ kfSessionFrom: 'sal:自然|ref:自然|t:0000-0000' })
     }
   }
 })

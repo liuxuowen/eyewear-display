@@ -57,6 +57,16 @@
   margin-bottom: 12rpx;
 }
 
+/* 暗色取消按钮 */
+.btn-cancel {
+  background-color: #33333339 !important;
+  color: #fff !important;
+  border: none !important;
+}
+.btn-cancel::after {
+  border: none !important;
+}
+
 .product-list {
   display: flex;
   flex-direction: column;
