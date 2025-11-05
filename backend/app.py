@@ -13,7 +13,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
 from models import db, Product, User, PageView, Favorite, Salesperson
-from sqlalchemy import inspect, text, or_
+from sqlalchemy import inspect, text, or_, select
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -363,8 +363,9 @@ def list_favorites():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
 
-        # 子查询获取用户收藏的 frame_model 列表，按收藏时间倒序
-        subq = Favorite.query.with_entities(Favorite.frame_model).filter_by(open_id=open_id).subquery()
+        # 子查询获取用户收藏的 frame_model 列表
+        # 使用显式 select() 构造，避免 SQLAlchemy 发出 Subquery -> select 的警告
+        subq = select(Favorite.frame_model).where(Favorite.open_id == open_id)
         # 只返回仍有效的商品
         query = Product.query.filter(Product.frame_model.in_(subq)).filter_by(is_active='是')
 

@@ -18,8 +18,8 @@ set -Eeuo pipefail
 #   DOMAIN=example.com EMAIL=admin@example.com ./scripts/setup-nginx-https.sh
 #   DOMAIN=api.example.com EMAIL=admin@example.com BACKEND_PORT=5000 STATIC_IMAGES_DIR=/var/www/resource/products_img ./scripts/setup-nginx-https.sh
 
-DOMAIN=${DOMAIN:-}
-EMAIL=${EMAIL:-}
+DOMAIN=${DOMAIN:-yimuliaoran.top}
+EMAIL=${EMAIL:-admin@yimuliaoran.top}
 BACKEND_PORT=${BACKEND_PORT:-5000}
 STATIC_IMAGES_DIR=${STATIC_IMAGES_DIR:-/var/www/resource/products_img}
 SITE_NAME=${SITE_NAME:-eyewear}

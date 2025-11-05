@@ -46,7 +46,7 @@ map \$http_upgrade \$connection_upgrade {
 server {
   listen ${FRONT_PORT};
   listen [::]:${FRONT_PORT};
-  server_name _;
+  server_name www.yimuliaoran.top;
 
   server_tokens off;
   client_max_body_size 10m;
