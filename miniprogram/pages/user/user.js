@@ -8,7 +8,10 @@ Page({
     avatarUrl: '',
     role: '', // 'sales' | 'user'
     isSales: false,
-    referrals: []
+    hasMySales: false,
+    mySalesName: '',
+    referrals: [],
+    kfSessionFrom: ''
   },
 
   onLoad() {
@@ -34,6 +37,14 @@ Page({
   },
 
   onShow() {
+    // 同步选中自定义 tabBar 到“个人”
+    try {
+      const tb = this.getTabBar && this.getTabBar()
+      if (tb && tb.setSelectedByRoute) tb.setSelectedByRoute()
+    } catch (e) {}
+    // 更新客服会话来源
+    this._updateKfSessionFrom()
+    try { if (app && app._log) app._log('user:onShow', { route: (getCurrentPages().slice(-1)[0] || {}).route }) } catch (e) {}
     if (app.globalData.openId && app.globalData.openId !== this.data.openId) {
       this.setData({ openId: app.globalData.openId })
       this._loadRole(app.globalData.openId)
@@ -88,23 +99,29 @@ Page({
       success: (res) => {
         if (res.data && res.data.status === 'success' && res.data.data) {
           const role = res.data.data.role || 'user'
-          this.setData({ role, isSales: role === 'sales' })
+          const hasMySales = !!(res.data.data.has_my_sales || res.data.data.my_sales_open_id)
+          const mySalesName = (res.data.data.my_sales_name || '').trim()
+          this.setData({ role, isSales: role === 'sales', hasMySales, mySalesName })
+          // 同步到全局，便于自定义 tabBar 响应
+          if (app && app._setRoleFromServer) {
+            app._setRoleFromServer(res.data.data)
+          }
         }
       },
+    })
+  },
 
-      _loadReferrals(openId) {
-        if (!openId) return
-        wx.request({
-          url: `${app.globalData.apiBaseUrl}/users/referrals`,
-          method: 'GET',
-          data: { open_id: openId },
-          success: (res) => {
-            if (res.data && res.data.status === 'success' && res.data.data) {
-              const items = res.data.data.items || []
-              this.setData({ referrals: items })
-            }
-          }
-        })
+  _loadReferrals(openId) {
+    if (!openId) return
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/users/referrals`,
+      method: 'GET',
+      data: { open_id: openId },
+      success: (res) => {
+        if (res.data && res.data.status === 'success' && res.data.data) {
+          const items = res.data.data.items || []
+          this.setData({ referrals: items })
+        }
       }
     })
   },
@@ -117,6 +134,47 @@ Page({
     return {
       title: '给你推荐一个眼镜展示小程序',
       path
+    }
+  }
+  ,
+  // 与首页一致的客服 session-from 生成
+  _updateKfSessionFrom() {
+    try {
+      const oid = app.globalData.openId || ''
+      const now = new Date()
+      const mm = String(now.getMonth() + 1).padStart(2, '0')
+      const dd = String(now.getDate()).padStart(2, '0')
+      const HH = String(now.getHours()).padStart(2, '0')
+      const MM = String(now.getMinutes()).padStart(2, '0')
+      const t = `${mm}/${dd}-${HH}:${MM}`
+      const sanitize = (s) => {
+        const x = (s || '').toString().replace(/[|]/g, '')
+        return x.length > 8 ? x.slice(0, 8) : x
+      }
+      const apply = (salesName, refName) => {
+        const sal = sanitize(salesName || '自然')
+        const ref = sanitize(refName || '自然')
+        const s = `sal:${sal}|ref:${ref}|t:${t}`
+        this.setData({ kfSessionFrom: s })
+      }
+      if (!oid) { apply('自然', '自然'); return }
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/kf/context`,
+        method: 'GET',
+        data: { open_id: oid },
+        success: (res) => {
+          if (res && res.data && res.data.status === 'success' && res.data.data) {
+            const salesName = res.data.data.sales_name || '自然'
+            const refName = res.data.data.referrer_nickname || '自然'
+            apply(salesName, refName)
+          } else {
+            apply('自然', '自然')
+          }
+        },
+        fail: () => apply('自然', '自然')
+      })
+    } catch (e) {
+      this.setData({ kfSessionFrom: 'sal:自然|ref:自然|t:0000-0000' })
     }
   }
 })

@@ -9,6 +9,12 @@ Page({
     empty: false
   },
   onShow() {
+    // 同步选中自定义 tabBar 到“收藏”
+    try {
+      const tb = this.getTabBar && this.getTabBar()
+      if (tb && tb.setSelectedByRoute) tb.setSelectedByRoute()
+    } catch (e) {}
+    try { if (app && app._log) app._log('watchlist:onShow', { route: (getCurrentPages().slice(-1)[0] || {}).route }) } catch (e) {}
     // 每次切换到收藏页，刷新列表
     this.setData({ products: [], page: 1, hasMore: true, empty: false }, () => this.loadFavorites())
   },

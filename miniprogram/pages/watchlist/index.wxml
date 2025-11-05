@@ -26,4 +26,6 @@
 		<view class="loading" wx:if="{{isLoading}}">加载中...</view>
 		<view class="no-more" wx:if="{{!hasMore && products.length > 0 && !isLoading}}">没有更多了</view>
 	</view>
+  <!-- 预留底部空间，避免内容被自定义 tabBar 遮挡 -->
+  <view class="tabbar-spacer"></view>
 </view>

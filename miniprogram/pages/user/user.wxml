@@ -44,7 +44,20 @@
 
 	<!-- 说明 -->
 	<view class="tips">
-			<text>说明：OpenID 会自动获取；点击 OpenID 可复制；“获取昵称头像”需用户主动授权。</text>
+			<text>分隔符---分隔符</text>
+	</view>
+
+	<!-- 我的销售卡片（所有角色都显示；无分配则提供联系客服入口） -->
+	<view class="card">
+		<view class="row" style="justify-content: space-between;">
+			<view>
+				<text class="label">我的销售：</text>
+				<text class="value">{{hasMySales ? (mySalesName || '--') : '--'}}</text>
+			</view>
+			<view>
+				<button wx:if="{{!hasMySales}}" size="mini" type="primary" open-type="contact" session-from="{{kfSessionFrom}}">咨询客服</button>
+			</view>
+		</view>
 	</view>
 
 	<!-- 我的转介绍人员列表 -->

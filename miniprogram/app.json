@@ -14,6 +14,7 @@
   },
 
   "tabBar": {
+    "custom": true,
     "list": [
       {
         "pagePath": "pages/index/index",

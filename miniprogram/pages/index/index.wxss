@@ -79,6 +79,9 @@
   padding: 20rpx;
   display: flex;
   gap: 20rpx;
+  border: 1rpx solid #d0d7de; /* 更明显的细边框 */
+  /* 可选：在深色背景上也清晰 */
+  background-clip: padding-box;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
   position: relative;
   align-items: flex-start; /* 确保右侧信息区域按需增高，不被图片高度限制 */
@@ -235,16 +238,31 @@
   font-size: 24rpx;
 }
 
+/* 预留底部空间，避免被自定义 tabBar 遮挡 */
+.tabbar-spacer {
+  height: calc(60px + constant(safe-area-inset-bottom));
+  height: calc(60px + env(safe-area-inset-bottom));
+}
+
+.assigned-tip {
+  margin: 24rpx 0;
+  background: #fffbe6;
+  color: #8c6d1f;
+  border: 1rpx solid #ffe58f;
+  padding: 16rpx;
+  border-radius: 8rpx;
+}
+
 /* 悬浮客服按钮 */
 .float-kf {
   position: fixed;
   right: 50rpx;
-  bottom: 80rpx;
+  bottom: 200rpx;
   z-index: 1101;
   width: 150rpx !important;
   height: 96rpx !important;
   border-radius: 50%;
-  background: transparent;
+  background: #fff;
   padding: 0;
   border: none !important;   /* 移除按钮本体边框 */
   box-shadow: 0 8rpx 5rpx rgba(0,0,0,0.2);

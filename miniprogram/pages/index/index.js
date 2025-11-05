@@ -11,6 +11,11 @@ Page({
         data: { open_id: oid, page: '/pages/index/index' }
       })
     }
+    // 同步选中自定义 tabBar
+    try {
+      const tb = this.getTabBar && this.getTabBar()
+      if (tb && tb.setSelectedByRoute) tb.setSelectedByRoute()
+    } catch (e) {}
     if (app.globalData.openId) {
       track(app.globalData.openId)
       this._updateKfSessionFrom()
@@ -50,6 +55,7 @@ Page({
     favoriteIds: {},
     // 角色与分享选择
     isSales: false,
+  hasMySales: false,
     selecting: false,
     selectedMap: {},
     selectedCount: 0,
@@ -70,8 +76,18 @@ Page({
     capsuleRightWidth: 0,
     menuHeight: 32
   },
-
   onLoad(options) {
+    // 开启/关闭调试：?debug=1 或 ?debug=0
+    try {
+      if (options && (options.debug === '1' || options.debug === 'true')) {
+        app.setDebug && app.setDebug(true)
+        wx.showToast({ title: 'DEBUG ON', icon: 'none' })
+      } else if (options && (options.debug === '0' || options.debug === 'false')) {
+        app.setDebug && app.setDebug(false)
+        wx.showToast({ title: 'DEBUG OFF', icon: 'none' })
+      }
+      app._log && app._log('index:onLoad:options', options)
+    } catch (e) {}
     // 计算状态栏与胶囊按钮，精确适配不同机型
     try {
       const sys = wx.getSystemInfoSync()
@@ -421,10 +437,29 @@ Page({
       success: (res) => {
         if (res.data && res.data.status === 'success') {
           const role = res.data.data && res.data.data.role
-          this.setData({ isSales: role === 'sales' })
+          const hasMySales = !!(res.data.data && (res.data.data.has_my_sales || res.data.data.my_sales_open_id))
+          const isSales = role === 'sales'
+          this.setData({ isSales, hasMySales })
+          // 写入全局并通知（供自定义 tabBar 动态隐藏“商品”）
+          if (app && app._setRoleFromServer) {
+            app._setRoleFromServer(res.data.data)
+          }
+          // 若为普通用户且已分配销售，则跳转至“收藏/推荐”页，隐藏首页商品列表
+          if (!isSales && hasMySales) {
+            this._goToRecommendations()
+          }
         }
       }
     })
+  },
+  _goToRecommendations() {
+    try {
+      if (wx.switchTab) {
+        wx.switchTab({ url: '/pages/watchlist/index' })
+      } else {
+        wx.navigateTo({ url: '/pages/watchlist/index' })
+      }
+    } catch (e) {}
   },
   _applyPendingSkus() {
     const list = this.data.pendingSkus
@@ -461,7 +496,18 @@ Page({
       method: 'POST',
       data: { open_id: oid, my_sales_open_id: sid },
       success: (res) => {
-        // 成功或幂等都无需提示，静默处理
+        // 成功或幂等：刷新角色缓存以便自定义 tabBar 立刻生效
+        if (app && app.fetchAndCacheRole) {
+          app.fetchAndCacheRole()
+            .then(() => {
+              const isSales = !!(app.globalData && app.globalData.isSales)
+              const hasMySales = !!(app.globalData && app.globalData.hasMySales)
+              if (!isSales && hasMySales) {
+                this._goToRecommendations()
+              }
+            })
+            .catch(() => {})
+        }
       }
     })
   },

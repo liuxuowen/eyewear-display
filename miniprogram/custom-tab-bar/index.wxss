@@ -1,0 +1,51 @@
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 500; /* 保持在页面元素之上，但低于悬浮客服按钮(1101) */
+}
+.tab-bar-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 背景覆盖 tab 区域 + 安全区，避免底部出现白条 */
+  height: calc(50px + constant(safe-area-inset-bottom));
+  height: calc(50px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  z-index: 0; /* 明确置于内容层之下 */
+}
+.tab-items {
+  display: flex;
+  height: 50px;
+  /* 让可点击内容避开底部安全区 */
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: transparent;
+  position: relative;
+  z-index: 1; /* 内容层在背景层之上，避免被遮挡 */
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+.tab-item .icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 2px;
+}
+.tab-item .label {
+  font-size: 12px;
+  line-height: 14px;
+}
+.tab-item .label.active {
+  color: #1a1a1a;
+  font-weight: 500;
+}
+/* 删除独立 safe-bottom，改为用背景和内边距处理 */

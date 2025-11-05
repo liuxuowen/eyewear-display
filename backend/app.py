@@ -659,7 +659,7 @@ def wechat_code2session():
 def get_user_role():
     """根据 open_id 返回角色信息。来源：数据库 sales 表。
     Query: open_id
-    Return: { role: 'sales' | 'user' }
+    Return: { role: 'sales' | 'user', has_my_sales: bool, my_sales_open_id: str|null, my_sales_name: str|null }
     """
     try:
         open_id = (request.args.get('open_id') or '').strip()
@@ -667,7 +667,25 @@ def get_user_role():
             return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
         is_sales = Salesperson.query.filter_by(open_id=open_id).first() is not None
         role = 'sales' if is_sales else 'user'
-        return jsonify({'status': 'success', 'data': {'role': role}})
+        # 返回是否已分配“我的销售”，便于前端按角色与分配态控制 UI
+        user = User.query.get(open_id)
+        my_sales_open_id = None
+        my_sales_name = None
+        if user and (user.my_sales_open_id or '').strip():
+            my_sales_open_id = (user.my_sales_open_id or '').strip()
+            try:
+                sp = Salesperson.query.filter_by(open_id=my_sales_open_id).first()
+                if sp and (sp.name or '').strip():
+                    my_sales_name = (sp.name or '').strip()
+            except Exception:
+                my_sales_name = None
+        has_my_sales = bool(my_sales_open_id)
+        return jsonify({'status': 'success', 'data': {
+            'role': role,
+            'has_my_sales': has_my_sales,
+            'my_sales_open_id': my_sales_open_id,
+            'my_sales_name': my_sales_name
+        }})
     except Exception as e:
         return handle_error(e, 'Error getting user role')
 
