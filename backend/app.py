@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
@@ -12,7 +13,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
 from models import db, Product, User, PageView, Favorite, Salesperson
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect, text, or_
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -118,6 +119,18 @@ def _build_public_image_url(path: str) -> str:
 
 def _serialize_product_with_public_images(product: Product) -> dict:
     d = product.to_dict()
+    # 清洗后端常见占位字符串（例如 'None', 'null' 等）为实际空值，避免前端展示奇怪文本
+    def _clean_text(x):
+        if isinstance(x, str):
+            t = x.strip()
+            if t.lower() in ('none', 'null', 'undefined', 'nan'):
+                return ''
+            return t
+        return x
+    if 'brand' in d:
+        d['brand'] = _clean_text(d.get('brand'))
+    if 'notes' in d:
+        d['notes'] = _clean_text(d.get('notes'))
     imgs = d.get('images', []) or []
     d['images'] = [_build_public_image_url(p) for p in imgs]
     return d
@@ -163,7 +176,31 @@ def get_products():
                 multi_filters[f] = str(v).strip()
 
         query = Product.query.filter_by(is_active='是')
-        numeric_fields = {'lens_size', 'nose_bridge_width', 'temple_length', 'frame_total_length', 'frame_height'}
+        numeric_fields = {'lens_size', 'nose_bridge_width', 'temple_length', 'frame_total_length', 'frame_height', 'weight', 'price'}
+
+        def _material_match_any(col, tags):
+            """构造“材质标签”匹配条件：
+            - tags: 可迭代的标签（如 ['TR','B钛']）
+            - 数据库存储格式示例："TR+钛"、"TR+B钛"；按'+'分隔为精确标签
+            - 精确匹配策略（避免子串误命中）：
+              col = tag OR col LIKE 'tag+%' OR col LIKE '%+tag' OR col LIKE '%+tag+%'
+            """
+            conds = []
+            for raw in tags:
+                tag = (raw or '').strip()
+                if not tag:
+                    continue
+                like_mid = f"%+{tag}+%"
+                like_head = f"{tag}+%"
+                like_tail = f"%+{tag}"
+                conds.append(or_(col == tag, col.like(like_head), col.like(like_tail), col.like(like_mid)))
+            if not conds:
+                return None
+            # 任一命中即可
+            out = conds[0]
+            for c in conds[1:]:
+                out = or_(out, c)
+            return out
 
         def _parse_range_or_number(s: str):
             """解析数值或范围字符串，支持：
@@ -192,6 +229,26 @@ def get_products():
         if multi_filters:
             # 同时应用多字段过滤（AND）
             for f, v in multi_filters.items():
+                if f == 'other_info':
+                    # 其他信息：恢复为品牌或备注任一模糊匹配
+                    like = f"%{v}%"
+                    query = query.filter(or_(Product.brand.like(like), Product.notes.like(like)))
+                    logger.debug("apply fuzzy filter other_info (brand or notes) like %s", like)
+                    continue
+                if f == 'brand_info':
+                    # 品牌信息：仅在品牌字段模糊匹配
+                    like = f"%{v}%"
+                    query = query.filter(Product.brand.like(like))
+                    logger.debug("apply fuzzy filter brand_info (brand only) like %s", like)
+                    continue
+                if f == 'frame_material':
+                    # 解析为多选标签，分隔符支持逗号/中文逗号/竖线
+                    parts = [p.strip() for p in re.split(r'[，,|]+', v) if p and p.strip()]
+                    cond = _material_match_any(Product.frame_material, parts)
+                    if cond is not None:
+                        query = query.filter(cond)
+                        logger.debug("apply material any-of tags: %s", parts)
+                    continue
                 col = getattr(Product, f, None)
                 if col is None:
                     continue
@@ -220,7 +277,21 @@ def get_products():
             if not search_field or search_field not in allowed_fields:
                 search_field = app.config.get('DEFAULT_SEARCH_FIELD', 'frame_model')
             col = getattr(Product, search_field, None)
-            if col is not None:
+            if search_field == 'other_info':
+                like = f"%{search_value}%"
+                query = query.filter(or_(Product.brand.like(like), Product.notes.like(like)))
+                logger.debug("apply single fuzzy other_info (brand or notes) like %s", like)
+            elif search_field == 'brand_info':
+                like = f"%{search_value}%"
+                query = query.filter(Product.brand.like(like))
+                logger.debug("apply single fuzzy brand_info (brand only) like %s", like)
+            elif search_field == 'frame_material':
+                parts = [p.strip() for p in re.split(r'[，,|]+', search_value) if p and p.strip()]
+                cond = _material_match_any(Product.frame_material, parts)
+                if cond is not None:
+                    query = query.filter(cond)
+                    logger.debug("apply single material any-of tags: %s", parts)
+            elif col is not None:
                 if search_field in numeric_fields:
                     try:
                         lo, hi = _parse_range_or_number(search_value)
@@ -646,6 +717,30 @@ def list_sales():
         return jsonify({'status': 'success', 'data': {'items': items}})
     except Exception as e:
         return handle_error(e, 'Error listing sales')
+
+@app.route('/api/users/referrals', methods=['GET'])
+def list_user_referrals():
+    """列出某用户的转介绍人员列表（被其推荐注册/访问的用户）。
+    Query: open_id (required)
+    Return: { items: [{ open_id, nickname }], total: n }
+    """
+    try:
+        open_id = (request.args.get('open_id') or '').strip()
+        if not open_id:
+            return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+
+        q = User.query.with_entities(User.open_id, User.nickname).filter(User.referrer_open_id == open_id)
+        # 优先按创建时间倒序，如无则按 open_id
+        try:
+            q = q.order_by(User.created_at.desc())
+        except Exception:
+            q = q.order_by(User.open_id.asc())
+
+        rows = q.all()
+        items = [{'open_id': r.open_id, 'nickname': (r.nickname or '')} for r in rows]
+        return jsonify({'status': 'success', 'data': {'items': items, 'total': len(items)}})
+    except Exception as e:
+        return handle_error(e, 'Error listing user referrals')
 
 
 @app.route('/api/favorites/batch', methods=['POST'])

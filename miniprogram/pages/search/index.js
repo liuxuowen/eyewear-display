@@ -12,24 +12,35 @@ Page({
     history: [],
   helpText: `最近搜索保留 5 条
 支持按如下字段进行精确匹配或范围匹配：
-镜架型号（需精确匹配）：如“98044”或“T18981”
-镜片大小（范围35≤x≤70）：如“50”或“40-45”
-鼻梁宽度（范围10≤x≤35）：如“18”或“16-20”
-镜腿长度（范围120≤x≤170）：如“145”或“140-150”
-镜架总长（范围100≤x≤160）：如“140”或“135-145”
-镜架高度（范围20≤x≤60）：如“42”或“40-45”
+镜架型号（文本，需精确匹配）：如“98044”或“T18981”
+镜片大小（数字，范围35≤x≤70）：如“50”或“40-45”
+鼻梁宽度（数字，范围10≤x≤35）：如“18”或“16-20”
+镜腿长度（数字，范围120≤x≤170）：如“145”或“140-150”
+镜架总长（数字，范围100≤x≤160）：如“140”或“135-145”
+镜架高度（数字，范围20≤x≤60）：如“42”或“40-45”
+镜架材料（多选）：如“TR,钛”表示“TR”或者“钛”
+重量（数字，范围3≤x≤50）：如“20”或“18-22”
+售价（数字，范围50≤x≤500）：如“199”或“100-300”
+品牌信息（文本）：仅在“所属品牌”字段中模糊匹配
   `, // 可在此处自行调整文案
     // 无结果提示（可在界面展示，文案可改）
     noResult: false,
     noResultText: '未找到任何结果，请调整搜索条件后重试。',
     // 多字段筛选的输入值
+    // 固定可选材质标签（供前端复选显示）
+    materialOptions: ['TR','B钛','钛','纯钛','合金','板材','金胶','塑钢'],
+    selectedMaterials: [],
+    selectedMaterialMap: {},
     filters: {
       frame_model: '',
       lens_size: '',
       nose_bridge_width: '',
       temple_length: '',
       frame_total_length: '',
-      frame_height: ''
+      frame_height: '',
+      weight: '',
+      price: '',
+      brand_info: ''
     },
     // 字段级错误提示（仅数值字段）
     errors: {
@@ -37,7 +48,9 @@ Page({
       nose_bridge_width: '',
       temple_length: '',
       frame_total_length: '',
-      frame_height: ''
+      frame_height: '',
+      weight: '',
+      price: ''
     }
   },
 
@@ -66,6 +79,11 @@ Page({
         const filters = payload.filters
         if (filters && typeof filters === 'object') {
           const cur = this.data.filters
+          // 反推已选材质标签
+          const matStr = (filters.frame_material || cur.frame_material || '')
+          const selectedMaterials = matStr ? matStr.split(/[,，|]+/).map(s => (s||'').trim()).filter(Boolean) : []
+          const selectedMaterialMap = {}
+          selectedMaterials.forEach(t => { selectedMaterialMap[t] = true })
           this.setData({
             filters: {
               frame_model: filters.frame_model || cur.frame_model,
@@ -73,8 +91,14 @@ Page({
               nose_bridge_width: filters.nose_bridge_width || cur.nose_bridge_width,
               temple_length: filters.temple_length || cur.temple_length,
               frame_total_length: filters.frame_total_length || cur.frame_total_length,
-              frame_height: filters.frame_height || cur.frame_height
-            }
+              frame_height: filters.frame_height || cur.frame_height,
+              weight: filters.weight || cur.weight,
+              price: filters.price || cur.price,
+              brand_info: filters.brand_info || cur.brand_info,
+              frame_material: matStr
+            },
+            selectedMaterials,
+            selectedMaterialMap
           })
         }
       })
@@ -141,7 +165,7 @@ Page({
     // 搜索前进行一次集中校验
     const errors = Object.assign({}, this.data.errors)
     let firstErrorField = ''
-    ;['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height'].forEach(k => {
+    ;['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height','weight','price','brand_info'].forEach(k => {
       const val = (f[k] || '').toString().trim()
       if (this._isNumericField(k)) {
         const chk = this._validateNumericOrRange(val)
@@ -154,6 +178,11 @@ Page({
       }
       if (val !== '') { params[k] = val; count++ }
     })
+    // 材质复选：将选中的标签组合到 frame_material（逗号分隔）
+    if (this.data.selectedMaterials && this.data.selectedMaterials.length) {
+      params.frame_material = this.data.selectedMaterials.join(',')
+      count++
+    }
     if (firstErrorField) {
       this.setData({ errors })
       wx.showToast({ title: '请修正红色字段的格式', icon: 'none' })
@@ -199,7 +228,7 @@ Page({
 
   // ===== 工具方法 =====
   _isNumericField(field) {
-    return field === 'lens_size' || field === 'nose_bridge_width' || field === 'temple_length' || field === 'frame_total_length' || field === 'frame_height'
+    return field === 'lens_size' || field === 'nose_bridge_width' || field === 'temple_length' || field === 'frame_total_length' || field === 'frame_height' || field === 'weight' || field === 'price'
   },
   _normalizeValue(v){
     if (v === undefined || v === null) return ''
@@ -226,13 +255,32 @@ Page({
 
   _normalizedFiltersObject(obj){
     // 只保留已知字段，去空值，并按固定顺序返回新对象
-    const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height']
+  const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height','weight','price','brand_info','frame_material']
     const out = {}
     order.forEach(k => {
       const v = (obj && obj[k] !== undefined && obj[k] !== null) ? (''+obj[k]).trim() : ''
       if (v !== '') out[k] = v
     })
     return out
+  },
+
+  // ===== 材质标签选择 =====
+  toggleMaterial(e){
+    const v = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.value) || ''
+    if (!v) return
+    const sel = (this.data.selectedMaterials || []).slice()
+    const map = Object.assign({}, this.data.selectedMaterialMap || {})
+    const idx = sel.indexOf(v)
+    if (idx >= 0) {
+      sel.splice(idx, 1)
+      delete map[v]
+    } else {
+      sel.push(v)
+      map[v] = true
+    }
+    const filters = Object.assign({}, this.data.filters)
+    filters.frame_material = sel.join(',')
+    this.setData({ selectedMaterials: sel, selectedMaterialMap: map, filters })
   },
 
   _saveHistoryCombined(filters){

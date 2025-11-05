@@ -47,7 +47,12 @@ module.exports = {
       'nose_bridge_width': '鼻梁宽度',
       'temple_length': '镜腿长度',
       'frame_total_length': '镜架总长',
-      'frame_height': '镜架高度'
+      'frame_height': '镜架高度',
+      'weight': '重量',
+      'price': '售价',
+      'other_info': '其他信息',
+      'brand_info': '品牌信息',
+      'frame_material': '镜架材料'
     }
     // 兜底：找不到则返回原字段名
     return map[field] || field
@@ -57,14 +62,19 @@ module.exports = {
   formatFilters: function(filters){
     if (!filters) return ''
     // 固定顺序，保证显示一致
-    var order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height']
+    var order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height','weight','price','brand_info','other_info','frame_material']
     var map = {
       'frame_model': '镜架型号',
       'lens_size': '镜片大小',
       'nose_bridge_width': '鼻梁宽度',
       'temple_length': '镜腿长度',
       'frame_total_length': '镜架总长',
-      'frame_height': '镜架高度'
+      'frame_height': '镜架高度',
+      'weight': '重量',
+      'price': '售价',
+      'other_info': '其他信息',
+      'brand_info': '品牌信息',
+      'frame_material': '镜架材料'
     }
     var parts = []
     for (var i=0;i<order.length;i++){

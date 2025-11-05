@@ -49,6 +49,11 @@ class Config:
         'temple_length',
         'frame_total_length',
         'frame_height',
+        'weight',
+        'price',
+        'frame_material',
+        'other_info',  # 模糊匹配 brand/notes（保留）
+        'brand_info',  # 品牌信息（仅匹配 brand）
     ]
     DEFAULT_SEARCH_FIELD = os.getenv('DEFAULT_SEARCH_FIELD', 'frame_model')
 

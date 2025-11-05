@@ -7,7 +7,8 @@ Page({
     nickname: '',
     avatarUrl: '',
     role: '', // 'sales' | 'user'
-    isSales: false
+    isSales: false,
+    referrals: []
   },
 
   onLoad() {
@@ -15,10 +16,12 @@ Page({
     if (oid) {
       this.setData({ openId: oid })
       this._loadRole(oid)
+      this._loadReferrals(oid)
     } else if (app.loginIfNeeded) {
       app.loginIfNeeded().then((id) => {
         this.setData({ openId: id })
         this._loadRole(id)
+        this._loadReferrals(id)
       }).catch(() => {})
     }
     // 从本地读取已保存的昵称、头像
@@ -34,6 +37,7 @@ Page({
     if (app.globalData.openId && app.globalData.openId !== this.data.openId) {
       this.setData({ openId: app.globalData.openId })
       this._loadRole(app.globalData.openId)
+      this._loadReferrals(app.globalData.openId)
     }
   },
 
@@ -86,6 +90,21 @@ Page({
           const role = res.data.data.role || 'user'
           this.setData({ role, isSales: role === 'sales' })
         }
+      },
+
+      _loadReferrals(openId) {
+        if (!openId) return
+        wx.request({
+          url: `${app.globalData.apiBaseUrl}/users/referrals`,
+          method: 'GET',
+          data: { open_id: openId },
+          success: (res) => {
+            if (res.data && res.data.status === 'success' && res.data.data) {
+              const items = res.data.data.items || []
+              this.setData({ referrals: items })
+            }
+          }
+        })
       }
     })
   },

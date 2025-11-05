@@ -5,7 +5,7 @@
 <view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
   <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
     <view class="search-box" style="height: {{menuHeight}}px;" bindtap="openSearchPage">
-      <input class="search-input" style="height: 100%;" placeholder="{{(require('../../config.js').searchPlaceholder)||'搜索（支持镜架型号，镜架尺寸/总长/高度）'}}" value="{{searchDisplay}}"/>
+      <input class="search-input" style="height: 100%;" placeholder="{{(require('../../config.js').searchPlaceholder)||'参数过滤（支持所有数字及文本类字段）'}}" value="{{searchDisplay}}"/>
       <view wx:if="{{searchDisplay}}" class="search-clear" catchtap="clearSearch">清空</view>
     </view>
   </view>
@@ -56,22 +56,88 @@
             </block>
             <block wx:else><text>{{f.unit(item.temple_length, '')}}</text></block>
           </view>
-          <view class="price-row"><text>价格：￥{{f.display(item.price)}}</text></view>
-          <view>
-            <text>镜架总长：</text>
-            <block wx:if="{{item.hl && item.hl.frame_total_length}}">
-              <block wx:for="{{item.hl.frame_total_length}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+          <view class="price-row">
+            <text>价格：</text>
+            <text>￥</text>
+            <block wx:if="{{item.hl && item.hl.price}}">
+              <block wx:for="{{item.hl.price}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
             </block>
-            <block wx:else><text>{{f.unit(item.frame_total_length, '')}}</text></block>
-          </view>
-          <view>
-            <text>镜架高度：</text>
-            <block wx:if="{{item.hl && item.hl.frame_height}}">
-              <block wx:for="{{item.hl.frame_height}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            <block wx:else>
+              <text>{{f.display(item.price)}}</text>
             </block>
-            <block wx:else><text>{{f.unit(item.frame_height, '')}}</text></block>
           </view>
-          <view><text>重量：{{f.unit(item.weight, 'g')}}</text></view>
+          <!-- 镜架总长 与 镜架高度 同行展示 -->
+          <view class="spec-pair-row">
+            <view class="spec-item">
+              <text>镜架总长：</text>
+              <block wx:if="{{item.hl && item.hl.frame_total_length}}">
+                <block wx:for="{{item.hl.frame_total_length}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+              </block>
+              <block wx:else><text>{{f.unit(item.frame_total_length, '')}}</text></block>
+            </view>
+            <view class="spec-item">
+              <text>镜架高度：</text>
+              <block wx:if="{{item.hl && item.hl.frame_height}}">
+                <block wx:for="{{item.hl.frame_height}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+              </block>
+              <block wx:else><text>{{f.unit(item.frame_height, '')}}</text></block>
+            </view>
+          </view>
+          
+          <!-- 重量 与 材质 同行展示（两列各50%） -->
+          <view class="wm-row">
+            <view class="weight-col">
+              <text>重量：</text>
+              <block wx:if="{{item.hl && item.hl.weight}}">
+                <block wx:for="{{item.hl.weight}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+                <text>g</text>
+              </block>
+              <block wx:else>
+                <text>{{f.unit(item.weight, 'g')}}</text>
+              </block>
+            </view>
+            <view class="material-col">
+              <text class="mat-label">材质：</text>
+              <block wx:if="{{item.mats && item.mats.length}}">
+                <view class="mat-tags">
+                  <block wx:if="{{item.hl && item.hl.material_tokens}}">
+                    <block wx:for="{{item.hl.material_tokens}}" wx:for-item="mt" wx:key="index">
+                      <view class="tag-chip {{mt.highlight ? 'on' : ''}}">{{mt.text}}</view>
+                    </block>
+                  </block>
+                  <block wx:else>
+                    <block wx:for="{{item.mats}}" wx:for-item="mat" wx:key="*this">
+                      <view class="tag-chip">{{mat}}</view>
+                    </block>
+                  </block>
+                </view>
+              </block>
+              <block wx:else>
+                <text class="mat-none">--</text>
+              </block>
+            </view>
+          </view>
+          <!-- 品牌展示（始终展示，无内容显示 --） -->
+          <view>
+            <text>品牌：</text>
+            <block wx:if="{{item.hl && item.hl.brand}}">
+              <block wx:for="{{item.hl.brand}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            </block>
+            <block wx:else>
+              <text>{{item.brand_text || '--'}}</text>
+            </block>
+          </view>
+          
+          <view>
+            <text>其他信息：</text>
+            <block wx:if="{{item.hl && item.hl.other_info_notes}}">
+              <block wx:for="{{item.hl.other_info_notes}}" wx:for-item="seg" wx:key="index"><text class="{{seg.highlight ? 'hl' : ''}}">{{seg.text}}</text></block>
+            </block>
+            <block wx:else>
+              <text>{{item.notes_text || '--'}}</text>
+            </block>
+          </view>
+          
         </view>
       </view>
     </view>

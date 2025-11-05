@@ -81,6 +81,7 @@
   gap: 20rpx;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
   position: relative;
+  align-items: flex-start; /* 确保右侧信息区域按需增高，不被图片高度限制 */
 }
 
 .product-image {
@@ -115,6 +116,16 @@
   gap: 4rpx;
   font-size: 24rpx;
   color: #666;
+  overflow: visible; /* 允许内部多行内容完全展示 */
+}
+
+/* 允许文字换行，避免长文本被单行截断导致“看不见”的错觉 */
+.product-specs text {
+  white-space: normal;
+  word-break: break-word;
+}
+.product-specs view {
+  overflow: visible;
 }
 
 /* 高亮匹配片段 */
@@ -136,6 +147,56 @@
 }
 .price-row {
   margin-top: 4rpx;
+}
+
+/* 规格成对展示（两列各50%） */
+.spec-pair-row { display: flex; align-items: baseline; }
+.spec-item {
+  width: 50%;
+  box-sizing: border-box;
+  display: flex;
+  gap: 6rpx;
+  align-items: baseline;
+}
+.spec-item:first-child { padding-right: 8rpx; }
+.spec-item:last-child { padding-left: 8rpx; }
+
+/* 重量 + 材质同一行（两列各50%） */
+.wm-row { display: flex; align-items: flex-start; }
+.weight-col, .material-col {
+  width: 50%;
+  box-sizing: border-box;
+}
+.weight-col { padding-right: 8rpx; }
+.material-col { padding-left: 8rpx; display: flex; flex-wrap: wrap; gap: 6rpx 8rpx; }
+.material-col .mat-label { flex: 0 0 auto; }
+.mat-none { color: #999; }
+
+/* 材质标签展示（两列） */
+.mat-row { display: flex; gap: 12rpx; align-items: flex-start; }
+.mat-row > text { flex: 0 0 auto; }
+.mat-tags {
+  flex: 1 1 auto;
+  display: flex;          /* 从两列网格改为自适应换行 */
+  flex-wrap: wrap;        /* 自动换行 */
+  gap: 6rpx 8rpx;         /* 紧凑间距 */
+}
+.tag-chip {
+  padding: 2rpx 10rpx;          /* 更小的内边距，降低高度与宽度 */
+  border: 1rpx solid #d0d7de;   /* 细边框 */
+  border-radius: 10rpx;         /* 更紧凑的圆角 */
+  background: #fff;
+  color: #333;
+  font-size: 18rpx;             /* 更小字号 */
+  width: auto;                  /* 自适应内容宽度，取消两列等宽 */
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 1.4;             /* 更紧凑的行高 */
+}
+.tag-chip.on {
+  background: #e6f4ff;
+  border-color: #1677ff;
+  color: #1677ff;
 }
 
 .select-box {

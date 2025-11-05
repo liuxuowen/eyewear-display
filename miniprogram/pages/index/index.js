@@ -55,12 +55,12 @@ Page({
     selectedCount: 0,
     // 分享落地待加入收藏的SKU
     pendingSkus: null,
-  // 分享落地待关联的销售open_id
-  pendingSalesOpenId: '',
-  // 分享落地待绑定的推荐人 open_id
-  pendingReferrerOpenId: '',
-  // 是否在处理完分享落地后跳转收藏页
-  autoGoWatchlist: false,
+    // 分享落地待关联的销售open_id
+    pendingSalesOpenId: '',
+    // 分享落地待绑定的推荐人 open_id
+    pendingReferrerOpenId: '',
+    // 是否在处理完分享落地后跳转收藏页
+    autoGoWatchlist: false,
     // 客服会话来源参数
     kfSessionFrom: '',
     // 自定义导航栏尺寸
@@ -287,6 +287,15 @@ Page({
 
     const hl = {}
     const v = (x) => (x === undefined || x === null) ? '' : ('' + x)
+    // 材质标签（由后端存储的 frame_material 通过 '+' 拆分）
+    const mats = v(item.frame_material).split('+').map(s => s.trim()).filter(Boolean)
+    const cleanSentinel = (s) => {
+      const t = (s || '').toString().trim()
+      if (!t) return ''
+      return /^(none|null|undefined|nan)$/i.test(t) ? '' : t
+    }
+    const brandText = cleanSentinel(item.brand)
+    const notesText = cleanSentinel(item.notes)
 
     // 帮助函数：子串高亮
     const highlightSubstring = (text, kw) => {
@@ -326,6 +335,7 @@ Page({
     }
 
     // 计算各字段的高亮片段
+  const otherText = `${brandText} ${notesText}`.trim()
     if (isMulti) {
       // frame_model：按子串高亮
       if (filters.frame_model) {
@@ -350,6 +360,23 @@ Page({
       handleNumeric('temple_length', v(item.temple_length), item.temple_length)
       handleNumeric('frame_total_length', v(item.frame_total_length), item.frame_total_length)
       handleNumeric('frame_height', v(item.frame_height), item.frame_height)
+      handleNumeric('weight', v(item.weight), item.weight)
+      handleNumeric('price', v(item.price), item.price)
+      if (filters.other_info) {
+        // 旧的“其他信息”字段：现在仅对品牌做高亮提示（备注不再在此行高亮）
+        hl.brand = highlightSubstring(brandText, filters.other_info)
+      }
+      if (filters.brand_info) {
+        // 新的“品牌信息”字段：仅对品牌做高亮
+        hl.brand = highlightSubstring(brandText, filters.brand_info)
+      }
+      // 材质标签高亮（多选）
+      if (filters.frame_material) {
+        const sel = ('' + filters.frame_material).split(/[，,|]+/).map(s => s.trim()).filter(Boolean)
+        const set = {}
+        sel.forEach(t => { set[t] = true })
+        hl.material_tokens = mats.map(t => ({ text: t, highlight: !!set[t] }))
+      }
     } else if (sq) {
       // 单字段
       if (sf === 'frame_model') {
@@ -364,10 +391,25 @@ Page({
         hl.frame_total_length = highlightSubstring(v(item.frame_total_length), sq)
       } else if (sf === 'frame_height') {
         hl.frame_height = highlightSubstring(v(item.frame_height), sq)
+      } else if (sf === 'weight') {
+        hl.weight = highlightSubstring(v(item.weight), sq)
+      } else if (sf === 'price') {
+        hl.price = highlightSubstring(v(item.price), sq)
+      } else if (sf === 'other_info') {
+        // 单字段“其他信息”搜索：此处仅对品牌高亮
+        hl.brand = highlightSubstring(brandText, sq)
+      } else if (sf === 'brand_info') {
+        // 单字段“品牌信息”搜索：仅品牌高亮
+        hl.brand = highlightSubstring(brandText, sq)
+      } else if (sf === 'frame_material') {
+        const sel = ('' + sq).split(/[，,|]+/).map(s => s.trim()).filter(Boolean)
+        const set = {}
+        sel.forEach(t => { set[t] = true })
+        hl.material_tokens = mats.map(t => ({ text: t, highlight: !!set[t] }))
       }
     }
 
-    return Object.assign({}, item, { hl })
+  return Object.assign({}, item, { hl, mats, brand_text: brandText, notes_text: notesText })
   },
   _loadUserRole() {
     const oid = (getApp().globalData && getApp().globalData.openId) || ''
@@ -547,14 +589,19 @@ Page({
     return { title: this.data.selectedCount > 0 ? `推荐${this.data.selectedCount}款镜架` : '精品镜架推荐', path }
   },
   _formatFiltersDisplay(filters) {
-    const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height']
+    const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height','weight','price','brand_info','other_info','frame_material']
     const labels = {
       frame_model: '型号',
       lens_size: '镜片',
       nose_bridge_width: '鼻梁',
       temple_length: '镜腿',
       frame_total_length: '总长',
-      frame_height: '高度'
+      frame_height: '高度',
+      weight: '重量',
+      price: '售价',
+      brand_info: '品牌',
+      other_info: '其他',
+      frame_material: '材质'
     }
     const parts = []
     order.forEach(k => {

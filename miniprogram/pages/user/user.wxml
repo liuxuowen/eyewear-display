@@ -46,4 +46,27 @@
 	<view class="tips">
 			<text>说明：OpenID 会自动获取；点击 OpenID 可复制；“获取昵称头像”需用户主动授权。</text>
 	</view>
+
+	<!-- 我的转介绍人员列表 -->
+	<view class="card">
+		<view class="row">
+			<text class="label">我的转介绍人员：</text>
+			<text class="value">共 {{referrals.length}} 人</text>
+		</view>
+		<view wx:if="{{referrals && referrals.length}}">
+			<view class="row" wx:for="{{referrals}}" wx:key="open_id">
+				<view class="col">
+					<text class="label">昵称：</text>
+					<text class="value">{{item.nickname || '--'}}</text>
+				</view>
+				<view class="col">
+					<text class="label">OpenID：</text>
+					<text class="value">{{item.open_id}}</text>
+				</view>
+			</view>
+		</view>
+		<view class="row" wx:else>
+			<text class="value">暂无转介绍人员</text>
+		</view>
+	</view>
 </view>

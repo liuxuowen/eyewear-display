@@ -146,3 +146,26 @@
 .btn-search {
   margin-top: 16rpx;
 }
+
+/* 材质标签样式 */
+.material-row { align-items: flex-start; }
+.material-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.tag-chip {
+  padding: 8rpx 14rpx;
+  border: 2rpx solid #d0d7de;
+  border-radius: 9999rpx;
+  background: #fff;
+  color: #333;
+  font-size: 24rpx;
+  width: auto;           /* 覆盖 index.wxss 中的 width:100%，让标签按内容自适应宽度 */
+  box-sizing: border-box;
+}
+.tag-chip.on {
+  background: #e6f4ff;
+  border-color: #1677ff;
+  color: #1677ff;
+}
