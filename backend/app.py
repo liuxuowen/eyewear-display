@@ -764,8 +764,11 @@ def list_user_referrals():
 
 @app.route('/api/favorites/batch', methods=['POST'])
 def add_favorites_batch():
-    """批量添加收藏（幂等）。Body: { open_id: str, frame_models: [str, ...] }
-    忽略无效或未上架的商品；返回成功加入的数量。
+    """批量添加收藏。
+    Body: { open_id: str, frame_models: [str, ...], reset?: bool }
+    - 当 reset=true 且 open_id 为销售角色时：先清空该用户的收藏，再加入传入列表（替换收藏）。
+    - 其他情况：保持原逻辑，幂等添加（忽略已存在）。
+    忽略无效或未上架的商品；返回 { added: n, reset: bool }。
     """
     try:
         data = request.get_json(silent=True) or {}
@@ -774,11 +777,26 @@ def add_favorites_batch():
         if not open_id or not isinstance(items, list):
             return jsonify({'status': 'error', 'message': 'open_id and frame_models(list) are required'}), 400
 
+        # 是否请求重置收藏（仅对销售角色生效）
+        reset_req = data.get('reset', False)
+        if isinstance(reset_req, str):
+            reset_req = reset_req.strip().lower() in ('1', 'true', 'yes', 'on')
+        reset = bool(reset_req)
+
         # 确保用户存在
         user = User.query.get(open_id)
         if not user:
             user = User(open_id=open_id)
             db.session.add(user)
+
+        # 若请求重置，需校验是否为销售；非销售则忽略 reset
+        if reset:
+            try:
+                is_sales = Salesperson.query.filter_by(open_id=open_id).first() is not None
+                if not is_sales:
+                    reset = False
+            except Exception:
+                reset = False
 
         # 去重并裁剪数量（上限 50，避免过载；前端会控制 10）
         uniq = []
@@ -794,26 +812,36 @@ def add_favorites_batch():
             if len(uniq) >= 50:
                 break
 
+        if reset and not uniq:
+            # 重置但传空列表：清空收藏
+            Favorite.query.filter_by(open_id=open_id).delete(synchronize_session=False)
+            db.session.commit()
+            return jsonify({'status': 'success', 'data': {'added': 0, 'reset': True}})
         if not uniq:
-            return jsonify({'status': 'success', 'data': {'added': 0}})
+            return jsonify({'status': 'success', 'data': {'added': 0, 'reset': False}})
 
         # 查询有效商品
         valid = Product.query.with_entities(Product.frame_model).filter(Product.is_active == '是', Product.frame_model.in_(uniq)).all()
         valid_set = {row.frame_model for row in valid}
 
-        # 现有收藏
-        existing = Favorite.query.with_entities(Favorite.frame_model).filter(Favorite.open_id == open_id, Favorite.frame_model.in_(list(valid_set))).all()
-        exist_set = {row.frame_model for row in existing}
-
-        # 批量添加
         added = 0
-        for fm in valid_set:
-            if fm in exist_set:
-                continue
-            db.session.add(Favorite(open_id=open_id, frame_model=fm))
-            added += 1
+        if reset:
+            # 替换收藏：清空后全量加入有效集合
+            Favorite.query.filter_by(open_id=open_id).delete(synchronize_session=False)
+            for fm in valid_set:
+                db.session.add(Favorite(open_id=open_id, frame_model=fm))
+                added += 1
+        else:
+            # 现有收藏（仅用于幂等添加场景）
+            existing = Favorite.query.with_entities(Favorite.frame_model).filter(Favorite.open_id == open_id, Favorite.frame_model.in_(list(valid_set))).all()
+            exist_set = {row.frame_model for row in existing}
+            for fm in valid_set:
+                if fm in exist_set:
+                    continue
+                db.session.add(Favorite(open_id=open_id, frame_model=fm))
+                added += 1
         db.session.commit()
-        return jsonify({'status': 'success', 'data': {'added': added}})
+        return jsonify({'status': 'success', 'data': {'added': added, 'reset': bool(reset)}})
     except Exception as e:
         db.session.rollback()
         return handle_error(e, 'Error adding favorites batch')

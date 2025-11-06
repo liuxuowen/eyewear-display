@@ -466,16 +466,20 @@ Page({
     const oid = (getApp().globalData && getApp().globalData.openId) || ''
     if (!list || !list.length || !oid) return
     this.setData({ pendingSkus: null })
+    // 销售点击打包卡片：需要“重置收藏”后再加入；普通用户保持原逻辑
+    const isSales = !!(((getApp().globalData && getApp().globalData.isSales) || false) || this.data.isSales)
     wx.request({
       url: `${app.globalData.apiBaseUrl}/favorites/batch`,
       method: 'POST',
-      data: { open_id: oid, frame_models: list.slice(0, 50) },
+      data: { open_id: oid, frame_models: list.slice(0, 50), reset: isSales },
       success: (res) => {
         if (res.data && res.data.status === 'success') {
           const added = (res.data.data && res.data.data.added) || 0
-          if (added > 0) {
+          const didReset = !!(res.data.data && res.data.data.reset)
+          if (didReset || added > 0) {
             this._loadFavoriteIds()
-            wx.showToast({ title: `已加入收藏${added}个`, icon: 'success' })
+            const msg = didReset ? `已重置收藏并加入${added}个` : `已加入收藏${added}个`
+            wx.showToast({ title: msg, icon: 'success' })
           }
           // 处理跳转逻辑（避免重复）
           if (this.data.autoGoWatchlist) {
