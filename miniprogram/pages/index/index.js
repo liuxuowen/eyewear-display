@@ -624,15 +624,32 @@ Page({
     this.setData({ selectedMap: map, selectedCount: count })
   },
   onShareAppMessage() {
+    // 生成分享路径（若为销售选择打包）
+    const isSales = !!this.data.isSales
+    const selecting = !!this.data.selecting
+    const selectedCount = Number(this.data.selectedCount || 0)
+    const selectedMap = this.data.selectedMap || {}
+
     let path = '/pages/index/index'
-    if (this.data.isSales && this.data.selecting && this.data.selectedCount > 0) {
-      const skus = Object.keys(this.data.selectedMap)
+    if (isSales && selecting && selectedCount > 0) {
+      const skus = Object.keys(selectedMap)
       const enc = encodeURIComponent(skus.join(','))
       const sid = (getApp().globalData && getApp().globalData.openId) || ''
       const sidParam = sid ? `&sid=${encodeURIComponent(sid)}` : ''
       path = `/pages/index/index?skus=${enc}${sidParam}`
     }
-    return { title: this.data.selectedCount > 0 ? `推荐${this.data.selectedCount}款镜架` : '精品镜架推荐', path }
+
+    // 需求：完成打包转发后回到商品首页（退出选择模式）
+    // 在触发分享时立即退出选择模式并清空已选，避免停留在选择态
+    if (isSales && selecting) {
+      try {
+        const fn = () => this.setData({ selecting: false, selectedMap: {}, selectedCount: 0 })
+        // 使用 setTimeout 避免与分享流程的同步返回竞争
+        setTimeout(fn, 0)
+      } catch (e) {}
+    }
+
+    return { title: selectedCount > 0 ? `推荐${selectedCount}款镜架` : '精品镜架推荐', path }
   },
   _formatFiltersDisplay(filters) {
     const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height','weight','price','brand_info','other_info','frame_material']

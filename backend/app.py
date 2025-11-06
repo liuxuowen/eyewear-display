@@ -159,10 +159,10 @@ def get_products():
     try:
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
-        try:
-            logger.info("/api/products query start page=%s per_page=%s args=%s", page, per_page, dict(request.args))
-        except Exception:
-            pass
+        # try:
+        #     logger.info("/api/products query start page=%s per_page=%s args=%s", page, per_page, dict(request.args))
+        # except Exception:
+        #     pass
 
         # 搜索参数（精确匹配）
         search_field = (request.args.get('search_field') or '').strip()
@@ -314,10 +314,10 @@ def get_products():
 
         products = paginate_query(query, page, per_page)
 
-        try:
-            logger.info("/api/products query done total=%s pages=%s current_page=%s count=%s", products.total, products.pages, products.page, len(products.items))
-        except Exception:
-            pass
+        # try:
+        #     logger.info("/api/products query done total=%s pages=%s current_page=%s count=%s", products.total, products.pages, products.page, len(products.items))
+        # except Exception:
+        #     pass
 
         return jsonify({
             'status': 'success',
