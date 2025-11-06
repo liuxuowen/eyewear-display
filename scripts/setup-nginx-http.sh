@@ -14,12 +14,12 @@ set -Eeuo pipefail
 #   STATIC_IMAGES_DIR=/data/images ./scripts/setup-nginx-http.sh
 #
 # Env vars:
-#   FRONT_PORT          default 8080 (public HTTP listen port)
+#   FRONT_PORT          default 80 (public HTTP listen port)
 #   BACKEND_PORT        default 5000 (internal backend port)
 #   STATIC_IMAGES_DIR   default /var/www/resource/products_img
 #   SITE_NAME           default eyewear-http
 
-FRONT_PORT=${FRONT_PORT:-8080}
+FRONT_PORT=${FRONT_PORT:-80}
 BACKEND_PORT=${BACKEND_PORT:-5000}
 STATIC_IMAGES_DIR=${STATIC_IMAGES_DIR:-/var/www/resource/products_img}
 SITE_NAME=${SITE_NAME:-eyewear-http}

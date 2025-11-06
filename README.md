@@ -64,3 +64,42 @@ GET /api/products/<frame_model>
 2. 配置正确的跨域设置
 3. 在生产环境中使用 HTTPS
 4. 确保服务器有足够的存储空间存放图片
+
+## 部署（Nginx + HTTPS）
+
+以下为推荐的生产部署方式（以 Debian/Ubuntu 服务器为例，域名以 yimuliaoran.top 为例）：
+
+- 后端进程
+   - 在服务器上准备 Python 环境并安装 `backend/requirements.txt`。
+   - 复制 `backend/.env.production` 到服务器 `backend/.env`，并设定：
+      - `APP_ENV=production`
+      - `FORCE_HTTPS=1`
+      - `JWT_SECRET_KEY` 为强随机值（必填）
+      - `DATABASE_URL` 为你的数据库连接串
+      - `IMAGE_SAVE_DIR` 指向图片目录（例如 `/var/www/resource/products_img`）
+      - `IMAGE_URL_PREFIX=https://yimuliaoran.top/static/images/`（与 Nginx 静态映射一致，改为你的域名）
+   - 使用 `gunicorn` 或 `waitress` 启动（参考 `scripts/backend.service.example` 或 `scripts/restart-backend.sh`）。
+
+- Nginx 反向代理与证书
+   - 若首次配置，可在服务器上执行脚本一键安装与签发证书：
+      - `scripts/setup-nginx-https.sh`（需要 root，需事先将域名解析到该服务器）
+   - 或手动参考 `scripts/nginx-https.conf.example` 完成以下要点：
+      - 80 端口全量跳转到 HTTPS
+      - 443 端口 `location /api/` 反代到后端（默认 `http://127.0.0.1:5000`，如后端监听 8080 则改为 8080）
+      - `location /static/images/` 使用 `alias /var/www/resource/products_img/;` 直接由 Nginx 下发图片
+      - 证书路径由 certbot 自动管理：`/etc/letsencrypt/live/<your-domain>/`
+
+- 验证
+   - 打开 `https://yimuliaoran.top/healthz` 应返回 `{"status":"ok"}`
+   - 打开 `https://yimuliaoran.top/api/products` 应返回 JSON 列表
+   - 图片链接应为 HTTPS，形如 `https://yimuliaoran.top/static/images/...`
+
+- 微信小程序后台
+   - 将 `https://yimuliaoran.top` 添加到 “request 合法域名”。
+   - 重新编译/预览并在真机测试。
+
+- 证书自动续期
+   - Certbot 会自动安装定时任务。
+   - 可在服务器执行一次演练：`certbot renew --dry-run`（需 root）。
+
+更多细节与可选参数见 `scripts/` 目录中的示例与脚本注释。

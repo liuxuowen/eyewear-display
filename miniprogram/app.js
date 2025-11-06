@@ -144,7 +144,7 @@ App({
   },
 
   globalData: {
-    apiBaseUrl: 'http://124.223.217.73:8080/api',
+    apiBaseUrl: 'https://yimuliaoran.top/api',
     openId: '',
     // 角色相关全局状态（供自定义 tabBar 动态渲染）
     isSales: false,
