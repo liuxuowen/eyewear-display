@@ -103,3 +103,47 @@ GET /api/products/<frame_model>
    - 可在服务器执行一次演练：`certbot renew --dry-run`（需 root）。
 
 更多细节与可选参数见 `scripts/` 目录中的示例与脚本注释。
+
+## 测试环境（Staging）部署
+
+目标：在同一台服务器或另一台服务器上，提供与生产相同的后端功能，但独立的域名、数据库、图片目录与证书。
+
+推荐做法：使用二级域名，例如 `test.yimuliaoran.top`（或 `api-test.your-domain.com`）。
+
+1) 准备后端实例
+- 拷贝 `backend/.env.staging` 到测试机 `backend/.env` 并填写：
+   - `APP_ENV=staging`、`FORCE_HTTPS=1`
+   - 独立的 `DATABASE_URL`（避免污染生产数据）
+   - 独立的图片目录：`IMAGE_SAVE_DIR=/var/www/resource/products_img_test`
+   - `IMAGE_URL_PREFIX=https://test.your-domain.com/static/images/`（换成你的测试域名）
+   - 独立的 `JWT_SECRET_KEY`
+- 启动方式同生产，可用不同端口（例如 5001/8081）。参考 `scripts/backend.service.example`：
+   - 复制一份为 `eyewear-backend-staging.service`，修改 `PORT=5001` 等环境变量。
+
+2) Nginx + 证书
+- 确保测试域名已解析到服务器公网 IP。
+- 用脚本一键配置（Debian/Ubuntu）：
+   ```bash
+   sudo DOMAIN=test.your-domain.com EMAIL=admin@your-domain.com BACKEND_PORT=5001 STATIC_IMAGES_DIR=/var/www/resource/products_img_test SITE_NAME=eyewear-staging \
+      ./scripts/setup-nginx-https.sh
+   ```
+- 或参照 `scripts/nginx-https.conf.example` 新建一个 `eyewear-staging.conf`：
+   - `server_name test.your-domain.com;`
+   - `location /api/ { proxy_pass http://127.0.0.1:5001; }`
+   - `location /static/images/ { alias /var/www/resource/products_img_test/; }`
+   - 申请并安装 Let’s Encrypt 证书（`certbot --nginx -d test.your-domain.com`）。
+
+3) 验证
+- `https://test.your-domain.com/healthz` 应返回 `{"status":"ok"}`
+- `https://test.your-domain.com/api/products` 应返回 JSON
+- 图片链接前缀为 `https://test.your-domain.com/static/images/...`
+
+4) 微信小程序白名单
+- 在“服务器域名”中增加测试域名：
+   - request 合法域名：`https://test.your-domain.com`
+   - downloadFile 合法域名：`https://test.your-domain.com`
+- 注意：仅用于测试/体验版时可添加；正式版请保持生产域名。
+
+5) 前端切换（可选）
+- 临时切换：手工改 `miniprogram/app.js` 中的 `apiBaseUrl` 指向测试域名并重新编译预览。
+- 或实现可配置切换（例如通过本地存储或 URL 参数设置覆盖），以便无需改代码即可切换环境。

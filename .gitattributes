@@ -1,0 +1,13 @@
+# Normalize line endings for shell scripts to avoid CRLF issues on Linux servers
+*.sh text eol=lf
+
+# (Optional) also keep Python files LF-only
+*.py text eol=lf
+
+# Keep JSON/JS/CSS/HTML consistently normalized
+*.json text eol=lf
+*.js   text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.wxml text eol=lf
+*.wxss text eol=lf
