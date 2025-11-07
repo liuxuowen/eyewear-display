@@ -463,6 +463,16 @@ def upsert_user():
         open_id = (data.get('open_id') or '').strip()
         if not open_id:
             return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+        # 合规性校验：长度与字符集（微信 openid 通常为长度较长的数字与字母，附加下划线）
+        # 允许范围：a-zA-Z0-9-_，长度 6-64（经验值；如需放宽可调整）
+        # 格式 + 长度校验：微信 openid 为 28 位（字母数字，下划线或破折号极少出现，这里宽松允许）
+        if not re.fullmatch(r'[A-Za-z0-9_-]{28}', open_id):
+            logger.error('INVALID_OPEN_ID format_or_length violation (expect length=28 alnum/_-): %r len=%d', open_id, len(open_id))
+            # 不中断业务，如需强制可改为直接返回 400
+            # return jsonify({'status': 'error', 'message': 'open_id invalid'}), 400
+        # 冗余保护（理论不会触发，因为上面已限定 28）：
+        if len(open_id) != 28:
+            logger.error('INVALID_OPEN_ID length != 28: len=%d value=%r', len(open_id), open_id)
 
         nickname = (data.get('nickname') or '').strip() or None
         avatar_url = (data.get('avatar_url') or '').strip() or None
@@ -498,6 +508,27 @@ def upsert_user():
     except Exception as e:
         db.session.rollback()
         return handle_error(e, 'Error upserting user')
+
+@app.route('/api/users/profile', methods=['GET'])
+def get_user_profile():
+    """获取用户基础资料（昵称与头像）。
+    Query: open_id
+    Return: { status, data: { open_id, nickname, avatar_url } } 若不存在返回 data 为 null。
+    """
+    try:
+        open_id = (request.args.get('open_id') or '').strip()
+        if not open_id:
+            return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
+        user = User.query.get(open_id)
+        if not user:
+            return jsonify({'status': 'success', 'data': None})
+        return jsonify({'status': 'success', 'data': {
+            'open_id': user.open_id,
+            'nickname': user.nickname or '',
+            'avatar_url': user.avatar_url or ''
+        }})
+    except Exception as e:
+        return handle_error(e, 'Error getting user profile')
 
 
 @app.route('/api/analytics/pageview', methods=['POST'])

@@ -6,12 +6,16 @@ Page({
     openId: '',
     nickname: '',
     avatarUrl: '',
+  avatarDebug: '',
+    editNickname: '',
+    nicknameHint: '',
     role: '', // 'sales' | 'user'
     isSales: false,
     hasMySales: false,
     mySalesName: '',
     referrals: [],
-    kfSessionFrom: ''
+    kfSessionFrom: '',
+    // 已简化为一键获取并直接保存，不再使用草稿字段
   },
 
   onLoad() {
@@ -20,20 +24,15 @@ Page({
       this.setData({ openId: oid })
       this._loadRole(oid)
       this._loadReferrals(oid)
+      this._loadProfile(oid)
     } else if (app.loginIfNeeded) {
       app.loginIfNeeded().then((id) => {
         this.setData({ openId: id })
         this._loadRole(id)
         this._loadReferrals(id)
+        this._loadProfile(id)
       }).catch(() => {})
     }
-    // 从本地读取已保存的昵称、头像
-    try {
-      const nn = wx.getStorageSync('nickname')
-      const av = wx.getStorageSync('avatarUrl')
-      if (nn) this.setData({ nickname: nn })
-      if (av) this.setData({ avatarUrl: av })
-    } catch (e) {}
   },
 
   onShow() {
@@ -49,6 +48,7 @@ Page({
       this.setData({ openId: app.globalData.openId })
       this._loadRole(app.globalData.openId)
       this._loadReferrals(app.globalData.openId)
+      this._loadProfile(app.globalData.openId)
     }
   },
 
@@ -60,35 +60,141 @@ Page({
     })
   },
 
-  getProfile() {
-    if (!wx.getUserProfile) {
-      wx.showModal({ title: '提示', content: '微信版本过低，不支持获取用户信息，请升级微信版本', showCancel: false })
-      return
-    }
-    wx.getUserProfile({
-      desc: '用于完善个人资料',
-      success: (res) => {
-        const info = res && res.userInfo
-        if (!info) return
-        const nn = info.nickName || ''
-        const av = info.avatarUrl || ''
-        this.setData({ nickname: nn, avatarUrl: av })
-        try { wx.setStorageSync('nickname', nn); wx.setStorageSync('avatarUrl', av) } catch (e) {}
-        const ensureLogin = app.loginIfNeeded ? app.loginIfNeeded() : Promise.resolve(app.globalData.openId)
-        ensureLogin.then((oid) => {
-          if (!oid) return
-          wx.request({
-            url: `${app.globalData.apiBaseUrl}/users/upsert`,
-            method: 'POST',
-            data: { open_id: oid, nickname: nn, avatar_url: av }
-          })
-        }).catch(() => {})
-      },
-      fail: () => {
-        wx.showToast({ title: '用户未授权', icon: 'none' })
-      }
-    })
+  // 注：平台规则调整后不再使用 getUserProfile 获取昵称头像，此方法已移除。
+
+  // 分离：仅获取昵称
+  getNickname() {
+    // 根据官方最佳实践：不再依赖 getUserProfile 返回昵称，改为手动输入+保存
+    wx.showToast({ title: '请输入上方昵称后保存', icon: 'none' })
   },
+
+  // 分离：仅获取头像（使用 chooseAvatar）
+  onChooseAvatar(e) {
+    try {
+      const url = e.detail && e.detail.avatarUrl
+      if (!url) { wx.showToast({ title: '未获取到头像', icon: 'none' }); return }
+      this.setData({ avatarUrl: url })
+      try { wx.setStorageSync('avatarUrl', url) } catch (err) {}
+      this._probeAvatar(url)
+      // 保存，仅头像更新
+      this._upsertProfile(this.data.nickname, url)
+      wx.showToast({ title: '头像已更新', icon: 'none' })
+    } catch (er) {
+      wx.showToast({ title: '头像获取异常', icon: 'none' })
+    }
+  },
+
+  // 手动输入昵称
+  onEditNicknameInput(e) {
+    const v = (e && e.detail && e.detail.value) || ''
+    this.setData({ editNickname: v, nicknameHint: '' })
+    // 防抖自动保存，解决选择微信昵称后未失焦不触发保存的问题
+    this._clearNickTimer()
+    const val = (v || '').trim()
+    // 基本长度通过再触发保存，避免无效请求
+    this._nickTimer = setTimeout(() => {
+      if (val && val.length >= 2 && val.length <= 12) {
+        this._autoSaveNickname(val, { silent: true, source: 'input' })
+      }
+    }, 600)
+  },
+  // 输入完成自动保存：失焦
+  onNicknameBlur(e) {
+    const v = (e && e.detail && (e.detail.value || e.detail.cursor !== undefined ? e.detail.value : '')) || ''
+    this._clearNickTimer()
+    this._autoSaveNickname((v || '').trim(), { silent: false, source: 'blur' })
+  },
+  // 输入法完成键
+  onNicknameConfirm(e) {
+    const v = (e && e.detail && e.detail.value) || ''
+    this._clearNickTimer()
+    this._autoSaveNickname((v || '').trim(), { silent: false, source: 'confirm' })
+  },
+  _clearNickTimer() {
+    if (this._nickTimer) {
+      clearTimeout(this._nickTimer)
+      this._nickTimer = null
+    }
+  },
+  // 自动保存逻辑（校验+避免重复保存）
+  _autoSaveNickname(nn, opts = {}) {
+    const prev = (this.data.nickname || '').trim()
+    const draft = (this.data.editNickname || '').trim()
+    // 同步草稿
+    if (nn !== draft) {
+      this.setData({ editNickname: nn })
+    }
+    if (!nn) { this.setData({ nicknameHint: '请输入昵称' }); return }
+    if (nn.length < 2 || nn.length > 12) { wx.showToast({ title: '长度 2-12 个字符', icon: 'none' }); return }
+    if (nn === prev) { this.setData({ nicknameHint: '昵称已保存' }); return }
+    try { wx.setStorageSync('nickname', nn) } catch (e) {}
+    this._upsertProfile(nn, this.data.avatarUrl, { silent: !!opts.silent })
+    this.setData({ nickname: nn, nicknameHint: '昵称已保存' })
+  },
+  
+  applyNickname() {
+    const nn = (this.data.editNickname || '').trim()
+    if (!nn) { wx.showToast({ title: '请输入昵称', icon: 'none' }); return }
+    if (nn.length < 2 || nn.length > 12) { wx.showToast({ title: '长度 2-12 个字符', icon: 'none' }); return }
+    try { wx.setStorageSync('nickname', nn) } catch (e) {}
+    this._upsertProfile(nn, this.data.avatarUrl)
+    this.setData({ nickname: nn, nicknameHint: '昵称已保存' })
+    wx.showToast({ title: '昵称已保存', icon: 'none' })
+  },
+
+  onAvatarLoad(e) {
+    this.setData({ avatarDebug: '头像加载成功' })
+  },
+  onAvatarError(e) {
+    this.setData({ avatarDebug: '头像加载失败(code:' + (e && e.detail && e.detail.errMsg || '未知') + ')' })
+  },
+
+  _probeAvatar(url) {
+    if (!url) return
+    try {
+      wx.getImageInfo({
+        src: url,
+        success: () => {
+          this.setData({ avatarDebug: '头像可访问' })
+        },
+        fail: (err) => {
+          this.setData({ avatarDebug: '下载失败:' + (err && err.errMsg || 'unknown') })
+        }
+      })
+    } catch (e) {
+      this.setData({ avatarDebug: '探测异常' })
+    }
+  },
+
+    _upsertProfile(nn, av, opts = {}) {
+      const ensureLogin = app.loginIfNeeded ? app.loginIfNeeded() : Promise.resolve(app.globalData.openId)
+      ensureLogin.then((oid) => {
+        if (!oid) { wx.showToast({ title: '未获取到用户ID', icon: 'none' }); return }
+        wx.request({
+          url: `${app.globalData.apiBaseUrl}/users/upsert`,
+          method: 'POST',
+          data: { open_id: oid, nickname: nn, avatar_url: av },
+          success: (r) => {
+            const ok = r && r.data && r.data.status === 'success'
+            if (!opts.silent) {
+              if (ok) wx.showToast({ title: '已保存', icon: 'success' })
+              else wx.showToast({ title: '保存失败', icon: 'none' })
+            }
+            // 如果没有手动输入昵称且后台返回用户已有昵称，自动填充（后期可扩展 GET profile 接口）
+            if (!nn && r && r.data && r.data.data && r.data.data.nickname) {
+              const autoNick = r.data.data.nickname
+              if (autoNick && !this.data.nickname) {
+                this.setData({ nickname: autoNick })
+                try { wx.setStorageSync('nickname', autoNick) } catch (e) {}
+              }
+            }
+          },
+          fail: () => {
+            if (!opts.silent) wx.showToast({ title: '网络错误', icon: 'none' })
+          }
+        })
+      }).catch(() => wx.showToast({ title: '登录失败', icon: 'none' }))
+    },
 
   _loadRole(openId) {
     if (!openId) return
@@ -108,6 +214,25 @@ Page({
           }
         }
       },
+    })
+  },
+
+  _loadProfile(openId) {
+    if (!openId) return
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/users/profile`,
+      method: 'GET',
+      data: { open_id: openId },
+      success: (res) => {
+        if (res && res.data && res.data.status === 'success' && res.data.data) {
+          const nick = (res.data.data.nickname || '').trim()
+          const avatar = (res.data.data.avatar_url || '').trim()
+          const upd = {}
+          if (nick) upd.nickname = nick
+          if (avatar) upd.avatarUrl = avatar
+          if (Object.keys(upd).length) this.setData(upd)
+        }
+      }
     })
   },
 

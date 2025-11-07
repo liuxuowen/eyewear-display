@@ -2,49 +2,17 @@
 <view class="container">
 	<!-- 账号信息卡片 -->
 	<view class="card">
-		<view class="avatar-row">
-			<image class="avatar" src="{{avatarUrl}}" mode="aspectFill" wx:if="{{avatarUrl}}"/>
-			<view class="avatar-placeholder" wx:if="{{!avatarUrl}}">无头像</view>
+		<view class="profile-row">
+			<button class="avatar-btn-ghost" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="none">
+				<image class="avatar" src="{{avatarUrl}}" mode="aspectFill" wx:if="{{avatarUrl}}" bindload="onAvatarLoad" binderror="onAvatarError"/>
+				<view class="avatar-placeholder" wx:if="{{!avatarUrl}}">授权头像</view>
+			</button>
+			<view class="profile-fields">
+				<view class="row">
+					<input type="nickname" class="nick-input" placeholder="授权微信昵称" placeholder-style="{{ (editNickname || nickname) ? 'color:#999;' : 'color:#ff4d4f;' }}" value="{{editNickname || nickname}}" bindinput="onEditNicknameInput" bindblur="onNicknameBlur" bindconfirm="onNicknameConfirm" confirm-type="done" maxlength="20" style="flex:1"/>
+				</view>
+			</view>
 		</view>
-		<view class="row">
-			<text class="label">昵称：</text>
-			<text class="value">{{nickname || '--'}}</text>
-		</view>
-		<view class="row">
-			<text class="label">OpenID：</text>
-				<text class="value" bindtap="copyOpenId">{{openId || '--'}}</text>
-		</view>
-		<view class="actions">
-			<button type="default" size="mini" bindtap="getProfile">获取昵称头像</button>
-		</view>
-	</view>
-
-	<!-- 角色信息卡片 -->
-	<view class="card">
-		<view class="row">
-			<text class="label">角色：</text>
-			<text class="value">{{isSales ? '销售' : '普通用户'}}</text>
-		</view>
-		<view class="row" wx:if="{{isSales}}">
-			<text class="label">说明：</text>
-			<text class="value">可在“商品”页使用“选择分享/打包转发”功能推荐商品</text>
-		</view>
-	</view>
-
-	<!-- 推荐给好友（转发）临时入口 -->
-	<view class="card">
-		<view class="row">
-			<text class="label">推荐：</text>
-			<text class="value">将小程序转发给好友，建立推荐关系</text>
-		</view>
-		<view class="actions">
-			<button type="primary" size="mini" open-type="share">推荐给好友</button>
-		</view>
-	</view>
-
-	<!-- 说明 -->
-	<view class="tips">
-			<text>分隔符---分隔符</text>
 	</view>
 
 	<!-- 我的销售卡片（所有角色都显示；无分配则提供联系客服入口） -->
@@ -60,10 +28,23 @@
 		</view>
 	</view>
 
+	<!-- 推荐给好友（转发）临时入口 -->
+	<view class="card">
+		<view class="row" style="justify-content: space-between;">
+			<view style="display:flex;align-items:center;gap:12rpx;">
+				<text class="label">推荐：</text>
+				<text class="value">转发给好友建立推荐关系</text>
+			</view>
+			<view>
+				<button type="primary" size="mini" open-type="share">推荐好友</button>
+			</view>
+		</view>
+	</view>
+
 	<!-- 我的转介绍人员列表 -->
 	<view class="card">
 		<view class="row">
-			<text class="label">我的转介绍人员：</text>
+			<text class="label">我的推荐的好友：</text>
 			<text class="value">共 {{referrals.length}} 人</text>
 		</view>
 		<view wx:if="{{referrals && referrals.length}}">
@@ -79,7 +60,16 @@
 			</view>
 		</view>
 		<view class="row" wx:else>
-			<text class="value">暂无转介绍人员</text>
+			<text class="value">暂无好友加入</text>
 		</view>
+	</view>
+
+	<!-- OpenID 底部居中展示 -->
+	<view class="openid-footer">
+		<text bindtap="copyOpenId">OpenID：{{openId || '--'}} （点击可复制）</text>
+	</view>
+	<!-- 角色信息（仅销售显示） -->
+	<view class="openid-footer" wx:if="{{isSales}}">
+		<text>角色：销售（可分享推荐商品）</text>
 	</view>
 </view>
