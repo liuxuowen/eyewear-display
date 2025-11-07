@@ -12,7 +12,7 @@ load_dotenv(dotenv_path=envfile)
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
-from models import db, Product, User, PageView, Favorite, Salesperson
+from models import db, Product, User, PageView, Favorite, Salesperson, SalesShare
 from sqlalchemy import inspect, text, or_, select
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
@@ -68,6 +68,31 @@ try:
                 except Exception as e:
                     db.session.rollback()
                     logger.warning('Ensure my_sales_open_id failed (may already exist or unsupported): %s', e)
+        # 轻量自检：sales_shares 表，若不存在则创建（无需完整迁移系统）
+        if 'sales_shares' not in insp.get_table_names():
+            try:
+                SalesShare.__table__.create(bind=db.engine)
+                logger.info('Created table sales_shares')
+            except Exception as e:
+                logger.warning('Create sales_shares failed (may already exist or unsupported): %s', e)
+        else:
+            # 确保新增列存在（简单列检查再尝试 ALTER）
+            try:
+                share_cols = [c['name'] for c in insp.get_columns('sales_shares')]
+                def ensure_column(col_name, ddl):
+                    if col_name not in share_cols:
+                        try:
+                            db.session.execute(text(f'ALTER TABLE sales_shares ADD COLUMN {ddl}'))
+                            db.session.commit()
+                            logger.info('Added column sales_shares.%s', col_name)
+                        except Exception as ie:
+                            db.session.rollback()
+                            logger.warning('Ensure column sales_shares.%s failed: %s', col_name, ie)
+                ensure_column('is_sent', 'is_sent BOOLEAN NOT NULL DEFAULT 0')
+                ensure_column('sent_count', 'sent_count INTEGER NOT NULL DEFAULT 0')
+                ensure_column('last_sent_time', 'last_sent_time DATETIME NULL')
+            except Exception as e:
+                logger.warning('sales_shares column ensure skipped: %s', e)
 except Exception as e:
     logger.warning('Startup column check skipped: %s', e)
 
@@ -854,6 +879,175 @@ def list_user_referrals():
         return jsonify({'status': 'success', 'data': {'items': items, 'total': len(items)}})
     except Exception as e:
         return handle_error(e, 'Error listing user referrals')
+
+
+# === 销售分享推送 & 打开记录 ===
+@app.route('/api/shares/push', methods=['POST'])
+def create_share_push():
+    """销售发起一次分享推送。
+    Body JSON: { salesperson_open_id: str, product_list: [str, ...] }
+    返回创建的分享记录。
+    规则：
+    - salesperson_open_id 必填，必须在销售表中存在；
+    - product_list 必填，至少一个型号，去重后存储；
+    - 存储为 SalesShare 记录，初始 open_count=0，is_opened=False。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        salesperson_open_id = (data.get('salesperson_open_id') or '').strip()
+        products = data.get('product_list') or []
+        if not salesperson_open_id or not isinstance(products, list):
+            return jsonify({'status': 'error', 'message': 'salesperson_open_id and product_list(list) are required'}), 400
+        # 校验是否为销售
+        sp = Salesperson.query.filter_by(open_id=salesperson_open_id).first()
+        if not sp:
+            return jsonify({'status': 'error', 'message': 'salesperson not found'}), 400
+        # 产品列表去重 & 过滤空值；限制数量 50
+        seen = set()
+        clean = []
+        for p in products:
+            if not p or not isinstance(p, str):
+                continue
+            mm = p.strip()
+            if not mm or mm in seen:
+                continue
+            seen.add(mm)
+            clean.append(mm)
+            if len(clean) >= 50:
+                break
+        if not clean:
+            return jsonify({'status': 'error', 'message': 'product_list cannot be empty'}), 400
+        import json
+        rec = SalesShare(
+            salesperson_open_id=salesperson_open_id,
+            product_list=json.dumps(clean, ensure_ascii=False),
+        )
+        db.session.add(rec)
+        db.session.commit()
+        return jsonify({'status': 'success', 'data': rec.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error creating share push')
+
+
+@app.route('/api/shares/open', methods=['POST'])
+def track_share_open():
+    """记录客户打开某次分享。
+    Body JSON: { share_id: int, customer_open_id: str }
+    行为：
+    - share_id 找不到返回 404
+    - 若 customer_open_id 为空或非法返回 400
+    - 去重：同一客户多次打开仅计一次；
+    - 更新 open_count / is_opened / first_open_time / last_open_time / customer_open_ids。
+    返回更新后的分享记录。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        share_id = data.get('share_id')
+        customer_open_id = (data.get('customer_open_id') or '').strip()
+        if not isinstance(share_id, int):
+            try:
+                share_id = int(share_id)
+            except Exception:
+                share_id = None
+        if not share_id or not customer_open_id:
+            return jsonify({'status': 'error', 'message': 'share_id and customer_open_id are required'}), 400
+        rec = SalesShare.query.get(share_id)
+        if not rec:
+            return jsonify({'status': 'error', 'message': 'share not found'}), 404
+        import json, datetime
+        try:
+            existing = json.loads(rec.customer_open_ids) if rec.customer_open_ids else []
+            if not isinstance(existing, list):
+                existing = []
+        except Exception:
+            existing = []
+        changed = False
+        if customer_open_id not in existing:
+            existing.append(customer_open_id)
+            rec.customer_open_ids = json.dumps(existing, ensure_ascii=False)
+            rec.open_count = len(existing)
+            now = datetime.datetime.utcnow()
+            if not rec.first_open_time:
+                rec.first_open_time = now
+            rec.last_open_time = now
+            rec.is_opened = rec.open_count > 0
+            changed = True
+        if changed:
+            db.session.commit()
+        return jsonify({'status': 'success', 'data': rec.to_dict(), 'updated': changed})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error tracking share open')
+
+
+@app.route('/api/shares', methods=['GET'])
+def list_shares():
+    """列出分享推送记录，支持按销售或客户过滤。
+    Query 参数：
+      - salesperson_open_id: 仅列出该销售发起的分享
+      - customer_open_id: 仅列出被该客户打开过的分享
+      - page, per_page: 分页
+    """
+    try:
+        salesperson_open_id = (request.args.get('salesperson_open_id') or '').strip()
+        customer_open_id = (request.args.get('customer_open_id') or '').strip()
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        q = SalesShare.query
+        if salesperson_open_id:
+            q = q.filter(SalesShare.salesperson_open_id == salesperson_open_id)
+        if customer_open_id:
+            # customer_open_ids 中包含该客户；使用 LIKE 简单匹配（JSON 数组字符串），再在内存中过滤精确包含
+            like = f"%{customer_open_id}%"
+            q = q.filter(SalesShare.customer_open_ids.like(like))
+        items = paginate_query(q.order_by(SalesShare.id.desc()), page, per_page)
+        data_items = [r.to_dict() for r in items.items]
+        # 若使用 customer_open_id，需要精确过滤（避免 LIKE 误命中子串）
+        if customer_open_id:
+            data_items = [d for d in data_items if customer_open_id in (d.get('customer_open_ids') or [])]
+        return jsonify({'status': 'success', 'data': {
+            'items': data_items,
+            'total': items.total,
+            'pages': items.pages,
+            'current_page': items.page
+        }})
+    except Exception as e:
+        return handle_error(e, 'Error listing shares')
+
+
+@app.route('/api/shares/mark_sent', methods=['POST'])
+def mark_share_sent():
+    """标记分享记录已触发发送（分享面板展示）。
+    Body: { share_id: int }
+    行为：
+      - 若 share_id 不存在返回 404
+      - 更新 is_sent=true, sent_count+=1, last_sent_time=NOW()
+    返回更新后的记录。
+    注意：由于微信分享回调限制，这是近似统计发送尝试的辅助字段。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        share_id = data.get('share_id')
+        if not isinstance(share_id, int):
+            try:
+                share_id = int(share_id)
+            except Exception:
+                share_id = None
+        if not share_id:
+            return jsonify({'status': 'error', 'message': 'share_id is required'}), 400
+        rec = SalesShare.query.get(share_id)
+        if not rec:
+            return jsonify({'status': 'error', 'message': 'share not found'}), 404
+        import datetime
+        rec.is_sent = True
+        rec.sent_count = (rec.sent_count or 0) + 1
+        rec.last_sent_time = datetime.datetime.utcnow()
+        db.session.commit()
+        return jsonify({'status': 'success', 'data': rec.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error marking share sent')
 
 
 @app.route('/api/favorites/batch', methods=['POST'])

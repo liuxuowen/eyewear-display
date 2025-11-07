@@ -15,9 +15,10 @@
 
 <view class="container">
   <!-- 销售分享工具栏 -->
-  <view class="sales-toolbar" wx:if="{{isSales}}">
-    <button size="mini" type="{{selecting ? 'default' : 'primary'}}" class="{{selecting ? 'btn-cancel' : ''}}" bindtap="toggleSelecting">{{selecting ? '取消' : '选择分享'}}</button>
-    <button size="mini" type="primary" open-type="share" wx:if="{{selecting}}" disabled="{{selectedCount<=0}}">打包转发(已选 {{selectedCount}}/10)</button>
+  <view class="sales-toolbar" wx:if="{{isSales}}" style="position: sticky; top: {{navHeight}}px; z-index: 1001; background: #fff; border-bottom: 1rpx solid #eee;">
+    <button size="mini" type="{{selecting ? 'default' : 'primary'}}" class="toolbar-btn {{selecting ? 'btn-cancel' : ''}}" bindtap="toggleSelecting">{{selecting ? '取消' : '选择分享'}}</button>
+    <button size="mini" type="default" class="toolbar-btn" wx:if="{{selecting}}" disabled="{{selectedCount<=0}}" bindtap="prepareSharePackage">{{isSharePrepared ? '已生成分享包' : '生成分享包'}}</button>
+    <button size="mini" type="primary" class="toolbar-btn" open-type="share" wx:if="{{selecting}}" disabled="{{selectedCount<=0 || !isSharePrepared}}">打包转发(已选 {{selectedCount}}/10)</button>
   </view>
   <view class="product-list" wx:if="{{isSales || !hasMySales}}">
     <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">

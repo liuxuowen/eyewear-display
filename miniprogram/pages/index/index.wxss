@@ -55,6 +55,16 @@
   gap: 12rpx;
   align-items: center;
   margin-bottom: 12rpx;
+  padding: 8rpx 16rpx;
+}
+
+/* 工具栏按钮统一尺寸与间距 */
+.toolbar-btn {
+  min-width: 180rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 20rpx !important;
+  font-size: 28rpx;
 }
 
 /* 暗色取消按钮 */

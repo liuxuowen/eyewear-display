@@ -22,6 +22,8 @@ Page({
       // 每次显示首页时强制刷新收藏状态（解决在收藏页取消后返回仍显示“已收藏”的问题）
       this._loadFavoriteIds()
       this._loadUserRole()
+      // 先上报分享打开，再处理收藏与跳转
+      this._applyPendingShareOpen()
       this._applyPendingSkus()
       this._applyPendingSales()
       this._applyPendingReferrer()
@@ -32,6 +34,8 @@ Page({
           this._updateKfSessionFrom()
           this._loadFavoriteIds()
           this._loadUserRole()
+          // 先上报分享打开，再处理收藏与跳转
+          this._applyPendingShareOpen()
           this._applyPendingSkus()
           this._applyPendingSales()
           this._applyPendingReferrer()
@@ -59,12 +63,18 @@ Page({
     selecting: false,
     selectedMap: {},
     selectedCount: 0,
+    // 分享包准备状态（用于提前获取 share_id 并将 shid 带入路径）
+    isSharePrepared: false,
+    preparedShareId: 0,
+    preparedSkusKey: '',
     // 分享落地待加入收藏的SKU
     pendingSkus: null,
     // 分享落地待关联的销售open_id
     pendingSalesOpenId: '',
     // 分享落地待绑定的推荐人 open_id
     pendingReferrerOpenId: '',
+    // 分享ID（用于分享打开上报）
+    pendingShareId: 0,
     // 是否在处理完分享落地后跳转收藏页
     autoGoWatchlist: false,
     // 客服会话来源参数
@@ -107,7 +117,7 @@ Page({
     this._loadFavoriteIds()
     this.loadProducts()
     this._updateKfSessionFrom()
-    // 处理分享落地参数（如 ?skus=a,b,c&sid=<sales_open_id>）
+    // 处理分享落地参数（如 ?skus=a,b,c&sid=<sales_open_id>&shid=<share_id>）
     if (options) {
       if (options.skus) {
         try {
@@ -122,6 +132,12 @@ Page({
         try {
           const sid = decodeURIComponent(options.sid)
           if (sid) this.setData({ pendingSalesOpenId: sid })
+        } catch (e) {}
+      }
+      if (options.shid) {
+        try {
+          const shid = Number(decodeURIComponent(options.shid))
+          if (!isNaN(shid) && shid > 0) this.setData({ pendingShareId: shid })
         } catch (e) {}
       }
       // 推荐关系：?ref=<referrer_open_id> 或 ?rid=<referrer_open_id>
@@ -196,6 +212,7 @@ Page({
 
   // 触底自动加载下一页
   onReachBottom() {
+    // 保持原有分页加载逻辑
     this.loadMore()
   },
 
@@ -490,6 +507,25 @@ Page({
       }
     })
   },
+  _applyPendingShareOpen() {
+    // 上报分享打开：需要 shareId 与 当前 viewer open_id
+    const shareId = Number(this.data.pendingShareId || 0)
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!shareId || !oid) return
+    // 防重复：一次会话只上报一次
+    if (this._shareOpenReported && this._shareOpenReported[shareId]) return
+    this._shareOpenReported = this._shareOpenReported || {}
+    this._shareOpenReported[shareId] = true
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/shares/open`,
+      method: 'POST',
+      data: { share_id: shareId, customer_open_id: oid },
+      complete: () => {
+        // 清除 pendingShareId，避免后续重复上报
+        this.setData({ pendingShareId: 0 })
+      }
+    })
+  },
   _applyPendingSales() {
     const sid = (this.data.pendingSalesOpenId || '').trim()
     const oid = (getApp().globalData && getApp().globalData.openId) || ''
@@ -608,6 +644,8 @@ Page({
     const on = !this.data.selecting
     this.setData({ selecting: on })
     if (!on) this.setData({ selectedMap: {}, selectedCount: 0 })
+    // 选择状态变化，重置已准备的分享包
+    this._resetPreparedShare()
   },
   toggleSelectItem(e) {
     if (!this.data.isSales || !this.data.selecting) return
@@ -626,6 +664,49 @@ Page({
     }
     const count = Object.keys(map).length
     this.setData({ selectedMap: map, selectedCount: count })
+    // 选择变化，重置已准备的分享包
+    this._resetPreparedShare()
+  },
+  _resetPreparedShare() {
+    this.setData({ isSharePrepared: false, preparedShareId: 0, preparedSkusKey: '' })
+  },
+  _computeSkusKey(skus, sid) {
+    try {
+      const arr = (skus || []).slice().sort()
+      return `${sid||''}::${arr.join(',')}`
+    } catch (e) {
+      return `${sid||''}::`
+    }
+  },
+  prepareSharePackage() {
+    const isSales = !!this.data.isSales
+    const selecting = !!this.data.selecting
+    const selectedCount = Number(this.data.selectedCount || 0)
+    const selectedMap = this.data.selectedMap || {}
+    if (!isSales || !selecting || selectedCount <= 0) {
+      wx.showToast({ title: '请先选择要分享的商品', icon: 'none' })
+      return
+    }
+    const skus = Object.keys(selectedMap)
+    const sid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!sid) { wx.showToast({ title: '请先登录', icon: 'none' }); return }
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/shares/push`,
+      method: 'POST',
+      data: { salesperson_open_id: sid, product_list: skus },
+      success: (res) => {
+        if (res && res.data && res.data.status === 'success' && res.data.data && res.data.data.id) {
+          const shareId = res.data.data.id
+          const key = this._computeSkusKey(skus, sid)
+          this.setData({ isSharePrepared: true, preparedShareId: shareId, preparedSkusKey: key })
+          // 注意：仅生成分享包，不标记发送；只有真正触发分享时才标记 is_sent
+          wx.showToast({ title: '分享包已生成', icon: 'success' })
+        } else {
+          wx.showToast({ title: '生成失败，请稍后再试', icon: 'none' })
+        }
+      },
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+    })
   },
   onShareAppMessage() {
     // 生成分享路径（若为销售选择打包）
@@ -633,27 +714,54 @@ Page({
     const selecting = !!this.data.selecting
     const selectedCount = Number(this.data.selectedCount || 0)
     const selectedMap = this.data.selectedMap || {}
-
+    // 默认路径（无分享包）
     let path = '/pages/index/index'
+    let title = selectedCount > 0 ? `推荐${selectedCount}款镜架` : '精品镜架推荐'
+    // 若为销售选择状态下分享，需先向后端登记分享，获取 share_id
     if (isSales && selecting && selectedCount > 0) {
       const skus = Object.keys(selectedMap)
-      const enc = encodeURIComponent(skus.join(','))
       const sid = (getApp().globalData && getApp().globalData.openId) || ''
-      const sidParam = sid ? `&sid=${encodeURIComponent(sid)}` : ''
-      path = `/pages/index/index?skus=${enc}${sidParam}`
+      if (sid) {
+        const encSkus = encodeURIComponent(skus.join(','))
+        const sidEnc = encodeURIComponent(sid)
+        // 若已预生成分享包并且选择未变化，则直接带上 shid
+        const currentKey = this._computeSkusKey(skus, sid)
+        if (this.data.isSharePrepared && this.data.preparedShareId > 0 && this.data.preparedSkusKey === currentKey) {
+          const shid = this.data.preparedShareId
+          path = `/pages/index/index?skus=${encSkus}&sid=${sidEnc}&shid=${shid}`
+          // 真正触发分享面板时，标记为 sent
+          wx.request({
+            url: `${app.globalData.apiBaseUrl}/shares/mark_sent`,
+            method: 'POST',
+            data: { share_id: shid }
+          })
+        } else {
+          // 未预生成时，保底使用原逻辑（不带 shid），并异步尝试登记
+          path = `/pages/index/index?skus=${encSkus}&sid=${sidEnc}`
+          wx.request({
+            url: `${app.globalData.apiBaseUrl}/shares/push`,
+            method: 'POST',
+            data: { salesperson_open_id: sid, product_list: skus },
+            success: (res) => {
+              if (res && res.data && res.data.status === 'success' && res.data.data && res.data.data.id) {
+                const shareId = res.data.data.id
+                try { wx.setStorageSync('lastShareId', shareId) } catch (e) {}
+                // 触发分享面板本身即认为是一次发送尝试（此分支也是在分享流程内调用）
+                wx.request({ url: `${app.globalData.apiBaseUrl}/shares/mark_sent`, method: 'POST', data: { share_id: shareId } })
+              }
+            }
+          })
+        }
+      }
     }
 
-    // 需求：完成打包转发后回到商品首页（退出选择模式）
-    // 在触发分享时立即退出选择模式并清空已选，避免停留在选择态
+    // 分享后退出选择模式并清空
     if (isSales && selecting) {
       try {
-        const fn = () => this.setData({ selecting: false, selectedMap: {}, selectedCount: 0 })
-        // 使用 setTimeout 避免与分享流程的同步返回竞争
-        setTimeout(fn, 0)
+        setTimeout(() => this.setData({ selecting: false, selectedMap: {}, selectedCount: 0 }), 0)
       } catch (e) {}
     }
-
-    return { title: selectedCount > 0 ? `推荐${selectedCount}款镜架` : '精品镜架推荐', path }
+    return { title, path }
   },
   _formatFiltersDisplay(filters) {
     const order = ['frame_model','lens_size','nose_bridge_width','temple_length','frame_total_length','frame_height','weight','price','brand_info','other_info','frame_material']

@@ -152,3 +152,60 @@ class Salesperson(db.Model):
             'open_id': self.open_id,
             'name': self.name,
         }
+
+
+class SalesShare(db.Model):
+    """记录销售发起的分享推送，以及被客户打开的情况。
+    设计说明：
+    - salesperson_open_id: 推送发起人（销售）open_id，引用 sales.open_id（不使用外键约束以减少迁移复杂度）。
+    - product_list: JSON 数组字符串，存储推送的镜架型号列表（frame_model）。
+    - push_time: 发起时间。
+    - customer_open_ids: JSON 数组字符串，记录已打开该分享的客户 open_id（去重）。
+    - open_count: 已打开的唯一客户数量（从 customer_open_ids 去重长度计算，但为查询效率存储冗余字段）。
+    - first_open_time / last_open_time: 首次/最近一次打开时间。
+    - is_opened: 是否至少被打开过一次（open_count > 0 冗余标记）。
+    """
+    __tablename__ = 'sales_shares'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    salesperson_open_id = db.Column(db.String(64), index=True, nullable=False, comment='销售 open_id')
+    product_list = db.Column(db.Text, nullable=False, comment='JSON 数组：推送的产品型号列表')
+    push_time = db.Column(db.DateTime, server_default=func.now(), nullable=False, comment='推送时间')
+    customer_open_ids = db.Column(db.Text, nullable=True, comment='JSON 数组：已打开的客户 open_id 列表')
+    open_count = db.Column(db.Integer, nullable=False, default=0, comment='唯一打开客户数量')
+    first_open_time = db.Column(db.DateTime, nullable=True, comment='首次打开时间')
+    last_open_time = db.Column(db.DateTime, nullable=True, comment='最近一次打开时间')
+    is_opened = db.Column(db.Boolean, nullable=False, default=False, comment='是否至少被打开过一次')
+    # 发送状态：用于统计真正进入分享发送流程（受限于微信 API，无法100%确认对方收到，但可记录发送尝试）
+    is_sent = db.Column(db.Boolean, nullable=False, default=False, comment='是否已触发发送（分享面板）')
+    sent_count = db.Column(db.Integer, nullable=False, default=0, comment='触发发送次数')
+    last_sent_time = db.Column(db.DateTime, nullable=True, comment='最近一次触发发送时间')
+
+    def to_dict(self):
+        import json
+        try:
+            products = json.loads(self.product_list) if self.product_list else []
+            if not isinstance(products, list):
+                products = []
+        except Exception:
+            products = []
+        try:
+            customer_ids = json.loads(self.customer_open_ids) if self.customer_open_ids else []
+            if not isinstance(customer_ids, list):
+                customer_ids = []
+        except Exception:
+            customer_ids = []
+        return {
+            'id': self.id,
+            'salesperson_open_id': self.salesperson_open_id,
+            'product_list': products,
+            'push_time': self.push_time.isoformat() if self.push_time else None,
+            'customer_open_ids': customer_ids,
+            'open_count': self.open_count,
+            'first_open_time': self.first_open_time.isoformat() if self.first_open_time else None,
+            'last_open_time': self.last_open_time.isoformat() if self.last_open_time else None,
+            'is_opened': self.is_opened,
+            'is_sent': self.is_sent,
+            'sent_count': self.sent_count,
+            'last_sent_time': self.last_sent_time.isoformat() if self.last_sent_time else None,
+        }
