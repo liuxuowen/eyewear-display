@@ -15,6 +15,7 @@ from config import Config
 from models import db, Product, User, PageView, Favorite, Salesperson
 from sqlalchemy import inspect, text, or_, select
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -94,6 +95,13 @@ def handle_error(e, message="An error occurred"):
     if app.config.get('ENV') == 'production':
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
     return jsonify({'status': 'error', 'message': str(e)}), 500
+
+def _allowed_image(mimetype: str) -> bool:
+    return mimetype in ('image/jpeg', 'image/png', 'image/jpg')
+
+def _avatar_public_url(filename: str) -> str:
+    base = request.host_url.rstrip('/')
+    return f"{base}/static/avatars/{filename}"
 
 def _build_public_image_url(path: str) -> str:
     """将数据库中的图片相对路径/文件名转换为可被前端直接访问的完整 URL。
@@ -345,6 +353,61 @@ def get_product(frame_model):
         })
     except Exception as e:
         return handle_error(e, f"Error getting product {frame_model}")
+
+
+# === 文件上传：头像 ===
+@app.route('/api/upload/avatar', methods=['POST'])
+def upload_avatar():
+    """上传用户头像文件，返回可长期访问的公网 URL。
+    Form: open_id, file (multipart)
+    Return: { status, url }
+    """
+    try:
+        open_id = (request.form.get('open_id') or '').strip()
+        f = request.files.get('file')
+        if not open_id:
+            logger.warning('avatar upload missing open_id')
+            return jsonify({'status': 'error', 'message': 'open_id missing'}), 400
+        if not f:
+            logger.warning('avatar upload missing file (open_id=%r)', open_id)
+            return jsonify({'status': 'error', 'message': 'file missing'}), 400
+
+        # 基本校验
+        if not _allowed_image(f.mimetype):
+            logger.warning('avatar upload unsupported mimetype %r (open_id=%r)', f.mimetype, open_id)
+            return jsonify({'status': 'error', 'message': 'unsupported file type'}), 400
+        # 限制大小 2MB
+        try:
+            f.stream.seek(0, 2)
+            size = f.stream.tell()
+            f.stream.seek(0)
+        except Exception:
+            size = None
+        if size is not None and size > 2 * 1024 * 1024:
+            logger.warning('avatar upload too large size=%s bytes (open_id=%r, mimetype=%r)', size, open_id, f.mimetype)
+            return jsonify({'status': 'error', 'message': 'file too large'}), 400
+
+        logger.info('avatar upload received open_id=%r mimetype=%r size=%s', open_id, f.mimetype, size)
+
+        # 生成安全文件名
+        ext = '.jpg'
+        if f.mimetype.endswith('png'):
+            ext = '.png'
+        safe = secure_filename(open_id) or 'user'
+        # 使用 open_id 前缀 + 时间戳，避免频繁覆盖；如需覆盖可改为固定名
+        import time
+        filename = f"{safe}_{int(time.time())}{ext}"
+        save_dir = Path(app.root_path) / 'static' / 'avatars'
+        save_dir.mkdir(parents=True, exist_ok=True)
+        save_path = save_dir / filename
+        f.save(save_path)
+
+        url = _avatar_public_url(filename)
+        logger.info('avatar upload success open_id=%r filename=%r url=%r', open_id, filename, url)
+        return jsonify({'status': 'success', 'url': url})
+    except Exception as e:
+        logger.error('avatar upload error open_id=%r err=%s', (request.form.get('open_id') or '').strip(), e)
+        return handle_error(e, 'Error uploading avatar')
 
 
 # === 收藏（Watchlist / Favorites） ===

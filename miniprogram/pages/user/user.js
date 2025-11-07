@@ -73,12 +73,34 @@ Page({
     try {
       const url = e.detail && e.detail.avatarUrl
       if (!url) { wx.showToast({ title: '未获取到头像', icon: 'none' }); return }
-      this.setData({ avatarUrl: url })
-      try { wx.setStorageSync('avatarUrl', url) } catch (err) {}
-      this._probeAvatar(url)
-      // 保存，仅头像更新
-      this._upsertProfile(this.data.nickname, url)
-      wx.showToast({ title: '头像已更新', icon: 'none' })
+      const oid = app.globalData.openId || this.data.openId
+      if (!oid) { wx.showToast({ title: '未获取到用户ID', icon: 'none' }); return }
+      // 上传临时头像文件，换取长期可访问 URL
+      wx.uploadFile({
+        url: `${app.globalData.apiBaseUrl}/upload/avatar`,
+        filePath: url,
+        name: 'file',
+        formData: { open_id: oid },
+        success: (res) => {
+          try {
+            const data = JSON.parse(res.data || '{}')
+            if (data && data.status === 'success' && data.url) {
+              const publicUrl = data.url
+              this.setData({ avatarUrl: publicUrl })
+              try { wx.setStorageSync('avatarUrl', publicUrl) } catch (err) {}
+              this._probeAvatar(publicUrl)
+              // 保存，仅头像更新（静默）
+              this._upsertProfile(this.data.nickname, publicUrl, { silent: true })
+              wx.showToast({ title: '头像已更新', icon: 'none' })
+            } else {
+              wx.showToast({ title: '上传失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.showToast({ title: '解析失败', icon: 'none' })
+          }
+        },
+        fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+      })
     } catch (er) {
       wx.showToast({ title: '头像获取异常', icon: 'none' })
     }
