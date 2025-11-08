@@ -19,10 +19,10 @@ Page({
     if (app.globalData.openId) {
       track(app.globalData.openId)
       this._updateKfSessionFrom()
-      // 每次显示首页时强制刷新收藏状态（解决在收藏页取消后返回仍显示“已收藏”的问题）
+      // 每次显示首页时强制刷新推荐状态（解决在推荐页取消后返回仍显示“已推荐”的问题）
       this._loadFavoriteIds()
       this._loadUserRole()
-      // 先上报分享打开，再处理收藏与跳转
+      // 先上报分享打开，再处理推荐与跳转
       this._applyPendingShareOpen()
       this._applyPendingSkus()
       this._applyPendingSales()
@@ -34,7 +34,7 @@ Page({
           this._updateKfSessionFrom()
           this._loadFavoriteIds()
           this._loadUserRole()
-          // 先上报分享打开，再处理收藏与跳转
+          // 先上报分享打开，再处理推荐与跳转
           this._applyPendingShareOpen()
           this._applyPendingSkus()
           this._applyPendingSales()
@@ -55,7 +55,7 @@ Page({
     filters: null,
     // 顶部搜索框显示文本（单字段或组合展示）
     searchDisplay: '',
-    // 当前用户已收藏的型号集合（用于按钮状态）
+    // 当前用户已推荐的型号集合（用于按钮状态）
     favoriteIds: {},
     // 角色与分享选择
     isSales: false,
@@ -67,7 +67,7 @@ Page({
     isSharePrepared: false,
     preparedShareId: 0,
     preparedSkusKey: '',
-    // 分享落地待加入收藏的SKU
+    // 分享落地待加入推荐的SKU
     pendingSkus: null,
     // 分享落地待关联的销售open_id
     pendingSalesOpenId: '',
@@ -75,7 +75,7 @@ Page({
     pendingReferrerOpenId: '',
     // 分享ID（用于分享打开上报）
     pendingShareId: 0,
-    // 是否在处理完分享落地后跳转收藏页
+    // 是否在处理完分享落地后跳转推荐页
     autoGoWatchlist: false,
     // 客服会话来源参数
     kfSessionFrom: '',
@@ -155,24 +155,38 @@ Page({
     if (isLoading) return
     if (!hasMore) return
     this.setData({ isLoading: true })
+    // 构造查询参数对象
+    const queryParams = (() => {
+      const d = { page, per_page: 10 }
+      const q = (this.data.searchQuery || '').trim()
+      const filters = this.data.filters
+      if (filters && typeof filters === 'object') {
+        Object.keys(filters).forEach(k => {
+          const val = (filters[k] || '').toString().trim()
+          if (val !== '') d[k] = val
+        })
+      } else if (q) {
+        d.search_field = this.data.searchField
+        d.search_value = q
+      }
+      return d
+    })()
+    // 请求去重：短时间内完全相同的查询参数不再重复发送
+    try {
+      const sig = JSON.stringify(queryParams)
+      const now = Date.now()
+      if (this._lastProductsQuerySig === sig && (now - (this._lastProductsQueryTime || 0) < 600)) {
+        // 视为重复触发（例如 onLoad + 返回后事件回调），直接跳过并还原 isLoading 状态
+        this.setData({ isLoading: false })
+        app._log && app._log('skip duplicate /products request', sig)
+        return
+      }
+      this._lastProductsQuerySig = sig
+      this._lastProductsQueryTime = now
+    } catch (e) {}
     wx.request({
       url: `${app.globalData.apiBaseUrl}/products`,
-      data: (() => {
-        const d = { page, per_page: 10 }
-        const q = (this.data.searchQuery || '').trim()
-        const filters = this.data.filters
-        if (filters && typeof filters === 'object') {
-          // 传递全部非空过滤项
-          Object.keys(filters).forEach(k => {
-            const val = (filters[k] || '').toString().trim()
-            if (val !== '') d[k] = val
-          })
-        } else if (q) {
-          d.search_field = this.data.searchField
-          d.search_value = q
-        }
-        return d
-      })(),
+      data: queryParams,
       success: (res) => {
         if (res.data.status === 'success') {
           const { items, total, pages } = res.data.data
@@ -461,7 +475,7 @@ Page({
           if (app && app._setRoleFromServer) {
             app._setRoleFromServer(res.data.data)
           }
-          // 若为普通用户且已分配销售，则跳转至“收藏/推荐”页，隐藏首页商品列表
+          // 若为普通用户且已分配销售，则跳转至“推荐/推荐”页，隐藏首页商品列表
           if (!isSales && hasMySales) {
             this._goToRecommendations()
           }
@@ -483,7 +497,7 @@ Page({
     const oid = (getApp().globalData && getApp().globalData.openId) || ''
     if (!list || !list.length || !oid) return
     this.setData({ pendingSkus: null })
-    // 销售点击打包卡片：需要“重置收藏”后再加入；普通用户保持原逻辑
+    // 销售点击打包卡片：需要“重置推荐”后再加入；普通用户保持原逻辑
     const isSales = !!(((getApp().globalData && getApp().globalData.isSales) || false) || this.data.isSales)
     wx.request({
       url: `${app.globalData.apiBaseUrl}/favorites/batch`,
@@ -495,7 +509,7 @@ Page({
           const didReset = !!(res.data.data && res.data.data.reset)
           if (didReset || added > 0) {
             this._loadFavoriteIds()
-            const msg = didReset ? `已重置收藏并加入${added}个` : `已加入收藏${added}个`
+            const msg = didReset ? `已重置推荐并加入${added}个` : `已加入推荐${added}个`
             wx.showToast({ title: msg, icon: 'success' })
           }
           // 处理跳转逻辑（避免重复）
@@ -592,7 +606,7 @@ Page({
     }
     const isFav = !!(this.data.favoriteIds && this.data.favoriteIds[model])
     if (isFav) {
-      // 已收藏 -> 取消收藏
+      // 已推荐 -> 取消推荐
       wx.request({
         url: `${app.globalData.apiBaseUrl}/favorites`,
         method: 'DELETE',
@@ -602,7 +616,7 @@ Page({
             const m = Object.assign({}, this.data.favoriteIds)
             delete m[model]
             this.setData({ favoriteIds: m })
-            wx.showToast({ title: '已取消收藏', icon: 'success' })
+            wx.showToast({ title: '已取消推荐', icon: 'success' })
           } else {
             wx.showToast({ title: (res.data && res.data.message) || '取消失败', icon: 'none' })
           }
@@ -610,7 +624,7 @@ Page({
         fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
       })
     } else {
-      // 未收藏 -> 添加收藏（幂等）
+      // 未推荐 -> 添加推荐（幂等）
       wx.request({
         url: `${app.globalData.apiBaseUrl}/favorites`,
         method: 'POST',
@@ -620,9 +634,9 @@ Page({
             const m = Object.assign({}, this.data.favoriteIds)
             m[model] = true
             this.setData({ favoriteIds: m })
-            wx.showToast({ title: '已收藏', icon: 'success' })
+            wx.showToast({ title: '已推荐', icon: 'success' })
           } else {
-            wx.showToast({ title: (res.data && res.data.message) || '收藏失败', icon: 'none' })
+            wx.showToast({ title: (res.data && res.data.message) || '推荐失败', icon: 'none' })
           }
         },
         fail: () => wx.showToast({ title: '网络错误', icon: 'none' })

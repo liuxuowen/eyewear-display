@@ -1,7 +1,7 @@
 <!--pages/watchlist/index.wxml-->
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
 <view class="container">
-	<view wx:if="{{empty}}" class="empty">暂无收藏</view>
+	<view wx:if="{{empty}}" class="empty">暂无推荐商品，请咨询客服</view>
 	<view class="product-list" wx:else>
 			<view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
 				<image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
@@ -9,7 +9,7 @@
 					<view class="product-title">
 						<text>型号：{{f.display(item.frame_model)}}</text>
 						<view class="fav-wrap">
-							<button class="fav-btn fav-on" size="mini" type="default" catchtap="removeFavorite" data-model="{{item.frame_model}}">取消收藏</button>
+							<button class="fav-btn fav-on" size="mini" type="default" catchtap="removeFavorite" data-model="{{item.frame_model}}">移出推荐</button>
 						</view>
 					</view>
 				<view class="product-specs">
