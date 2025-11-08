@@ -1,7 +1,15 @@
 <!--pages/watchlist/index.wxml-->
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
 <view class="container">
-	<view wx:if="{{empty}}" class="empty">暂无推荐商品，请咨询客服</view>
+		<view wx:if="{{empty}}" class="empty">
+			<block wx:if="{{hasMySales}}">
+				尚无推荐，请联系销售 <text class="sales-name">{{mySalesName || '您的销售'}}</text>
+			</block>
+			<block wx:else>
+				尚无推荐，请联系客服
+				<button class="kf-btn" size="mini" open-type="contact" session-from="sal:自然|ref:自然" hover-class="none">联系客服</button>
+			</block>
+		</view>
 	<view class="product-list" wx:else>
 			<view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
 				<image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>

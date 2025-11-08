@@ -6,3 +6,12 @@
 	color: #999;
 	padding: 40rpx 0;
 }
+.empty .sales-name {
+	color: #1677ff;
+	font-weight: 600;
+	padding: 0 6rpx;
+}
+.kf-btn {
+	margin-left: 12rpx;
+	vertical-align: middle;
+}

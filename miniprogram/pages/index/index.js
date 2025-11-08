@@ -50,6 +50,7 @@ Page({
     hasMore: true,
     isLoading: false,
     searchQuery: '',
+    searchPlaceholder: '参数过滤（支持所有数字及文本类字段）',
     searchField: (config && config.defaultSearchField) || 'frame_model',
     // 多字段过滤条件（可为空对象/空值表示未启用）
     filters: null,
@@ -112,6 +113,12 @@ Page({
       const capsuleRightWidth = menu ? (sys.windowWidth - menu.left + 8) : 80
       const menuHeight = menu && menu.height ? menu.height : 32
       this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight })
+    } catch (e) {}
+    // 若全局配置存在自定义 searchPlaceholder 则覆盖
+    try {
+      if (config && config.searchPlaceholder) {
+        this.setData({ searchPlaceholder: config.searchPlaceholder })
+      }
     } catch (e) {}
     this._updateSearchDisplay()
     this._loadFavoriteIds()
@@ -235,6 +242,16 @@ Page({
     wx.navigateTo({
       url: `/pages/product/detail?model=${model}`
     })
+  },
+
+  // 根据当前模式决定：选择模式下整卡片点击即切换选择；否则进入详情
+  onProductTap(e) {
+    if (this.data.selecting && this.data.isSales) {
+      // 复用选择逻辑
+      this.toggleSelectItem(e)
+    } else {
+      this.goToDetail(e)
+    }
   },
 
   onPullDownRefresh() {
