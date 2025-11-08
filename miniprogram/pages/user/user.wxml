@@ -47,15 +47,16 @@
 			<text class="label">我的推荐的好友：</text>
 			<text class="value">共 {{referrals.length}} 人</text>
 		</view>
-		<view wx:if="{{referrals && referrals.length}}">
+		
+		<view class="card referrals-list" wx:if="{{referrals && referrals.length}}">
 			<view class="row" wx:for="{{referrals}}" wx:key="open_id">
 				<view class="col">
 					<text class="label">昵称：</text>
-					<text class="value">{{item.nickname || '--'}}</text>
+					<text class="value nickname">{{item.nickname || '--'}}</text>
 				</view>
 				<view class="col">
-					<text class="label">OpenID：</text>
-					<text class="value">{{item.open_id}}</text>
+					<text class="label"></text>
+					<text class="value openid">{{item.open_id}}</text>
 				</view>
 			</view>
 		</view>
@@ -66,7 +67,7 @@
 
 	<!-- OpenID 底部居中展示 -->
 	<view class="openid-footer">
-		<text bindtap="copyOpenId">OpenID：{{openId || '--'}} （点击可复制）</text>
+		<text bindtap="copyOpenId">我的ID：{{openId || '--'}} （点击可复制）</text>
 	</view>
 	<!-- 角色信息（仅销售显示） -->
 	<view class="openid-footer" wx:if="{{isSales}}">

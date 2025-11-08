@@ -388,36 +388,73 @@ def upload_avatar():
     Return: { status, url }
     """
     try:
+        logger.info('avatar upload debug form_keys=%s files_keys=%s', list(request.form.keys()), list(request.files.keys()))
+
         open_id = (request.form.get('open_id') or '').strip()
         f = request.files.get('file')
+        remote_url = (request.form.get('remote_url') or request.form.get('avatar_url') or '').strip()
+        logger.info('avatar upload debug form_keys=%s files_keys=%s open_id=%r remote_url=%r', list(request.form.keys()), list(request.files.keys()), open_id, remote_url)
         if not open_id:
             logger.warning('avatar upload missing open_id')
             return jsonify({'status': 'error', 'message': 'open_id missing'}), 400
-        if not f:
-            logger.warning('avatar upload missing file (open_id=%r)', open_id)
-            return jsonify({'status': 'error', 'message': 'file missing'}), 400
+        if not f and not remote_url:
+            logger.warning('avatar upload missing file and remote_url (open_id=%r)', open_id)
+            return jsonify({'status': 'error', 'message': 'file or remote_url required'}), 400
 
-        # 基本校验
-        if not _allowed_image(f.mimetype):
-            logger.warning('avatar upload unsupported mimetype %r (open_id=%r)', f.mimetype, open_id)
-            return jsonify({'status': 'error', 'message': 'unsupported file type'}), 400
-        # 限制大小 2MB
-        try:
-            f.stream.seek(0, 2)
-            size = f.stream.tell()
-            f.stream.seek(0)
-        except Exception:
-            size = None
-        if size is not None and size > 2 * 1024 * 1024:
-            logger.warning('avatar upload too large size=%s bytes (open_id=%r, mimetype=%r)', size, open_id, f.mimetype)
-            return jsonify({'status': 'error', 'message': 'file too large'}), 400
-
-        logger.info('avatar upload received open_id=%r mimetype=%r size=%s', open_id, f.mimetype, size)
+        # 若本地文件存在，走本地上传；否则尝试远程下载
+        content_bytes = None
+        content_type = None
+        if f is not None:
+            # 基本校验
+            if not _allowed_image(f.mimetype):
+                logger.warning('avatar upload unsupported mimetype %r (open_id=%r)', f.mimetype, open_id)
+                return jsonify({'status': 'error', 'message': 'unsupported file type'}), 400
+            # 限制大小 2MB
+            try:
+                f.stream.seek(0, 2)
+                size = f.stream.tell()
+                f.stream.seek(0)
+            except Exception:
+                size = None
+            if size is not None and size > 2 * 1024 * 1024:
+                logger.warning('avatar upload too large size=%s bytes (open_id=%r, mimetype=%r)', size, open_id, f.mimetype)
+                return jsonify({'status': 'error', 'message': 'file too large'}), 400
+            logger.info('avatar upload received open_id=%r mimetype=%r size=%s', open_id, f.mimetype, size)
+            content_type = f.mimetype
+        else:
+            # 远程下载：仅允许微信头像域名，避免滥用
+            import requests as _rq
+            from urllib.parse import urlparse
+            try:
+                pr = urlparse(remote_url)
+                host = (pr.hostname or '').lower()
+                allowed_hosts = {'thirdwx.qlogo.cn', 'wx.qlogo.cn'}
+                if host not in allowed_hosts:
+                    logger.warning('avatar remote_url host not allowed: %r (open_id=%r)', host, open_id)
+                    return jsonify({'status': 'error', 'message': 'remote host not allowed'}), 400
+                r = _rq.get(remote_url, timeout=5)
+                r.raise_for_status()
+                content_type = r.headers.get('Content-Type', '')
+                if not _allowed_image(content_type):
+                    logger.warning('avatar remote content-type unsupported: %r (open_id=%r)', content_type, open_id)
+                    return jsonify({'status': 'error', 'message': 'unsupported file type'}), 400
+                content_bytes = r.content
+                size = len(content_bytes)
+                if size > 2 * 1024 * 1024:
+                    logger.warning('avatar remote too large size=%s (open_id=%r)', size, open_id)
+                    return jsonify({'status': 'error', 'message': 'file too large'}), 400
+                logger.info('avatar remote fetched ok size=%s type=%r url=%r (open_id=%r)', size, content_type, remote_url, open_id)
+            except Exception as de:
+                logger.error('avatar remote fetch error url=%r open_id=%r err=%s', remote_url, open_id, de)
+                return jsonify({'status': 'error', 'message': 'remote fetch failed'}), 400
 
         # 生成安全文件名
         ext = '.jpg'
-        if f.mimetype.endswith('png'):
-            ext = '.png'
+        try:
+            if (content_type or '').endswith('png'):
+                ext = '.png'
+        except Exception:
+            pass
         safe = secure_filename(open_id) or 'user'
         # 使用 open_id 前缀 + 时间戳，避免频繁覆盖；如需覆盖可改为固定名
         import time
@@ -425,7 +462,11 @@ def upload_avatar():
         save_dir = Path(app.root_path) / 'static' / 'avatars'
         save_dir.mkdir(parents=True, exist_ok=True)
         save_path = save_dir / filename
-        f.save(save_path)
+        if content_bytes is not None:
+            with open(save_path, 'wb') as fp:
+                fp.write(content_bytes)
+        else:
+            f.save(save_path)
 
         url = _avatar_public_url(filename)
         logger.info('avatar upload success open_id=%r filename=%r url=%r', open_id, filename, url)

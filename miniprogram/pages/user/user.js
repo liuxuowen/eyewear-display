@@ -99,7 +99,10 @@ Page({
             wx.showToast({ title: '解析失败', icon: 'none' })
           }
         },
-        fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+        fail: (err) => {
+          console.error('avatar upload fail', err)
+          wx.showToast({ title: '网络错误', icon: 'none' })
+        }
       })
     } catch (er) {
       wx.showToast({ title: '头像获取异常', icon: 'none' })

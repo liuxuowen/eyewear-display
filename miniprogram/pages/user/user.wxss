@@ -56,6 +56,19 @@
 	color: #333;
 	word-break: break-all;
 }
+
+/* 推荐好友列表字体缩小 */
+
+/* 推荐好友列表：分别设置昵称与 OpenID 字体大小 */
+.referrals-list .row .label { font-size: 28rpx; }
+.referrals-list .row .value.nickname { font-size: 28rpx; }
+.referrals-list .row .value.openid { font-size: 20rpx; }
+
+/* openid 再小一点以便区分 */
+/* .referrals-list .row .value:nth-child(2) { */
+	/* 若需要更细分可用自定义 class，这里保留逻辑位置示例 */
+/* } */
+
 .actions {
 	margin-top: 16rpx;
 	display: flex;

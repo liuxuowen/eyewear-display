@@ -19,26 +19,22 @@ Page({
     if (app.globalData.openId) {
       track(app.globalData.openId)
       this._updateKfSessionFrom()
-      // 每次显示首页时强制刷新推荐状态（解决在推荐页取消后返回仍显示“已推荐”的问题）
-      this._loadFavoriteIds()
-      this._loadUserRole()
-      // 先上报分享打开，再处理推荐与跳转
       this._applyPendingShareOpen()
       this._applyPendingSkus()
       this._applyPendingSales()
       this._applyPendingReferrer()
+      // 若角色尚未就绪，则确保角色决定后再加载/跳转
+      if (!this.data.roleReady) this._ensureRoleThenDecide()
     } else if (app.loginIfNeeded) {
       app.loginIfNeeded()
         .then((oid) => {
           track(oid)
           this._updateKfSessionFrom()
-          this._loadFavoriteIds()
-          this._loadUserRole()
-          // 先上报分享打开，再处理推荐与跳转
           this._applyPendingShareOpen()
           this._applyPendingSkus()
           this._applyPendingSales()
           this._applyPendingReferrer()
+          this._ensureRoleThenDecide()
         })
         .catch(() => {})
     }
@@ -61,6 +57,8 @@ Page({
     // 角色与分享选择
     isSales: false,
   hasMySales: false,
+    roleReady: false,
+    preRouted: false,
     selecting: false,
     selectedMap: {},
     selectedCount: 0,
@@ -120,10 +118,18 @@ Page({
         this.setData({ searchPlaceholder: config.searchPlaceholder })
       }
     } catch (e) {}
-    this._updateSearchDisplay()
+  this._updateSearchDisplay()
     this._loadFavoriteIds()
-    this.loadProducts()
     this._updateKfSessionFrom()
+    // 如果当前判断为“未分配销售”，优先加载商品列表，确保用户默认落在商品页
+    try {
+      const gd = (app && app.globalData) || {}
+      if (!gd.hasMySales) {
+        this.loadProducts()
+      }
+    } catch (e) {}
+  // 前置角色判断，避免非销售且已分配销售的用户先看到商品列表造成闪动
+  this._ensureRoleThenDecide()
     // 处理分享落地参数（如 ?skus=a,b,c&sid=<sales_open_id>&shid=<share_id>）
     if (options) {
       if (options.skus) {
@@ -155,6 +161,35 @@ Page({
         } catch (e) {}
       }
     }
+  },
+
+  _ensureRoleThenDecide() {
+    const ensureLogin = () => app.loginIfNeeded ? app.loginIfNeeded() : Promise.resolve(app.globalData.openId)
+    return ensureLogin().then(() => {
+      // 如果全局已经有角色信息，直接用；否则拉取
+      const gd = app.globalData || {}
+      const hasRoleCached = typeof gd.isSales === 'boolean'
+      const getRole = hasRoleCached ? Promise.resolve(gd) : (app.fetchAndCacheRole ? app.fetchAndCacheRole() : Promise.resolve(gd))
+      return getRole.then((g) => {
+        const isSales = !!((g && g.isSales) || app.globalData.isSales)
+        const hasMySales = !!((g && g.hasMySales) || app.globalData.hasMySales)
+        this.setData({ isSales, hasMySales, roleReady: true })
+        if (!isSales && hasMySales && !this.data.preRouted) {
+          // 非销售且已分配销售：不展示商品列表，直接前往推荐页
+          this.setData({ preRouted: true })
+          this._goToRecommendations()
+          return
+        }
+        // 销售或未分配销售：再加载商品列表
+        if (this.data.products.length === 0 && !this.data.isLoading) {
+          this.loadProducts()
+        }
+      }).catch(() => {
+        // 失败时降级：仍然按默认逻辑展示商品列表
+        this.setData({ roleReady: true })
+        if (this.data.products.length === 0 && !this.data.isLoading) this.loadProducts()
+      })
+    }).catch(() => {})
   },
 
   loadProducts() {
