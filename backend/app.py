@@ -9,7 +9,7 @@ import requests
 envfile = Path(__file__).with_name('.env')
 load_dotenv(dotenv_path=envfile)
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g, has_request_context
 from flask_cors import CORS
 from config import Config
 from models import db, Product, User, PageView, Favorite, Salesperson, SalesShare
@@ -21,11 +21,70 @@ app = Flask(__name__)
 app.config.from_object(Config)
 logger = logging.getLogger(__name__)
 
-# 统一日志格式
+# 统一日志格式（追加 open_id 上下文）
 logging.basicConfig(
     level=os.getenv('LOG_LEVEL', 'INFO').upper(),
-    format='%(asctime)s %(levelname)s %(name)s %(message)s'
+    format='%(asctime)s %(levelname)s %(name)s oid=%(open_id)s %(message)s'
 )
+
+
+class OpenIdInjectFilter(logging.Filter):
+    """将当前请求中的 open_id 注入日志记录的 record.open_id 字段。
+    若无请求上下文或无法解析，则记为 '-'.
+    """
+    PARAM_CANDIDATES = (
+        'open_id', 'customer_open_id', 'salesperson_open_id',
+        'my_sales_open_id', 'referrer_open_id', 'openid', 'sid'
+    )
+
+    @classmethod
+    def _extract_from_request(cls):
+        try:
+            # 优先使用 before_request 捕获到的值
+            oid = getattr(g, '_log_open_id', None) if has_request_context() else None
+        except Exception:
+            oid = None
+        try:
+            if has_request_context():
+                if not oid:
+                    # args/form
+                    for k in cls.PARAM_CANDIDATES:
+                        v = request.values.get(k)
+                        if v:
+                            oid = v
+                            break
+                if not oid and (request.is_json or request.mimetype == 'application/json'):
+                    data = request.get_json(silent=True) or {}
+                    for k in cls.PARAM_CANDIDATES:
+                        v = data.get(k)
+                        if v:
+                            oid = v
+                            break
+        except Exception:
+            pass
+        return oid
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        oid = '-'
+        try:
+            if has_request_context():
+                x = self._extract_from_request()
+                if x:
+                    oid = str(x)
+        except Exception:
+            pass
+        # 为避免 KeyError，确保总是设置该字段
+        record.open_id = oid
+        return True
+
+
+# 将过滤器挂到所有现有 handler 上
+_oid_filter = OpenIdInjectFilter()
+_root_logger = logging.getLogger()
+for _h in _root_logger.handlers:
+    _h.addFilter(_oid_filter)
+# 也挂到当前模块 logger（以防外部 handler 未继承 root 的过滤器）
+logger.addFilter(_oid_filter)
 
 # 更严格的 CORS：仅作用于 /api/*，并按配置限制来源
 cors_origins = app.config.get('CORS_ORIGINS', '*')
@@ -95,6 +154,36 @@ try:
                 logger.warning('sales_shares column ensure skipped: %s', e)
 except Exception as e:
     logger.warning('Startup column check skipped: %s', e)
+
+
+@app.before_request
+def _capture_openid_for_logging():
+    """在请求开始时尝试抓取 open_id（或等价参数）存入 g，便于日志统一输出。"""
+    try:
+        candidates = (
+            'open_id', 'customer_open_id', 'salesperson_open_id',
+            'my_sales_open_id', 'referrer_open_id', 'openid', 'sid'
+        )
+        oid = None
+        # args/form 优先
+        for k in candidates:
+            v = request.values.get(k)
+            if v:
+                oid = v
+                break
+        if not oid and (request.is_json or request.mimetype == 'application/json'):
+            data = request.get_json(silent=True) or {}
+            for k in candidates:
+                v = data.get(k)
+                if v:
+                    oid = v
+                    break
+        g._log_open_id = oid
+    except Exception:
+        try:
+            g._log_open_id = None
+        except Exception:
+            pass
 
 @app.after_request
 def set_security_headers(resp):

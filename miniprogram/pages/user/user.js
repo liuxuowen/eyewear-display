@@ -100,7 +100,7 @@ Page({
           }
         },
         fail: (err) => {
-          console.error('avatar upload fail', err)
+          try { console.error('avatar upload fail', { oid, err }) } catch (e) {}
           wx.showToast({ title: '网络错误', icon: 'none' })
         }
       })

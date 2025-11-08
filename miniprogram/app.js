@@ -74,9 +74,15 @@ App({
 
   // 订阅-通知机制：角色变更时通知自定义 tabBar 等组件更新
   _roleListeners: [],
-  // 调试日志（受 globalData.debug 控制）
+  // 调试日志（受 globalData.debug 控制）：统一附带 openId
   _log(tag, obj) {
-    try { if (this.globalData && this.globalData.debug) console.log('[DBG]', tag, obj || '') } catch (e) {}
+    try {
+      if (this.globalData && this.globalData.debug) {
+        const oid = (this.globalData && this.globalData.openId) || ''
+        const payload = (obj && typeof obj === 'object') ? Object.assign({}, obj, { oid }) : { msg: obj, oid }
+        console.log('[DBG]', tag, payload)
+      }
+    } catch (e) {}
   },
   setDebug(on) {
     const v = !!on

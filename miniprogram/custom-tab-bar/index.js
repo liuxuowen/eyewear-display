@@ -82,7 +82,13 @@ Component({
   },
   methods: {
     _dbg(tag, data) {
-      try { if (app && app.globalData && app.globalData.debug) console.log('[TAB]', tag, data || '') } catch (e) {}
+      try {
+        if (app && app.globalData && app.globalData.debug) {
+          const oid = (app.globalData && app.globalData.openId) || ''
+          const payload = (data && typeof data === 'object') ? Object.assign({}, data, { oid }) : { msg: data, oid }
+          console.log('[TAB]', tag, payload)
+        }
+      } catch (e) {}
     },
     _init() {
       // 先用当前全局角色渲染一次，避免空白
