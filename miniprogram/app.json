@@ -24,7 +24,7 @@
       },
       {
         "pagePath": "pages/watchlist/index",
-        "text": "收藏",
+        "text": "推荐",
         "iconPath": "images/watchlist.png",
         "selectedIconPath": "images/watchlist_sel.png"
       },

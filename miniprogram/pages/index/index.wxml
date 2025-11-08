@@ -35,9 +35,7 @@
           <block wx:else>
             <text>{{f.display(item.frame_model)}}</text>
           </block>
-          <view class="fav-wrap">
-            <button class="fav-btn {{favoriteIds[item.frame_model] ? 'fav-on' : ''}}" size="mini" type="default" catchtap="toggleFavorite" data-model="{{item.frame_model}}">{{favoriteIds[item.frame_model] ? '已收藏' : '收藏'}}</button>
-          </view>
+          <!-- 用户侧不再提供“推荐/收藏”入口；推荐数据仅由销售侧生成 -->
         </view>
         <view class="product-specs">
           <view>
@@ -153,7 +151,7 @@
 
   <!-- 非销售且已分配销售：引导去推荐页 -->
   <view wx:if="{{!isSales && hasMySales}}" class="assigned-tip">
-    <text>您的专属销售已为您推荐商品，请前往“我的收藏/推荐”查看。</text>
+    <text>您的专属销售已为您推荐商品，请前往“我的推荐/推荐”查看。</text>
     <view style="margin-top: 12rpx;">
       <button size="mini" type="primary" bindtap="_goToRecommendations">去查看</button>
     </view>

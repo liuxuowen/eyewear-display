@@ -15,7 +15,7 @@ Component({
       },
       {
         pagePath: 'pages/watchlist/index',
-        text: '收藏',
+        text: '推荐',
         iconPath: '/images/watchlist.png',
         selectedIconPath: '/images/watchlist_sel.png'
       },
@@ -30,7 +30,7 @@ Component({
     reducedList: [
       {
         pagePath: 'pages/watchlist/index',
-        text: '收藏',
+        text: '推荐',
         iconPath: '/images/watchlist.png',
         selectedIconPath: '/images/watchlist_sel.png'
       },
@@ -51,7 +51,7 @@ Component({
       },
       {
         pagePath: 'pages/watchlist/index',
-        text: '收藏',
+        text: '推荐',
         iconPath: '/images/watchlist.png',
         selectedIconPath: '/images/watchlist_sel.png'
       },
@@ -102,7 +102,7 @@ Component({
       this._dbg('refreshByRole', { isSales, hasMySales, useReduced, listLen: (list || []).length })
       this.setData({ list }, () => {
         this.setSelectedByRoute()
-        // 如果当前是 index 页面且被隐藏，则跳转到“收藏”
+        // 如果当前是 index 页面且被隐藏，则跳转到“推荐”
         const cur = this._currentRoute()
         const hasIndex = list.some(i => i.pagePath === 'pages/index/index')
         if (!hasIndex && cur === 'pages/index/index') {

@@ -435,11 +435,11 @@ def upload_avatar():
         return handle_error(e, 'Error uploading avatar')
 
 
-# === 收藏（Watchlist / Favorites） ===
+# === 推荐（Watchlist / Favorites） ===
 
 @app.route('/api/favorites', methods=['GET'])
 def list_favorites():
-    """列出某用户收藏的商品（按加入时间倒序）。
+    """列出某用户推荐的商品（按加入时间倒序）。
     Query: open_id (required), page, per_page
     返回商品列表（仅展示 is_active=是 的商品）。
     """
@@ -451,7 +451,7 @@ def list_favorites():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
 
-        # 子查询获取用户收藏的 frame_model 列表
+        # 子查询获取用户推荐的 frame_model 列表
         # 使用显式 select() 构造，避免 SQLAlchemy 发出 Subquery -> select 的警告
         subq = select(Favorite.frame_model).where(Favorite.open_id == open_id)
         # 只返回仍有效的商品
@@ -473,7 +473,7 @@ def list_favorites():
 
 @app.route('/api/favorites/ids', methods=['GET'])
 def list_favorite_ids():
-    """获取用户收藏的型号列表。
+    """获取用户推荐的型号列表。
     Query: open_id (required)
     Return: { items: [frame_model, ...] }
     """
@@ -489,8 +489,8 @@ def list_favorite_ids():
 
 @app.route('/api/favorites', methods=['POST'])
 def add_favorite():
-    """添加收藏（幂等）。Body: { open_id, frame_model }
-    如用户不存在，则占位创建用户。重复收藏不会报错。
+    """添加推荐（幂等）。Body: { open_id, frame_model }
+    如用户不存在，则占位创建用户。重复推荐不会报错。
     """
     try:
         data = request.get_json(silent=True) or {}
@@ -498,6 +498,14 @@ def add_favorite():
         frame_model = (data.get('frame_model') or '').strip()
         if not open_id or not frame_model:
             return jsonify({'status': 'error', 'message': 'open_id and frame_model are required'}), 400
+
+        # 仅允许销售添加推荐
+        try:
+            is_sales = Salesperson.query.filter_by(open_id=open_id).first() is not None
+        except Exception:
+            is_sales = False
+        if not is_sales:
+            return jsonify({'status': 'error', 'message': 'only salesperson can add recommendation'}), 403
 
         # 确保用户存在
         user = User.query.get(open_id)
@@ -524,7 +532,7 @@ def add_favorite():
 
 @app.route('/api/favorites', methods=['DELETE'])
 def remove_favorite():
-    """取消收藏。Body: { open_id, frame_model }"""
+    """取消推荐。Body: { open_id, frame_model }"""
     try:
         data = request.get_json(silent=True) or {}
         open_id = (data.get('open_id') or '').strip()
@@ -1052,9 +1060,9 @@ def mark_share_sent():
 
 @app.route('/api/favorites/batch', methods=['POST'])
 def add_favorites_batch():
-    """批量添加收藏。
+    """批量添加推荐。
     Body: { open_id: str, frame_models: [str, ...], reset?: bool }
-    - 当 reset=true 且 open_id 为销售角色时：先清空该用户的收藏，再加入传入列表（替换收藏）。
+    - 当 reset=true 且 open_id 为销售角色时：先清空该用户的推荐，再加入传入列表（替换推荐）。
     - 其他情况：保持原逻辑，幂等添加（忽略已存在）。
     忽略无效或未上架的商品；返回 { added: n, reset: bool }。
     """
@@ -1065,7 +1073,7 @@ def add_favorites_batch():
         if not open_id or not isinstance(items, list):
             return jsonify({'status': 'error', 'message': 'open_id and frame_models(list) are required'}), 400
 
-        # 是否请求重置收藏（仅对销售角色生效）
+        # 是否请求重置推荐（仅对销售角色生效）
         reset_req = data.get('reset', False)
         if isinstance(reset_req, str):
             reset_req = reset_req.strip().lower() in ('1', 'true', 'yes', 'on')
@@ -1101,7 +1109,7 @@ def add_favorites_batch():
                 break
 
         if reset and not uniq:
-            # 重置但传空列表：清空收藏
+            # 重置但传空列表：清空推荐
             Favorite.query.filter_by(open_id=open_id).delete(synchronize_session=False)
             db.session.commit()
             return jsonify({'status': 'success', 'data': {'added': 0, 'reset': True}})
@@ -1114,13 +1122,13 @@ def add_favorites_batch():
 
         added = 0
         if reset:
-            # 替换收藏：清空后全量加入有效集合
+            # 替换推荐：清空后全量加入有效集合
             Favorite.query.filter_by(open_id=open_id).delete(synchronize_session=False)
             for fm in valid_set:
                 db.session.add(Favorite(open_id=open_id, frame_model=fm))
                 added += 1
         else:
-            # 现有收藏（仅用于幂等添加场景）
+            # 现有推荐（仅用于幂等添加场景）
             existing = Favorite.query.with_entities(Favorite.frame_model).filter(Favorite.open_id == open_id, Favorite.frame_model.in_(list(valid_set))).all()
             exist_set = {row.frame_model for row in existing}
             for fm in valid_set:
