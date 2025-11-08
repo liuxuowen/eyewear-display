@@ -448,15 +448,6 @@ def list_favorites():
         if not open_id:
             return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
 
-
-        # 仅允许销售角色主动添加推荐；普通用户的“推荐”入口已在前端移除。
-        # （仍允许通过分享落地批量添加 batch 接口，以满足被销售推荐后加入推荐列表的需求。）
-        try:
-            is_sales = Salesperson.query.filter_by(open_id=open_id).first() is not None
-        except Exception:
-            is_sales = False
-        if not is_sales:
-            return jsonify({'status': 'error', 'message': 'only salesperson can add recommendation'}), 403
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
 
