@@ -15,3 +15,52 @@
 	margin-left: 12rpx;
 	vertical-align: middle;
 }
+
+/* 新版推荐列表样式 */
+.watchlist-header {
+	padding: 24rpx 20rpx 12rpx 20rpx;
+}
+.wl-title {
+	font-size: 32rpx;
+	font-weight: 600;
+	color: #1a1a1a;
+}
+.wl-count {
+	margin-left: 16rpx;
+	font-size: 24rpx;
+	color: #555;
+}
+.rec-card {
+	background: #fff;
+	border: 1rpx solid #e3e3e3;
+	border-radius: 12rpx;
+	padding: 20rpx 24rpx 24rpx 24rpx;
+	margin: 0 20rpx 20rpx 20rpx;
+	box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+}
+.rec-line {
+	font-size: 26rpx;
+	color: #333;
+	line-height: 40rpx;
+}
+.rec-images {
+	margin-top: 12rpx;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12rpx;
+}
+.rec-img {
+	width: 200rpx;
+	height: 150rpx;
+	background: #fafafa;
+	border: 1rpx solid #eee;
+	border-radius: 8rpx;
+}
+.rec-actions {
+	margin-top: 16rpx;
+	text-align: right;
+}
+.fav-btn.fav-on {
+	border-color: #ff7875;
+	color: #ff4d4f;
+}

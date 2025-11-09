@@ -21,7 +21,7 @@
     <button size="mini" type="primary" class="toolbar-btn" open-type="share" wx:if="{{selecting}}" disabled="{{selectedCount<=0 || !isSharePrepared}}">打包转发(已选 {{selectedCount}}/10)</button>
   </view>
   <!-- 当未分配销售时立即展示商品列表（不等角色完全就绪）；若已分配销售则等待 roleReady 再决定是否跳转 -->
-  <view class="product-list" wx:if="{{(isSales && roleReady) || (!hasMySales)}}">
+  <view class="product-list" wx:if="{{isSales || (!hasMySales)}}">
   <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="onProductTap" data-model="{{item.frame_model}}">
       <view class="select-box {{selectedMap[item.frame_model] ? 'on' : ''}}" wx:if="{{selecting}}" catchtap="toggleSelectItem" data-model="{{item.frame_model}}"></view>
       <image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
@@ -142,11 +142,11 @@
   </view>
   
   <!-- 加载更多 -->
-  <view class="load-more" wx:if="{{((isSales && roleReady) || (!hasMySales)) && hasMore && !isLoading}}">
+  <view class="load-more" wx:if="{{(isSales || (!hasMySales)) && hasMore && !isLoading}}">
     <text bindtap="loadMore">加载更多</text>
   </view>
-  <view class="loading" wx:if="{{((isSales && roleReady) || (!hasMySales)) && isLoading}}">加载中...</view>
-  <view class="no-more" wx:if="{{((isSales && roleReady) || (!hasMySales)) && !hasMore && products.length > 0 && !isLoading}}">没有更多了</view>
+  <view class="loading" wx:if="{{(isSales || (!hasMySales)) && isLoading}}">加载中...</view>
+  <view class="no-more" wx:if="{{(isSales || (!hasMySales)) && !hasMore && products.length > 0 && !isLoading}}">没有更多了</view>
 
   <!-- 预留底部空间，避免内容被自定义 tabBar 遮挡 -->
   <view class="tabbar-spacer"></view>

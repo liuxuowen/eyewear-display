@@ -1,39 +1,44 @@
 <!--pages/watchlist/index.wxml-->
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
 <view class="container">
-		<view wx:if="{{empty}}" class="empty">
-			<block wx:if="{{hasMySales}}">
-				尚无推荐，请联系销售 <text class="sales-name">{{mySalesName || '您的销售'}}</text>
-			</block>
-			<block wx:else>
-				尚无推荐，请联系客服
-				<button class="kf-btn" size="mini" open-type="contact" session-from="sal:自然|ref:自然" hover-class="none">联系客服</button>
-			</block>
-		</view>
-	<view class="product-list" wx:else>
-			<view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="goToDetail" data-model="{{item.frame_model}}">
-				<image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
-				<view class="product-info">
-					<view class="product-title">
-						<text>型号：{{f.display(item.frame_model)}}</text>
-						<view class="fav-wrap">
-							<button class="fav-btn fav-on" size="mini" type="default" catchtap="removeFavorite" data-model="{{item.frame_model}}">移出推荐</button>
-						</view>
-					</view>
-				<view class="product-specs">
-					<text>镜架尺寸：{{f.unit(item.lens_size, '')}}-{{f.unit(item.nose_bridge_width, '')}}-{{f.unit(item.temple_length, '')}}</text>
-					<text>价格：￥{{f.display(item.price)}}</text>
-					<text>镜架总长：{{f.unit(item.frame_total_length, '')}}</text>
-					<text>镜架高度：{{f.unit(item.frame_height, '')}}</text>
-					<text>重量：{{f.unit(item.weight, 'g')}}</text>
+	<!-- 顶部标题 -->
+	<view class="watchlist-header">
+		<text class="wl-count" wx:if="{{!empty}}">已推荐共 {{products.length}} 款镜架</text>
+	</view>
+
+	<view wx:if="{{empty}}" class="empty">
+		<block wx:if="{{hasMySales}}">
+			尚无推荐，请联系销售 <text class="sales-name">{{mySalesName || '您的销售'}}</text>
+		</block>
+		<block wx:else>
+			尚无推荐，请联系客服
+			<button class="kf-btn" size="mini" open-type="contact" session-from="sal:自然|ref:自然" hover-class="none">联系客服</button>
+		</block>
+	</view>
+
+	<!-- 推荐列表新版布局 -->
+	<view wx:else>
+		<block wx:for="{{products}}" wx:key="frame_model">
+			<view class="rec-card">
+				<view class="rec-line">镜架尺寸：{{f.unit(item.lens_size, '')}}-{{f.unit(item.nose_bridge_width, '')}}-{{f.unit(item.temple_length, '')}}</view>
+				<view class="rec-line">镜架总长：{{f.unit(item.frame_total_length, '')}}</view>
+				<view class="rec-line">镜架高度：{{f.unit(item.frame_height, '')}}</view>
+				<view class="rec-images" wx:if="{{item.images && item.images.length}}">
+					<block wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
+						<image class="rec-img" src="{{img}}" mode="aspectFit" bindtap="previewImage" data-current="{{img}}" data-list="{{item.images}}"></image>
+					</block>
+				</view>
+				<view class="rec-actions">
+					<button class="fav-btn fav-on" size="mini" type="default" catchtap="removeFavorite" data-model="{{item.frame_model}}">移出推荐</button>
 				</view>
 			</view>
-		</view>
+		</block>
 
 		<view class="load-more" wx:if="{{hasMore && !isLoading}}" bindtap="loadMore">加载更多</view>
 		<view class="loading" wx:if="{{isLoading}}">加载中...</view>
 		<view class="no-more" wx:if="{{!hasMore && products.length > 0 && !isLoading}}">没有更多了</view>
 	</view>
-  <!-- 预留底部空间，避免内容被自定义 tabBar 遮挡 -->
-  <view class="tabbar-spacer"></view>
+
+	<!-- 预留底部空间，避免内容被自定义 tabBar 遮挡 -->
+	<view class="tabbar-spacer"></view>
 </view>

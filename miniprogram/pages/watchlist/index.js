@@ -123,4 +123,17 @@ Page({
       fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
     })
   }
+  ,
+  // 图片全屏预览
+  previewImage(e) {
+    const cur = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.current) || ''
+    let list = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.list) || []
+    if (typeof list === 'string') {
+      // dataset 把数组序列化为逗号拼接字符串的情况
+      list = list.split(',').map(s => s.trim()).filter(Boolean)
+    }
+    if (!Array.isArray(list) || list.length === 0) list = [cur].filter(Boolean)
+    if (!cur) return
+    wx.previewImage({ current: cur, urls: list })
+  }
 })
