@@ -25,7 +25,7 @@
 				<view class="rec-line">镜架高度：{{f.unit(item.frame_height, '')}}</view>
 				<view class="rec-images" wx:if="{{item.images && item.images.length}}">
 					<block wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
-						<image class="rec-img" src="{{img}}" mode="aspectFit" bindtap="previewImage" data-current="{{img}}" data-list="{{item.images}}"></image>
+						<image class="rec-img" src="{{f.thumb(img)}}" mode="aspectFit" bindtap="previewImage" data-current="{{img}}" data-list="{{item.images}}"></image>
 					</block>
 				</view>
 				<view class="rec-actions">

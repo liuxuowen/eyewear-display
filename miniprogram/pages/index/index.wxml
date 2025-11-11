@@ -24,7 +24,7 @@
   <view class="product-list" wx:if="{{isSales || (!hasMySales)}}">
   <view class="product-item" wx:for="{{products}}" wx:key="frame_model" bindtap="onProductTap" data-model="{{item.frame_model}}">
       <view class="select-box {{selectedMap[item.frame_model] ? 'on' : ''}}" wx:if="{{selecting}}" catchtap="toggleSelectItem" data-model="{{item.frame_model}}"></view>
-      <image class="product-image" src="{{f.firstImage(item.images)}}" mode="aspectFit"></image>
+  <image class="product-image" src="{{f.firstThumb(item.images)}}" mode="aspectFit"></image>
       <view class="product-info">
         <view class="product-title">
           <text>型号：</text>

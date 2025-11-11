@@ -26,6 +26,24 @@ var isNil = function(v){
   return false
 }
 
+// 生成缩略图地址核心函数（内部）
+var _toThumb = function(url){
+  if (!url) return ''
+  var s = '' + url
+  // 只处理 /static/images/ 下的资源
+  var anchor = '/static/images/'
+  var idx = s.indexOf(anchor)
+  if (idx === -1) return s
+  // 已是 thumb 路径则原样返回
+  if (s.indexOf('/static/images/thumb/') !== -1) return s
+  // 去掉查询参数（如果有）
+  var q = s.indexOf('?')
+  var base = q >= 0 ? s.slice(0, q) : s
+  // 在 /static/images/ 后插入 thumb/
+  var insertPos = idx + anchor.length
+  return base.slice(0, insertPos) + 'thumb/' + base.slice(insertPos)
+}
+
 module.exports = {
   display: function(v){
     return isNil(v) ? '--' : v
@@ -36,6 +54,20 @@ module.exports = {
   firstImage: function(list){
     if (!list || list.length === 0) return ''
     return list[0]
+  },
+  // 生成缩略图地址：仅对 /static/images/ 下的资源追加缩放参数
+  thumb: function(url){
+    return _toThumb(url)
+  },
+  // 兼容别名，若部分页面改成 toThumb 也可用
+  toThumb: function(url){
+    return _toThumb(url)
+  },
+  // 取首图并转为缩略图
+  firstThumb: function(list){
+    if (!list || list.length === 0) return ''
+    var u = list[0]
+    return _toThumb(u)
   },
   // 将字段名转换为中文标签，用于展示
   getFieldLabel: function(field){
