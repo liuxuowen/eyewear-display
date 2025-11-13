@@ -127,6 +127,20 @@ try:
                 except Exception as e:
                     db.session.rollback()
                     logger.warning('Ensure my_sales_open_id failed (may already exist or unsupported): %s', e)
+        # 确保 favorites 表新增批次列存在
+        if 'favorites' in insp.get_table_names():
+            fav_cols = [c['name'] for c in insp.get_columns('favorites')]
+            def _ensure_fav_col(name, ddl):
+                if name not in fav_cols:
+                    try:
+                        db.session.execute(text(f'ALTER TABLE favorites ADD COLUMN {ddl}'))
+                        db.session.commit()
+                        logger.info('Added column favorites.%s', name)
+                    except Exception as ie:
+                        db.session.rollback()
+                        logger.warning('Ensure favorites.%s failed (may already exist or unsupported): %s', name, ie)
+            _ensure_fav_col('batch_id', 'batch_id INTEGER NULL')
+            _ensure_fav_col('batch_time', 'batch_time DATETIME NULL')
         # 轻量自检：sales_shares 表，若不存在则创建（无需完整迁移系统）
         if 'sales_shares' not in insp.get_table_names():
             try:
@@ -150,6 +164,21 @@ try:
                 ensure_column('is_sent', 'is_sent BOOLEAN NOT NULL DEFAULT 0')
                 ensure_column('sent_count', 'sent_count INTEGER NOT NULL DEFAULT 0')
                 ensure_column('last_sent_time', 'last_sent_time DATETIME NULL')
+                ensure_column('note', 'note VARCHAR(64) NULL')
+                ensure_column('dedup_key', 'dedup_key VARCHAR(128) NULL')
+                # 尝试为 dedup_key 创建唯一索引（若已存在则忽略）
+                try:
+                    idx_list = insp.get_indexes('sales_shares')
+                    idx_names = {i.get('name') for i in idx_list}
+                    has_dedup_idx = any('dedup' in (n or '').lower() for n in idx_names)
+                    if not has_dedup_idx:
+                        # MySQL/SQLite 兼容写法：不使用 IF NOT EXISTS，失败则忽略
+                        db.session.execute(text('CREATE UNIQUE INDEX idx_sales_shares_dedup ON sales_shares(dedup_key)'))
+                        db.session.commit()
+                        logger.info('Created unique index idx_sales_shares_dedup on sales_shares(dedup_key)')
+                except Exception as ie:
+                    db.session.rollback()
+                    logger.warning('Ensure unique index on sales_shares.dedup_key failed or exists: %s', ie)
             except Exception as e:
                 logger.warning('sales_shares column ensure skipped: %s', e)
 except Exception as e:
@@ -193,6 +222,15 @@ def set_security_headers(resp):
     resp.headers['Referrer-Policy'] = 'no-referrer'
     # 仅 API 响应；CSP 对纯 API 影响有限，但可作为保守默认
     resp.headers.setdefault('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; connect-src 'self'")
+    # API 禁止缓存，确保客户端总是拿到最新数据
+    try:
+        p = (request.path or '')
+        if p.startswith('/api/'):
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+    except Exception:
+        pass
     # HSTS：仅在启用 HTTPS 或强制 HTTPS 时设置
     if request.is_secure or app.config.get('FORCE_HTTPS'):
         resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
@@ -569,34 +607,76 @@ def upload_avatar():
 
 @app.route('/api/favorites', methods=['GET'])
 def list_favorites():
-    """列出某用户推荐的商品（按加入时间倒序）。
-    Query: open_id (required), page, per_page
-    返回商品列表（仅展示 is_active=是 的商品）。
+    """列出某用户推荐的商品。
+    支持按推荐批次分组返回：若传 group_by=batch 则返回分组结构。
+    Query:
+      - open_id (required)
+      - page, per_page （仅在非分组模式下分页产品）
+      - group_by=batch 可启用批次分组模式（忽略分页，返回全部分组）
+    批次定义：同一批推荐操作（批量接口或单次添加）生成唯一 batch_id 与 batch_time。
+    未分配 batch_id 的旧数据归为 legacy 分组。
     """
     try:
         open_id = (request.args.get('open_id') or '').strip()
         if not open_id:
             return jsonify({'status': 'error', 'message': 'open_id is required'}), 400
 
-        page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 10))
-
-        # 子查询获取用户推荐的 frame_model 列表
-        # 使用显式 select() 构造，避免 SQLAlchemy 发出 Subquery -> select 的警告
-        subq = select(Favorite.frame_model).where(Favorite.open_id == open_id)
-        # 只返回仍有效的商品
-        query = Product.query.filter(Product.frame_model.in_(subq)).filter_by(is_active='是')
-
-        products = paginate_query(query, page, per_page)
-        return jsonify({
-            'status': 'success',
-            'data': {
-                'items': [_serialize_product_with_public_images(p) for p in products.items],
-                'total': products.total,
-                'pages': products.pages,
-                'current_page': products.page
-            }
-        })
+        group_by = (request.args.get('group_by') or '').strip().lower()
+        if group_by == 'batch':
+            # 分组模式：拉取该用户所有 favorites 及对应产品（仅 is_active=是）
+            # 兼容 MySQL 无 NULLS LAST：按 (batch_time IS NULL) 升序，将非空在前，再按 batch_time DESC, created_at DESC
+            favs = (Favorite.query
+                    .filter_by(open_id=open_id)
+                    .order_by(Favorite.batch_time.is_(None), Favorite.batch_time.desc(), Favorite.created_at.desc())
+                    .all())
+            # 收集所有型号到产品查询
+            frame_models = [f.frame_model for f in favs]
+            if not frame_models:
+                return jsonify({'status': 'success', 'data': {'batches': []}})
+            products = Product.query.filter(Product.frame_model.in_(frame_models), Product.is_active == '是').all()
+            prod_map = {p.frame_model: _serialize_product_with_public_images(p) for p in products}
+            batches = []
+            # 分组：batch_id 为 None -> legacy 单独处理，按 batch_time 逆序，其次 created_at
+            from collections import OrderedDict
+            grouped = OrderedDict()
+            for f in favs:
+                bid = f.batch_id if f.batch_id is not None else '__legacy__'
+                key = bid
+                if key not in grouped:
+                    grouped[key] = {
+                        'batch_id': f.batch_id,
+                        'batch_time': f.batch_time.isoformat() if f.batch_time else None,
+                        'items': []
+                    }
+                prod = prod_map.get(f.frame_model)
+                if prod:
+                    grouped[key]['items'].append(prod)
+            # legacy 放最后，其余按 batch_time desc
+            legacy = grouped.pop('__legacy__', None)
+            # 转换为列表
+            for k, v in grouped.items():
+                batches.append(v)
+            # 过滤空批次（可能全部失效）
+            batches = [b for b in batches if b['items']]
+            if legacy and legacy['items']:
+                legacy['batch_time'] = None
+                batches.append(legacy)
+            return jsonify({'status': 'success', 'data': {'batches': batches}})
+        else:
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', 10))
+            subq = select(Favorite.frame_model).where(Favorite.open_id == open_id)
+            query = Product.query.filter(Product.frame_model.in_(subq)).filter_by(is_active='是')
+            products = paginate_query(query, page, per_page)
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'items': [_serialize_product_with_public_images(p) for p in products.items],
+                    'total': products.total,
+                    'pages': products.pages,
+                    'current_page': products.page
+                }
+            })
     except Exception as e:
         return handle_error(e, 'Error listing favorites')
 
@@ -649,9 +729,24 @@ def add_favorite():
             return jsonify({'status': 'error', 'message': '商品不存在或未上架'}), 404
 
         # 幂等插入
+        # 生成批次：若请求带 batch_id 则尝试复用；否则新建
+        import time, datetime
+        incoming_batch_id = data.get('batch_id')
+        batch_id = None
+        batch_time = None
+        try:
+            if incoming_batch_id is not None:
+                batch_id = int(incoming_batch_id)
+        except Exception:
+            batch_id = None
+        if batch_id is None:
+            # 为该用户生成新的 batch_id：取当前时间戳秒
+            batch_id = int(time.time())
+        batch_time = datetime.datetime.utcnow()
+
         exists = Favorite.query.filter_by(open_id=open_id, frame_model=frame_model).first()
         if not exists:
-            fav = Favorite(open_id=open_id, frame_model=frame_model)
+            fav = Favorite(open_id=open_id, frame_model=frame_model, batch_id=batch_id, batch_time=batch_time)
             db.session.add(fav)
         db.session.commit()
         return jsonify({'status': 'success'})
@@ -1023,7 +1118,7 @@ def list_user_referrals():
 @app.route('/api/shares/push', methods=['POST'])
 def create_share_push():
     """销售发起一次分享推送。
-    Body JSON: { salesperson_open_id: str, product_list: [str, ...] }
+    Body JSON: { salesperson_open_id: str, product_list: [str, ...], note?: str (0-10 chars) }
     返回创建的分享记录。
     规则：
     - salesperson_open_id 必填，必须在销售表中存在；
@@ -1034,6 +1129,14 @@ def create_share_push():
         data = request.get_json(silent=True) or {}
         salesperson_open_id = (data.get('salesperson_open_id') or '').strip()
         products = data.get('product_list') or []
+        dedup_key = (data.get('dedup_key') or '').strip()
+        note = (data.get('note') or '').strip()
+        try:
+            logger.info('shares.push request sp=%s items=%s note_len=%s dedup_key=%r',
+                        salesperson_open_id, (len(products) if isinstance(products, list) else 'NA'),
+                        (len(note) if isinstance(note, str) else 0), dedup_key)
+        except Exception:
+            pass
         if not salesperson_open_id or not isinstance(products, list):
             return jsonify({'status': 'error', 'message': 'salesperson_open_id and product_list(list) are required'}), 400
         # 校验是否为销售
@@ -1055,13 +1158,56 @@ def create_share_push():
                 break
         if not clean:
             return jsonify({'status': 'error', 'message': 'product_list cannot be empty'}), 400
+        # 备注长度限制（按字符计数，最多10）
+        try:
+            if len(note) > 10:
+                note = note[:10]
+        except Exception:
+            note = note[:10] if note else None
         import json
-        rec = SalesShare(
-            salesperson_open_id=salesperson_open_id,
-            product_list=json.dumps(clean, ensure_ascii=False),
-        )
+        # 兼容性保护：仅当模型具备 dedup_key 属性时，启用去重逻辑
+        has_dedup_attr = hasattr(SalesShare, 'dedup_key')
+        # 若携带 dedup_key，先尝试按键查找，避免重复创建
+        if dedup_key and has_dedup_attr:
+            exist = SalesShare.query.filter_by(dedup_key=dedup_key).first()
+            if exist:
+                try:
+                    logger.info('shares.push dedup-hit key=%r share_id=%s open_count=%s is_sent=%s',
+                                dedup_key, getattr(exist, 'id', None), getattr(exist, 'open_count', None), getattr(exist, 'is_sent', None))
+                except Exception:
+                    pass
+                return jsonify({'status': 'success', 'data': exist.to_dict(), 'dedup': True})
+        import datetime
+        rec_kwargs = {
+            'salesperson_open_id': salesperson_open_id,
+            'product_list': json.dumps(clean, ensure_ascii=False),
+            'note': note or None,
+            # 统一时区：使用 UTC 时间作为 push_time，避免数据库本地时区差异
+            'push_time': datetime.datetime.utcnow(),
+        }
+        if has_dedup_attr:
+            rec_kwargs['dedup_key'] = dedup_key or None
+        rec = SalesShare(**rec_kwargs)
         db.session.add(rec)
-        db.session.commit()
+        try:
+            db.session.commit()
+            try:
+                logger.info('shares.push created id=%s sp=%s items=%s note=%r dedup_key=%r',
+                            getattr(rec, 'id', None), salesperson_open_id, len(clean), (note or None), (dedup_key or None))
+            except Exception:
+                pass
+        except Exception as ce:
+            # 可能并发唯一冲突（若后续添加唯一索引），回退后重查
+            db.session.rollback()
+            if dedup_key and has_dedup_attr:
+                exist2 = SalesShare.query.filter_by(dedup_key=dedup_key).first()
+                if exist2:
+                    try:
+                        logger.info('shares.push dedup-collision key=%r resolved_to_id=%s', dedup_key, getattr(exist2, 'id', None))
+                    except Exception:
+                        pass
+                    return jsonify({'status': 'success', 'data': exist2.to_dict(), 'dedup': True})
+            raise ce
         return jsonify({'status': 'success', 'data': rec.to_dict()})
     except Exception as e:
         db.session.rollback()
@@ -1090,6 +1236,10 @@ def track_share_open():
                 share_id = None
         if not share_id or not customer_open_id:
             return jsonify({'status': 'error', 'message': 'share_id and customer_open_id are required'}), 400
+        try:
+            logger.info('shares.open request share_id=%s customer=%s', share_id, customer_open_id)
+        except Exception:
+            pass
         rec = SalesShare.query.get(share_id)
         if not rec:
             return jsonify({'status': 'error', 'message': 'share not found'}), 404
@@ -1113,10 +1263,82 @@ def track_share_open():
             changed = True
         if changed:
             db.session.commit()
+            try:
+                logger.info('shares.open updated share_id=%s customer=%s open_count=%s first_open_time=%s last_open_time=%s',
+                            getattr(rec, 'id', None), customer_open_id, getattr(rec, 'open_count', None), getattr(rec, 'first_open_time', None), getattr(rec, 'last_open_time', None))
+            except Exception:
+                pass
+        else:
+            try:
+                logger.info('shares.open duplicate-ignore share_id=%s customer=%s open_count=%s', getattr(rec, 'id', None), customer_open_id, getattr(rec, 'open_count', None))
+            except Exception:
+                pass
         return jsonify({'status': 'success', 'data': rec.to_dict(), 'updated': changed})
     except Exception as e:
         db.session.rollback()
         return handle_error(e, 'Error tracking share open')
+
+
+@app.route('/api/shares/open_by_dedup', methods=['POST'])
+def track_share_open_by_dedup():
+    """按 dedup_key 记录客户打开某次分享（用于未能携带 shid 的分享路径）。
+    Body JSON: { dedup_key: str, customer_open_id: str }
+    行为：
+    - 若当前部署未启用 dedup_key 字段，则返回 400
+    - dedup_key 未找到返回 404
+    - 其余逻辑同 /api/shares/open：同一客户多次打开仅计一次，更新 open_count/is_opened 等
+    """
+    try:
+        # 兼容性：仅当模型具备 dedup_key 属性时启用
+        if not hasattr(SalesShare, 'dedup_key'):
+            return jsonify({'status': 'error', 'message': 'dedup_key not supported on server'}), 400
+        data = request.get_json(silent=True) or {}
+        dedup_key = (data.get('dedup_key') or '').strip()
+        customer_open_id = (data.get('customer_open_id') or '').strip()
+        if not dedup_key or not customer_open_id:
+            return jsonify({'status': 'error', 'message': 'dedup_key and customer_open_id are required'}), 400
+        try:
+            logger.info('shares.open_by_dedup request key=%r customer=%s', dedup_key, customer_open_id)
+        except Exception:
+            pass
+        rec = SalesShare.query.filter_by(dedup_key=dedup_key).first()
+        if not rec:
+            return jsonify({'status': 'error', 'message': 'share not found by dedup_key'}), 404
+        import json, datetime
+        try:
+            existing = json.loads(rec.customer_open_ids) if rec.customer_open_ids else []
+            if not isinstance(existing, list):
+                existing = []
+        except Exception:
+            existing = []
+        changed = False
+        if customer_open_id not in existing:
+            existing.append(customer_open_id)
+            rec.customer_open_ids = json.dumps(existing, ensure_ascii=False)
+            rec.open_count = len(existing)
+            now = datetime.datetime.utcnow()
+            if not rec.first_open_time:
+                rec.first_open_time = now
+            rec.last_open_time = now
+            rec.is_opened = rec.open_count > 0
+            changed = True
+        if changed:
+            db.session.commit()
+            try:
+                logger.info('shares.open_by_dedup updated key=%r share_id=%s customer=%s open_count=%s first_open_time=%s last_open_time=%s',
+                            dedup_key, getattr(rec, 'id', None), customer_open_id, getattr(rec, 'open_count', None), getattr(rec, 'first_open_time', None), getattr(rec, 'last_open_time', None))
+            except Exception:
+                pass
+        else:
+            try:
+                logger.info('shares.open_by_dedup duplicate-ignore key=%r share_id=%s customer=%s open_count=%s',
+                            dedup_key, getattr(rec, 'id', None), customer_open_id, getattr(rec, 'open_count', None))
+            except Exception:
+                pass
+        return jsonify({'status': 'success', 'data': rec.to_dict(), 'updated': changed})
+    except Exception as e:
+        db.session.rollback()
+        return handle_error(e, 'Error tracking share open by dedup_key')
 
 
 @app.route('/api/shares', methods=['GET'])
@@ -1132,6 +1354,11 @@ def list_shares():
         customer_open_id = (request.args.get('customer_open_id') or '').strip()
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
+        try:
+            logger.info('shares.list query sp=%s customer=%s page=%s per_page=%s',
+                        salesperson_open_id or '-', customer_open_id or '-', page, per_page)
+        except Exception:
+            pass
         q = SalesShare.query
         if salesperson_open_id:
             q = q.filter(SalesShare.salesperson_open_id == salesperson_open_id)
@@ -1144,6 +1371,11 @@ def list_shares():
         # 若使用 customer_open_id，需要精确过滤（避免 LIKE 误命中子串）
         if customer_open_id:
             data_items = [d for d in data_items if customer_open_id in (d.get('customer_open_ids') or [])]
+        try:
+            logger.info('shares.list result count=%s total=%s page=%s pages=%s',
+                        len(data_items), items.total, items.page, items.pages)
+        except Exception:
+            pass
         return jsonify({'status': 'success', 'data': {
             'items': data_items,
             'total': items.total,
@@ -1174,6 +1406,10 @@ def mark_share_sent():
                 share_id = None
         if not share_id:
             return jsonify({'status': 'error', 'message': 'share_id is required'}), 400
+        try:
+            logger.info('shares.mark_sent request share_id=%s', share_id)
+        except Exception:
+            pass
         rec = SalesShare.query.get(share_id)
         if not rec:
             return jsonify({'status': 'error', 'message': 'share not found'}), 404
@@ -1182,6 +1418,11 @@ def mark_share_sent():
         rec.sent_count = (rec.sent_count or 0) + 1
         rec.last_sent_time = datetime.datetime.utcnow()
         db.session.commit()
+        try:
+            logger.info('shares.mark_sent updated share_id=%s sent_count=%s last_sent_time=%s',
+                        getattr(rec, 'id', None), getattr(rec, 'sent_count', None), getattr(rec, 'last_sent_time', None))
+        except Exception:
+            pass
         return jsonify({'status': 'success', 'data': rec.to_dict()})
     except Exception as e:
         db.session.rollback()
@@ -1251,11 +1492,15 @@ def add_favorites_batch():
         valid_set = {row.frame_model for row in valid}
 
         added = 0
+        import time, datetime
+        # 新批次 ID：统一一个 batch_id 赋予本次新增的记录
+        new_batch_id = int(time.time())
+        batch_time = datetime.datetime.utcnow()
         if reset:
             # 替换推荐：清空后全量加入有效集合
             Favorite.query.filter_by(open_id=open_id).delete(synchronize_session=False)
             for fm in valid_set:
-                db.session.add(Favorite(open_id=open_id, frame_model=fm))
+                db.session.add(Favorite(open_id=open_id, frame_model=fm, batch_id=new_batch_id, batch_time=batch_time))
                 added += 1
         else:
             # 现有推荐（仅用于幂等添加场景）
@@ -1264,10 +1509,10 @@ def add_favorites_batch():
             for fm in valid_set:
                 if fm in exist_set:
                     continue
-                db.session.add(Favorite(open_id=open_id, frame_model=fm))
+                db.session.add(Favorite(open_id=open_id, frame_model=fm, batch_id=new_batch_id, batch_time=batch_time))
                 added += 1
         db.session.commit()
-        return jsonify({'status': 'success', 'data': {'added': added, 'reset': bool(reset)}})
+        return jsonify({'status': 'success', 'data': {'added': added, 'reset': bool(reset), 'batch_id': new_batch_id}})
     except Exception as e:
         db.session.rollback()
         return handle_error(e, 'Error adding favorites batch')

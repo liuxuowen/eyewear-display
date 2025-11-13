@@ -67,6 +67,16 @@
   font-size: 28rpx;
 }
 
+/* 两个各占50%的按钮容器 */
+.two-btns {
+  display: flex;
+  gap: 12rpx;
+  width: 100%;
+}
+.toolbar-half {
+  flex: 1 1 50%;
+}
+
 /* 暗色取消按钮 */
 .btn-cancel {
   background-color: #33333339 !important;

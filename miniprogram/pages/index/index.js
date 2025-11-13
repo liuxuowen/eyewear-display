@@ -63,9 +63,10 @@ Page({
     selectedMap: {},
     selectedCount: 0,
     // 分享包准备状态（用于提前获取 share_id 并将 shid 带入路径）
-    isSharePrepared: false,
-    preparedShareId: 0,
-    preparedSkusKey: '',
+  // 分享相关旧状态保留（不再用于顶部按钮，但仍支持底部批次打包分享）
+  isSharePrepared: false,
+  preparedShareId: 0,
+  preparedSkusKey: '',
     // 分享落地待加入推荐的SKU
     pendingSkus: null,
     // 分享落地待关联的销售open_id
@@ -74,6 +75,8 @@ Page({
     pendingReferrerOpenId: '',
     // 分享ID（用于分享打开上报）
     pendingShareId: 0,
+  // 备选：当路径无 shid 时，使用 sig=dedup_key 标记打开
+  pendingShareDedupKey: '',
     // 是否在处理完分享落地后跳转推荐页
     autoGoWatchlist: false,
     // 客服会话来源参数
@@ -153,6 +156,13 @@ Page({
           if (!isNaN(shid) && shid > 0) this.setData({ pendingShareId: shid })
         } catch (e) {}
       }
+      // 若无 shid 但有 sig（dedup_key），用于后端按 dedup_key 补记打开
+      if (options.sig) {
+        try {
+          const sig = decodeURIComponent(options.sig)
+          if (sig) this.setData({ pendingShareDedupKey: sig })
+        } catch (e) {}
+      }
       // 推荐关系：?ref=<referrer_open_id> 或 ?rid=<referrer_open_id>
       if (options.ref || options.rid) {
         try {
@@ -175,7 +185,15 @@ Page({
         const hasMySales = !!((g && g.hasMySales) || app.globalData.hasMySales)
         this.setData({ isSales, hasMySales, roleReady: true })
         if (!isSales && hasMySales && !this.data.preRouted) {
-          // 非销售且已分配销售：不展示商品列表，直接前往推荐页
+          // 非销售且已分配销售：
+          // 若存在分享落地待处理的SKU（autoGoWatchlist=true），则等待批量加入成功后再跳转，避免竞态导致推荐页看不到最新批次。
+          const hasPendingShareApply = !!(this.data.autoGoWatchlist && Array.isArray(this.data.pendingSkus) && this.data.pendingSkus.length > 0)
+          if (hasPendingShareApply) {
+            // 标记已决策，避免重复导航；_applyPendingSkus 成功后会执行跳转
+            this.setData({ preRouted: true })
+            return
+          }
+          // 否则：直接前往推荐页
           this.setData({ preRouted: true })
           this._goToRecommendations()
           return
@@ -567,7 +585,10 @@ Page({
           // 处理跳转逻辑（避免重复）
           if (this.data.autoGoWatchlist) {
             this.setData({ autoGoWatchlist: false })
-            wx.switchTab ? wx.switchTab({ url: '/pages/watchlist/index' }) : wx.navigateTo({ url: '/pages/watchlist/index' })
+            // 延迟跳转，给后端提交与 watchlist 初次加载一次同步机会（避免批次尚未创建完毕）
+            setTimeout(() => {
+              wx.switchTab ? wx.switchTab({ url: '/pages/watchlist/index' }) : wx.navigateTo({ url: '/pages/watchlist/index' })
+            }, 200)
           }
         }
       }
@@ -577,20 +598,37 @@ Page({
     // 上报分享打开：需要 shareId 与 当前 viewer open_id
     const shareId = Number(this.data.pendingShareId || 0)
     const oid = (getApp().globalData && getApp().globalData.openId) || ''
-    if (!shareId || !oid) return
-    // 防重复：一次会话只上报一次
-    if (this._shareOpenReported && this._shareOpenReported[shareId]) return
+    const dedupKey = (this.data.pendingShareDedupKey || '').trim()
+    if ((!shareId && !dedupKey) || !oid) return
+    // 防重复：一次会话只上报一次（同时区分 shareId 与 dedupKey 两类键）
     this._shareOpenReported = this._shareOpenReported || {}
-    this._shareOpenReported[shareId] = true
-    wx.request({
-      url: `${app.globalData.apiBaseUrl}/shares/open`,
-      method: 'POST',
-      data: { share_id: shareId, customer_open_id: oid },
-      complete: () => {
-        // 清除 pendingShareId，避免后续重复上报
-        this.setData({ pendingShareId: 0 })
-      }
-    })
+    if (shareId) {
+      const key = `sid:${shareId}`
+      if (this._shareOpenReported[key]) return
+      this._shareOpenReported[key] = true
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/shares/open`,
+        method: 'POST',
+        data: { share_id: shareId, customer_open_id: oid },
+        complete: () => {
+          this.setData({ pendingShareId: 0 })
+        }
+      })
+      return
+    }
+    if (dedupKey) {
+      const key = `ddk:${dedupKey}`
+      if (this._shareOpenReported[key]) return
+      this._shareOpenReported[key] = true
+      wx.request({
+        url: `${app.globalData.apiBaseUrl}/shares/open_by_dedup`,
+        method: 'POST',
+        data: { dedup_key: dedupKey, customer_open_id: oid },
+        complete: () => {
+          this.setData({ pendingShareDedupKey: '' })
+        }
+      })
+    }
   },
   _applyPendingSales() {
     const sid = (this.data.pendingSalesOpenId || '').trim()
@@ -774,6 +812,37 @@ Page({
       fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
     })
   },
+  // 新增：加入推荐批次（仅将当前选中SKU列表写入 favorites，不跳转）
+  addSelectedToBatch() {
+    const isSales = !!this.data.isSales
+    if (!isSales) { wx.showToast({ title: '仅销售可操作', icon: 'none' }); return }
+    const selecting = !!this.data.selecting
+    const selectedCount = Number(this.data.selectedCount || 0)
+    if (!selecting || selectedCount <= 0) { wx.showToast({ title: '请选择商品', icon: 'none' }); return }
+    const selectedMap = this.data.selectedMap || {}
+    const skus = Object.keys(selectedMap)
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!oid) { wx.showToast({ title: '请先登录', icon: 'none' }); return }
+    // 写入推荐批次：不 reset，仅追加去重
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/favorites/batch`,
+      method: 'POST',
+      data: { open_id: oid, frame_models: skus, reset: false },
+      success: (res) => {
+        if (res && res.data && res.data.status === 'success') {
+          const added = (res.data.data && res.data.data.added) || 0
+          const batchId = (res.data.data && res.data.data.batch_id) || ''
+          wx.showToast({ title: added > 0 ? `已加入批次(+${added})` : '无新增（已存在）', icon: added > 0 ? 'success' : 'none' })
+          // 销售加入推荐后，回到首页状态：退出选择模式并清空选择
+          this.setData({ selecting: false, selectedMap: {}, selectedCount: 0 })
+          this._resetPreparedShare()
+        } else {
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        }
+      },
+      fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+    })
+  },
   onShareAppMessage() {
     // 生成分享路径（若为销售选择打包）
     const isSales = !!this.data.isSales
@@ -802,12 +871,15 @@ Page({
             data: { share_id: shid }
           })
         } else {
-          // 未预生成时，保底使用原逻辑（不带 shid），并异步尝试登记
-          path = `/pages/index/index?skus=${encSkus}&sid=${sidEnc}`
+          // 未预生成时，保底逻辑：带上 sig=dedup_key，落地用 dedup_key 补记 open
+          const ts = Math.floor(Date.now()/1000)
+          const dkey = `${currentKey}::${ts}`
+          const sig = encodeURIComponent(dkey)
+          path = `/pages/index/index?skus=${encSkus}&sid=${sidEnc}&sig=${sig}`
           wx.request({
             url: `${app.globalData.apiBaseUrl}/shares/push`,
             method: 'POST',
-            data: { salesperson_open_id: sid, product_list: skus },
+            data: { salesperson_open_id: sid, product_list: skus, dedup_key: dkey },
             success: (res) => {
               if (res && res.data && res.data.status === 'success' && res.data.data && res.data.data.id) {
                 const shareId = res.data.data.id

@@ -18,7 +18,11 @@
 
 /* 新版推荐列表样式 */
 .watchlist-header {
-	padding: 24rpx 20rpx 12rpx 20rpx;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start; /* 左侧文字 + 自动推右按钮 */
+	padding: 24rpx 0 0 20rpx; /* 去掉右侧内边距，让按钮贴右侧 */
+	min-height: 64rpx;
 }
 .wl-title {
 	font-size: 32rpx;
@@ -26,9 +30,17 @@
 	color: #1a1a1a;
 }
 .wl-count {
-	margin-left: 16rpx;
-	font-size: 24rpx;
-	color: #555;
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #333;
+	flex: 1; /* 占满剩余空间推按钮到最右 */
+}
+.share-row {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+	padding: 12rpx 0 12rpx 20rpx; /* 与第一行一致右侧贴边 */
+	min-height: 64rpx;
 }
 .rec-card {
 	background: #fff;
@@ -37,6 +49,73 @@
 	padding: 20rpx 24rpx 24rpx 24rpx;
 	margin: 0 20rpx 20rpx 20rpx;
 	box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+}
+.batch-header {
+	display: flex;
+	align-items: baseline;
+	gap: 12rpx;
+	padding: 12rpx 20rpx 0 20rpx;
+	color: #666;
+}
+.batch-title {
+	font-size: 26rpx;
+	font-weight: 600;
+	color: #333;
+}
+.batch-time {
+	font-size: 22rpx;
+	color: #888;
+}
+.rec-model {
+	font-size: 30rpx;
+	font-weight: 600;
+	color: #333;
+	margin-bottom: 8rpx;
+}
+
+/* share-toolbar replaced by share-row */
+
+.note-input {
+  flex: 1;
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 20rpx;
+  background: #f7f8fa;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+.success-btn {
+	margin-left: 4rpx;
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #fff;
+	background: #52c41a;
+	border: 1rpx solid #52c41a;
+	border-radius: 8rpx;
+}
+.danger-btn {
+	margin-left: auto; /* 被 wl-count flex 推之后紧贴右侧 */
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #ff4d4f;
+	border: 1rpx solid #ff4d4f;
+	background: #fff;
+	border-radius: 8rpx;
+}
+.action-btn {
+	width: 200rpx;
+	height: 64rpx;
+	line-height: 64rpx;
+	text-align: center;
+	padding: 0;
+}
+.rec-model.latest {
+	color: #1677ff;
+	font-weight: 700;
+}
+.rec-model.old {
+	color: #555;
 }
 .rec-line {
 	font-size: 26rpx;
@@ -55,6 +134,11 @@
 	background: #fafafa;
 	border: 1rpx solid #eee;
 	border-radius: 8rpx;
+  opacity: 0;
+  transition: opacity .28s ease;
+}
+.rec-img.loaded {
+  opacity: 1;
 }
 .rec-actions {
 	margin-top: 16rpx;

@@ -124,6 +124,9 @@ class Favorite(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     open_id = db.Column(db.String(64), db.ForeignKey('users.open_id'), index=True, nullable=False)
     frame_model = db.Column(db.String(100), db.ForeignKey('products.frame_model'), index=True, nullable=False)
+    # 新增：推荐批次（同一批次内的记录共享相同 batch_id 与 batch_time）
+    batch_id = db.Column(db.Integer, nullable=True, index=True, comment='推荐批次编号（按用户递增）')
+    batch_time = db.Column(db.DateTime, nullable=True, comment='该批次的时间标记（同一批次统一时间）')
     created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
 
     __table_args__ = (
@@ -135,6 +138,8 @@ class Favorite(db.Model):
             'id': self.id,
             'open_id': self.open_id,
             'frame_model': self.frame_model,
+            'batch_id': self.batch_id,
+            'batch_time': self.batch_time.isoformat() if self.batch_time else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -180,6 +185,9 @@ class SalesShare(db.Model):
     is_sent = db.Column(db.Boolean, nullable=False, default=False, comment='是否已触发发送（分享面板）')
     sent_count = db.Column(db.Integer, nullable=False, default=0, comment='触发发送次数')
     last_sent_time = db.Column(db.DateTime, nullable=True, comment='最近一次触发发送时间')
+    note = db.Column(db.String(64), nullable=True, comment='分享备注（0-10字符）')
+    # 去重键：由(销售open_id, 去重后的产品列表, 备注)确定，便于前后端幂等创建
+    dedup_key = db.Column(db.String(128), nullable=True, unique=False, index=True, comment='前端/服务端计算的幂等键')
 
     def to_dict(self):
         import json
@@ -208,4 +216,5 @@ class SalesShare(db.Model):
             'is_sent': self.is_sent,
             'sent_count': self.sent_count,
             'last_sent_time': self.last_sent_time.isoformat() if self.last_sent_time else None,
+            'note': self.note,
         }

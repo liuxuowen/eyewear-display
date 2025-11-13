@@ -2,14 +2,29 @@ const app = getApp()
 
 Page({
   data: {
+    // 分组后的批次数据：[{ batch_id, batch_time, items: [product...] }]
+    batches: [],
+    // 兼容旧字段（如果需要原列表，可由 batches 扁平化得到）
     products: [],
     page: 1,
     hasMore: true,
     isLoading: false,
     empty: false,
     hasMySales: false,
+    isSales: false,
     mySalesName: '',
-    mySalesOpenId: ''
+    mySalesOpenId: '',
+    totalCount: 0,
+    // 销售分享备注（0-10字）
+    salesShareNote: '' ,
+    // 分享包准备状态（用于 watchlist 一键打包）
+    isSharePreparedAll: false,
+    preparedShareAllId: 0,
+    preparedAllSkusKey: '',
+    // 图片加载覆盖映射：原图URL => 当前使用的src（thumb或原图）
+    imageSrcMap: {},
+    // 图片是否完成加载（用于渐显）
+    imageLoadedMap: {}
   },
   onShow() {
     // 同步选中自定义 tabBar 到“推荐”
@@ -17,18 +32,45 @@ Page({
       const tb = this.getTabBar && this.getTabBar()
       if (tb && tb.setSelectedByRoute) tb.setSelectedByRoute()
     } catch (e) {}
+    // 若仅从全屏图片预览返回，避免触发整页刷新
+    if (this._skipNextOnShow) {
+      this._skipNextOnShow = false
+      try { if (app && app._log) app._log('watchlist:onShow:skip-refresh-after-preview') } catch (e) {}
+      return
+    }
     try { if (app && app._log) app._log('watchlist:onShow', { route: (getCurrentPages().slice(-1)[0] || {}).route }) } catch (e) {}
     // 每次切换到推荐页，刷新列表
     this._syncRoleFromGlobal()
-    this.setData({ products: [], page: 1, hasMore: true, empty: false }, () => this.loadFavorites())
+    this.setData({ batches: [], products: [], page: 1, hasMore: false, empty: false, totalCount: 0 }, () => this.loadFavorites())
+  },
+  // 缩略图加载失败时，回退到原图
+  onImageError(e) {
+    try {
+      const img = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.img) || ''
+      if (!img) return
+      const map = Object.assign({}, this.data.imageSrcMap || {})
+      // 回退到原图
+      map[img] = img
+      this.setData({ imageSrcMap: map })
+    } catch (_) {}
+  },
+  onImageLoad(e) {
+    try {
+      const img = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.img) || ''
+      if (!img) return
+      const loaded = Object.assign({}, this.data.imageLoadedMap || {})
+      loaded[img] = true
+      this.setData({ imageLoadedMap: loaded })
+    } catch (_) {}
   },
   _syncRoleFromGlobal() {
     try {
       const gd = (getApp() && getApp().globalData) || {}
       const hasMySales = !!gd.hasMySales
       const mySalesOpenId = gd.mySalesOpenId || ''
+      const isSales = !!gd.isSales
       // 若全局中没有销售姓名，尝试后端拉取角色补齐（与首页逻辑保持一致）
-      if (!gd.mySalesName && mySalesOpenId) {
+      if ((!gd.mySalesName || typeof gd.isSales !== 'boolean') && (mySalesOpenId || gd.openId)) {
         wx.request({
           url: `${gd.apiBaseUrl}/users/role`,
           method: 'GET',
@@ -38,18 +80,22 @@ Page({
             if (d && d.my_sales_name) {
               this.setData({ mySalesName: d.my_sales_name })
             }
+            if (d && d.role) {
+              this.setData({ isSales: d.role === 'sales' })
+            }
           }
         })
       }
       this.setData({
         hasMySales,
         mySalesOpenId,
-        mySalesName: gd.mySalesName || ''
+        mySalesName: gd.mySalesName || '',
+        isSales: typeof this.data.isSales === 'boolean' ? this.data.isSales : isSales
       })
     } catch (e) {}
   },
   loadFavorites() {
-    if (this.data.isLoading || !this.data.hasMore) return
+    if (this.data.isLoading) return
     const oid = (getApp().globalData && getApp().globalData.openId) || ''
     if (!oid) {
       this.setData({ empty: true })
@@ -59,18 +105,21 @@ Page({
     wx.request({
       url: `${app.globalData.apiBaseUrl}/favorites`,
       method: 'GET',
-      data: { open_id: oid, page: this.data.page, per_page: 10 },
+      data: { open_id: oid, group_by: 'batch' },
       success: (res) => {
         if (res.data && res.data.status === 'success') {
           const data = res.data.data || {}
-          const items = data.items || []
-          const pages = data.pages || 1
-          const page = data.current_page || this.data.page
-          const list = this.data.products.concat(items)
+          const batches = Array.isArray(data.batches) ? data.batches : []
+          // 统计总数
+          const total = batches.reduce((acc, b) => acc + (Array.isArray(b.items) ? b.items.length : 0), 0)
+          // 兼容：扁平化为 products 以便后续可能复用
+          const flat = [].concat(...batches.map(b => (b.items || [])))
           this.setData({
-            products: list,
-            hasMore: page < pages,
-            empty: list.length === 0
+            batches,
+            products: flat,
+            hasMore: false,
+            empty: total === 0,
+            totalCount: total
           })
         } else {
           wx.showToast({ title: '加载失败', icon: 'none' })
@@ -81,15 +130,13 @@ Page({
     })
   },
   loadMore() {
-    if (this.data.hasMore) {
-      this.setData({ page: this.data.page + 1 }, () => this.loadFavorites())
-    }
+    // 分组模式不分页，留空占位
   },
   onReachBottom() {
     this.loadMore()
   },
   onPullDownRefresh() {
-    this.setData({ products: [], page: 1, hasMore: true, empty: false }, () => {
+    this.setData({ batches: [], products: [], page: 1, hasMore: false, empty: false, totalCount: 0 }, () => {
       this.loadFavorites()
       wx.stopPullDownRefresh()
     })
@@ -113,8 +160,15 @@ Page({
       data: { open_id: oid, frame_model: model },
       success: (res) => {
         if (res.data && res.data.status === 'success') {
-          const list = (this.data.products || []).filter(it => it.frame_model !== model)
-          this.setData({ products: list, empty: list.length === 0 })
+          // 从 batches 中移除
+          const batches = (this.data.batches || []).map(b => ({
+            ...b,
+            items: (b.items || []).filter(it => it.frame_model !== model)
+          })).filter(b => (b.items || []).length > 0)
+          const total = batches.reduce((acc, b) => acc + (b.items ? b.items.length : 0), 0)
+          // 同时维护扁平化列表
+          const flat = [].concat(...batches.map(b => (b.items || [])))
+          this.setData({ batches, products: flat, empty: total === 0, totalCount: total })
           wx.showToast({ title: '已取消推荐', icon: 'success' })
         } else {
           wx.showToast({ title: (res.data && res.data.message) || '操作失败', icon: 'none' })
@@ -124,6 +178,123 @@ Page({
     })
   }
   ,
+  // 一键清空（仅销售可见）
+  clearAllFavorites() {
+    if (!this.data.isSales) { wx.showToast({ title: '仅销售可用', icon: 'none' }); return }
+    const oid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!oid) { wx.showToast({ title: '请先登录', icon: 'none' }); return }
+    wx.showModal({
+      title: '确认清空',
+      content: '确定清空全部推荐？此操作不可撤销',
+      confirmText: '清空',
+      confirmColor: '#ff4d4f',
+      success: (res) => {
+        if (!res.confirm) return
+        wx.request({
+          url: `${app.globalData.apiBaseUrl}/favorites/batch`,
+          method: 'POST',
+          data: { open_id: oid, frame_models: [], reset: true },
+          success: (r) => {
+            if (r && r.data && r.data.status === 'success') {
+              this.setData({ batches: [], products: [], empty: true, totalCount: 0 })
+              wx.showToast({ title: '已清空推荐', icon: 'success' })
+            } else {
+              wx.showToast({ title: '清空失败', icon: 'none' })
+            }
+          },
+          fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+        })
+      }
+    })
+  },
+  // 输入备注
+  onNoteInput(e) {
+    let v = (e.detail && e.detail.value) || ''
+    if (v.length > 10) v = v.slice(0, 10)
+    this.setData({ salesShareNote: v })
+  },
+  _computeKeyForAll(skus, sid, note) {
+    try {
+      const arr = (skus || []).slice().sort()
+      return `${sid||''}::${arr.join(',')}::${note||''}`
+    } catch (e) { return `${sid||''}::${note||''}` }
+  },
+  _getAllRecommendedSkus(limit=50) {
+    const list = (this.data.products || []).map(p => p.frame_model).filter(Boolean)
+    if (!Array.isArray(list)) return []
+    // 去重并裁剪上限
+    const seen = {}
+    const out = []
+    for (let i=0;i<list.length && out.length<limit;i++) {
+      const m = (list[i]||'').trim()
+      if (!m || seen[m]) continue
+      seen[m] = true
+      out.push(m)
+    }
+    return out
+  },
+  // 预生成整包分享记录，供 open-type=share 使用 shid
+  prepareShareAllPackage() {
+    if (!this.data.isSales) { wx.showToast({ title: '仅销售可用', icon: 'none' }); return }
+    const skus = this._getAllRecommendedSkus(50)
+    if (!skus.length) { wx.showToast({ title: '暂无可分享商品', icon: 'none' }); return }
+    const sid = (getApp().globalData && getApp().globalData.openId) || ''
+    if (!sid) { wx.showToast({ title: '请先登录', icon: 'none' }); return }
+    const note = (this.data.salesShareNote || '').trim()
+    const baseKey = this._computeKeyForAll(skus, sid, note)
+    const ts = Math.floor(Date.now()/1000)
+    const dedup_key = `${baseKey}::${ts}`
+    // 预创建分享记录以便在 path 中带上 shid，后续可精确统计 open_count
+    wx.request({
+      url: `${app.globalData.apiBaseUrl}/shares/push`,
+      method: 'POST',
+      data: { salesperson_open_id: sid, product_list: skus, note, dedup_key },
+      success: (res) => {
+        if (res && res.data && res.data.status === 'success' && res.data.data && res.data.data.id) {
+          const shareId = res.data.data.id
+          // preparedAllSkusKey 仅保存 baseKey，用于判断选择是否变化；dedup_key 包含时间保证唯一
+          this.setData({ isSharePreparedAll: true, preparedShareAllId: shareId, preparedAllSkusKey: baseKey })
+        }
+      }
+    })
+  },
+  onShareAppMessage() {
+    // 一键打包转发（整包当前推荐列表）
+    const isSales = !!this.data.isSales
+    const sid = (getApp().globalData && getApp().globalData.openId) || ''
+    const skus = this._getAllRecommendedSkus(50)
+    const count = skus.length
+    let title = count > 0 ? `推荐${count}款镜架` : '精品镜架推荐'
+    let path = '/pages/index/index'
+    if (!isSales || !sid || count === 0) {
+      return { title, path }
+    }
+    const encSkus = encodeURIComponent(skus.join(','))
+    const sidEnc = encodeURIComponent(sid)
+    const note = (this.data.salesShareNote || '').trim()
+    const currentBaseKey = this._computeKeyForAll(skus, sid, note)
+    if (this.data.isSharePreparedAll && this.data.preparedShareAllId > 0 && this.data.preparedAllSkusKey === currentBaseKey) {
+      const shid = this.data.preparedShareAllId
+      path = `/pages/index/index?skus=${encSkus}&sid=${sidEnc}&shid=${shid}`
+      // 标记发送
+      wx.request({ url: `${app.globalData.apiBaseUrl}/shares/mark_sent`, method: 'POST', data: { share_id: shid } })
+    } else {
+      // 未预生成则尽力登记（无法保证 shid 带入路径）
+      const ts = Math.floor(Date.now()/1000)
+      const dedup_key = `${currentBaseKey}::${ts}`
+      const sig = encodeURIComponent(dedup_key)
+      path = `/pages/index/index?skus=${encSkus}&sid=${sidEnc}&sig=${sig}`
+      wx.request({ url: `${app.globalData.apiBaseUrl}/shares/push`, method: 'POST', data: { salesperson_open_id: sid, product_list: skus, note, dedup_key },
+        success: (res) => {
+          if (res && res.data && res.data.status === 'success' && res.data.data && res.data.data.id) {
+            const shareId = res.data.data.id
+            wx.request({ url: `${app.globalData.apiBaseUrl}/shares/mark_sent`, method: 'POST', data: { share_id: shareId } })
+          }
+        }
+      })
+    }
+    return { title, path }
+  },
   // 图片全屏预览
   previewImage(e) {
     const cur = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.current) || ''
@@ -134,6 +305,8 @@ Page({
     }
     if (!Array.isArray(list) || list.length === 0) list = [cur].filter(Boolean)
     if (!cur) return
+    // 标记：从预览返回时跳过一次 onShow 刷新
+    this._skipNextOnShow = true
     wx.previewImage({ current: cur, urls: list })
   }
 })
