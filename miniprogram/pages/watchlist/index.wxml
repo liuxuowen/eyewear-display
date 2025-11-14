@@ -30,8 +30,8 @@
 	<view wx:else>
 		<block wx:for="{{batches}}" wx:key="batch_id" wx:for-index="bidx" wx:for-item="batch">
 			<view class="batch-header">
-				<text class="batch-title">推荐批次</text>
-				<text class="batch-time">{{batch.batch_time || '历史推荐'}}</text>
+				<text class="batch-title">{{ isSales ? '推荐批次' : (bidx === 0 ? '最新推荐' : '历史推荐') }}</text>
+				<text class="batch-time">{{ batch.batch_time || '' }}</text>
 			</view>
 			<block wx:for="{{batch.items}}" wx:key="frame_model" wx:for-item="item">
 				<view class="rec-card">

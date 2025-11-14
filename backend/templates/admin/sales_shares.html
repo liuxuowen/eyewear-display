@@ -48,10 +48,10 @@
             {% set d = r.to_dict() %}
             <tr>
               <td>
-                <div>推送: {{ d.push_time }}</div>
-                {% if d.last_sent_time %}<div class="muted">sent: {{ d.last_sent_time }}</div>{% endif %}
-                {% if d.first_open_time %}<div class="muted">first open: {{ d.first_open_time }}</div>{% endif %}
-                {% if d.last_open_time %}<div class="muted">last open: {{ d.last_open_time }}</div>{% endif %}
+                <div>推送: {{ d.push_time|cn_time }}</div>
+                {% if d.last_sent_time %}<div class="muted">sent: {{ d.last_sent_time|cn_time }}</div>{% endif %}
+                {% if d.first_open_time %}<div class="muted">first open: {{ d.first_open_time|cn_time }}</div>{% endif %}
+                {% if d.last_open_time %}<div class="muted">last open: {{ d.last_open_time|cn_time }}</div>{% endif %}
               </td>
               <td>{{ (d.product_list or [])|length }}</td>
               <td>{{ d.note or '' }}</td>

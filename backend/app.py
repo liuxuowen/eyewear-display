@@ -22,6 +22,38 @@ app = Flask(__name__)
 app.config.from_object(Config)
 logger = logging.getLogger(__name__)
 
+# === 时间格式化（北京时间显示）===
+# 后台展示需要将数据库中以 UTC 记录的时间戳转换为北京时间 (UTC+8)。
+from datetime import timedelta, timezone, datetime
+CN_UTC_OFFSET = timedelta(hours=8)
+
+def to_beijing(dt):
+    """将 datetime 格式化为北京时间字符串。
+    现约定：数据库已直接存储北京时间（naive）。
+    - 若为 naive，直接格式化；
+    - 若为 tz-aware，则转换到 UTC+8 再格式化。
+    格式：YYYY-MM-DD HH:MM:SS
+    """
+    if not dt:
+        return ''
+    try:
+        if dt.tzinfo is None:
+            local = dt
+        else:
+            local = dt.astimezone(timezone(CN_UTC_OFFSET)).replace(tzinfo=None)
+        return local.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        return str(dt)
+
+app.jinja_env.filters['cn_time'] = to_beijing
+
+def now_cn():
+    """返回北京时间(UTC+8)的当前时间（naive datetime）。"""
+    try:
+        return (datetime.utcnow() + CN_UTC_OFFSET).replace(tzinfo=None)
+    except Exception:
+        return datetime.utcnow()
+
 # 统一日志格式（追加 open_id 上下文）
 logging.basicConfig(
     level=os.getenv('LOG_LEVEL', 'INFO').upper(),
@@ -879,6 +911,7 @@ def track_pageview():
             referer=request.headers.get('Referer'),
             user_agent=request.headers.get('User-Agent'),
             ip=_client_ip(),
+            created_at=now_cn(),
         )
         db.session.add(pv)
         db.session.commit()
@@ -1183,8 +1216,8 @@ def create_share_push():
             'salesperson_open_id': salesperson_open_id,
             'product_list': json.dumps(clean, ensure_ascii=False),
             'note': note or None,
-            # 统一时区：使用 UTC 时间作为 push_time，避免数据库本地时区差异
-            'push_time': datetime.datetime.utcnow(),
+            # 统一写入北京时间
+            'push_time': now_cn(),
         }
         if has_dedup_attr:
             rec_kwargs['dedup_key'] = dedup_key or None
@@ -1256,7 +1289,7 @@ def track_share_open():
             existing.append(customer_open_id)
             rec.customer_open_ids = json.dumps(existing, ensure_ascii=False)
             rec.open_count = len(existing)
-            now = datetime.datetime.utcnow()
+            now = now_cn()
             if not rec.first_open_time:
                 rec.first_open_time = now
             rec.last_open_time = now
@@ -1317,7 +1350,7 @@ def track_share_open_by_dedup():
             existing.append(customer_open_id)
             rec.customer_open_ids = json.dumps(existing, ensure_ascii=False)
             rec.open_count = len(existing)
-            now = datetime.datetime.utcnow()
+            now = now_cn()
             if not rec.first_open_time:
                 rec.first_open_time = now
             rec.last_open_time = now
@@ -1414,10 +1447,9 @@ def mark_share_sent():
         rec = SalesShare.query.get(share_id)
         if not rec:
             return jsonify({'status': 'error', 'message': 'share not found'}), 404
-        import datetime
         rec.is_sent = True
         rec.sent_count = (rec.sent_count or 0) + 1
-        rec.last_sent_time = datetime.datetime.utcnow()
+        rec.last_sent_time = now_cn()
         db.session.commit()
         try:
             logger.info('shares.mark_sent updated share_id=%s sent_count=%s last_sent_time=%s',
@@ -1550,11 +1582,19 @@ def admin_pageviews():
         except Exception as e:
             logger.error('admin pageviews query error: %s', e)
             rows = []
-        # 按日期分组（UTC 日期）
+        # 按日期分组（以数据库时间为准，约定已是北京时间）
         from collections import OrderedDict
         by_date = OrderedDict()
         for r in rows:
-            d = (r.created_at.date().isoformat() if r.created_at else '未知日期')
+            try:
+                if not r.created_at:
+                    d = '未知日期'
+                elif getattr(r.created_at, 'tzinfo', None) is None:
+                    d = r.created_at.date().isoformat()
+                else:
+                    d = r.created_at.astimezone(timezone(CN_UTC_OFFSET)).date().isoformat()
+            except Exception:
+                d = '未知日期'
             by_date.setdefault(d, []).append(r)
         grouped = [{'date': k, 'items': v} for k, v in by_date.items()]
     return _admin_response('admin/pageviews.html', open_id=open_id, grouped=grouped)
@@ -1572,12 +1612,20 @@ def admin_sales_shares():
         except Exception as e:
             logger.error('admin sales_shares query error: %s', e)
             rows = []
-        # 按推送日期分组（UTC 日期）
+        # 按推送日期分组（以数据库时间为准，约定已是北京时间）
         from collections import OrderedDict
         by_date = OrderedDict()
         for r in rows:
             dt = r.push_time or r.last_sent_time or r.first_open_time
-            d = (dt.date().isoformat() if dt else '未知日期')
+            try:
+                if not dt:
+                    d = '未知日期'
+                elif getattr(dt, 'tzinfo', None) is None:
+                    d = dt.date().isoformat()
+                else:
+                    d = dt.astimezone(timezone(CN_UTC_OFFSET)).date().isoformat()
+            except Exception:
+                d = '未知日期'
             by_date.setdefault(d, []).append(r)
         grouped = [{'date': k, 'items': v} for k, v in by_date.items()]
     return _admin_response('admin/sales_shares.html', sales_open_id=sales_open_id, grouped=grouped)

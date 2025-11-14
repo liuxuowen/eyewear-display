@@ -6,6 +6,8 @@ Thumbs.db
 *.log
 infos
 nginx.conf
+env.production
+
 
 # Python
 __pycache__/

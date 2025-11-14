@@ -44,7 +44,7 @@
           <tbody>
             {% for r in block['items'] %}
             <tr>
-              <td>{{ r.created_at }}</td>
+              <td>{{ r.created_at|cn_time }}</td>
               <td>{{ r.page }}</td>
               <td class="muted">{{ r.referer }}</td>
               <td class="muted">{{ r.user_agent }}</td>
