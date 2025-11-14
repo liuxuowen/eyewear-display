@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>访问日志 - {{ open_id or '' }}</title>
+  <title>客户详情 - {{ open_id or '' }}</title>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft Yahei",sans-serif;margin:0;background:#f7f8fa;color:#222}
     .wrap{max-width:1120px;margin:24px auto;padding:0 16px}
@@ -11,50 +11,151 @@
     .back{margin-bottom:12px;display:inline-block}
     h1{font-size:18px;margin:0 0 8px}
     .muted{color:#888}
-    .card{background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 12px;margin-bottom:16px}
+    .card{background:#fff;border:1px solid #eee;border-radius:8px;padding:12px 12px;margin-bottom:16px}
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid #f0f0f0;padding:8px 6px;text-align:left;font-size:14px}
     th{color:#666;background:#fafafa}
-    .date-head{font-weight:700;margin:12px 0 6px 0}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    .row{display:flex;gap:12px;align-items:center}
+    .avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid #eee}
+    .label{color:#666;margin-right:8px}
+    .pill{display:inline-block;border:1px solid #eee;border-radius:999px;padding:0 8px;height:20px;line-height:18px;font-size:12px;margin-right:6px}
+    .nowrap{white-space:nowrap}
+    .small{font-size:12px;color:#666}
+    .opened-row{background:#fffbe6}
+    .opened-flag{display:inline-block;background:#faad14;color:#000;font-size:12px;padding:0 6px;border-radius:4px;margin-left:4px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <a class="back" href="/admin">← 返回</a>
-    <h1>客户访问日志</h1>
+    <h1>客户详情</h1>
     <div class="muted">open_id：{{ open_id or '（未填写）' }}</div>
 
-    {% if not grouped %}
-      <p class="muted">暂无数据</p>
-    {% endif %}
-
-    {% for block in grouped %}
+    <div class="grid">
+      <!-- 卡片1：用户基本信息 -->
       <div class="card">
-        <div class="date-head">{{ block.date }}</div>
-        <table>
-          <thead>
-            <tr>
-              <th>时间</th>
-              <th>页面</th>
-              <th>Referer</th>
-              <th>User-Agent</th>
-              <th>IP</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in block['items'] %}
-            <tr>
-              <td>{{ r.created_at|cn_time }}</td>
-              <td>{{ r.page }}</td>
-              <td class="muted">{{ r.referer }}</td>
-              <td class="muted">{{ r.user_agent }}</td>
-              <td>{{ r.ip }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <h3 style="margin:0 0 8px">基本信息</h3>
+        {% if user_info %}
+          <div class="row" style="margin-bottom:8px">
+            {% if user_info.avatar_url %}
+              <img class="avatar" src="{{ user_info.avatar_url }}" alt="avatar" />
+            {% else %}
+              <div class="avatar" style="background:#fafafa"></div>
+            {% endif %}
+            <div>
+              <div><span class="label">昵称</span>{{ user_info.nickname or '—' }}</div>
+              <div class="small"><span class="label">创建时间</span>{{ user_info.created_at|cn_time }}</div>
+            </div>
+          </div>
+          <div class="small"><span class="label">OpenID</span><span class="nowrap">{{ user_info.open_id }}</span></div>
+          <div class="small" style="margin-top:4px">
+            <span class="label">所属销售</span>
+            {% if user_info.sales_name or user_info.sales_open_id %}
+              {{ user_info.sales_name or '—' }}
+              {% if user_info.sales_open_id %}<span class="pill">{{ user_info.sales_open_id }}</span>{% endif %}
+            {% else %}
+              未分配
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="muted">未找到该用户</p>
+        {% endif %}
       </div>
-    {% endfor %}
+
+      <!-- 卡片2：转介绍 -->
+      <div class="card">
+        <h3 style="margin:0 0 8px">转介绍</h3>
+        <div class="small">人数：{{ referrals_count or 0 }}</div>
+        {% if referrals and referrals|length > 0 %}
+          <table>
+            <thead>
+              <tr>
+                <th>头像</th>
+                <th>昵称</th>
+                <th>OpenID</th>
+                <th>创建时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in referrals %}
+              <tr>
+                <td>{% if r.avatar_url %}<img class="avatar" src="{{ r.avatar_url }}" />{% endif %}</td>
+                <td>{{ r.nickname or '—' }}</td>
+                <td class="small nowrap">{{ r.open_id }}</td>
+                <td class="small">{{ r.created_at|cn_time }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">暂无转介绍</p>
+        {% endif %}
+      </div>
+
+      <!-- 卡片3：推荐商品列表 -->
+      <div class="card">
+        <h3 style="margin:0 0 8px">推荐商品</h3>
+        {% if fav_products and fav_products|length > 0 %}
+          <table>
+            <thead>
+              <tr>
+                <th>型号</th>
+                <th>品牌</th>
+                <th>材质</th>
+                <th>重量(g)</th>
+                <th>尺寸(镜片/鼻梁/镜腿)</th>
+                <th>价格(元)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in fav_products %}
+              {% set opened = p.frame_model in preview_models %}
+              <tr class="{{ 'opened-row' if opened else '' }}">
+                <td>{{ p.frame_model }}{% if opened %}<span class="opened-flag">已预览</span>{% endif %}</td>
+                <td>{{ p.brand or '—' }}</td>
+                <td>{{ p.frame_material or '—' }}</td>
+                <td>{{ p.weight or '—' }}</td>
+                <td>{{ p.lens_size or '—' }}/{{ p.nose_bridge_width or '—' }}/{{ p.temple_length or '—' }}</td>
+                <td>{{ p.price or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">暂无推荐商品</p>
+        {% endif %}
+      </div>
+
+      <!-- 卡片4：访问日志 -->
+      <div class="card">
+        <h3 style="margin:0 0 8px">访问日志</h3>
+        {% if pv_list and pv_list|length > 0 %}
+          <table>
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>页面</th>
+                <th>IP（定位）</th>
+                <th>访问设备</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in pv_list %}
+              <tr>
+                <td class="small">{{ r.time_str }}</td>
+                <td>{{ r.page }}</td>
+                <td class="small">{{ r.ip }}<br/><span class="muted">{{ r.ip_loc }}</span></td>
+                <td class="small">{{ r.device or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">暂无访问记录</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </body>
 </html>

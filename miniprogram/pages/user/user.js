@@ -41,6 +41,23 @@ Page({
       const tb = this.getTabBar && this.getTabBar()
       if (tb && tb.setSelectedByRoute) tb.setSelectedByRoute()
     } catch (e) {}
+    // 页面曝光上报
+    const pagePath = '/pages/user/user'
+    const track = (oid) => {
+      if (!oid) return
+      try {
+        wx.request({
+          url: `${app.globalData.apiBaseUrl}/analytics/pageview`,
+          method: 'POST',
+          data: { open_id: oid, page: pagePath }
+        })
+      } catch (_) {}
+    }
+    if (app.globalData && app.globalData.openId) {
+      track(app.globalData.openId)
+    } else if (app.loginIfNeeded) {
+      app.loginIfNeeded().then(track).catch(() => {})
+    }
     // 更新客服会话来源
     this._updateKfSessionFrom()
     try { if (app && app._log) app._log('user:onShow', { route: (getCurrentPages().slice(-1)[0] || {}).route }) } catch (e) {}

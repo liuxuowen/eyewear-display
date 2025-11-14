@@ -32,6 +32,23 @@ Page({
       const tb = this.getTabBar && this.getTabBar()
       if (tb && tb.setSelectedByRoute) tb.setSelectedByRoute()
     } catch (e) {}
+    // 页面曝光上报
+    const pagePath = '/pages/watchlist/index'
+    const track = (oid) => {
+      if (!oid) return
+      try {
+        wx.request({
+          url: `${app.globalData.apiBaseUrl}/analytics/pageview`,
+          method: 'POST',
+          data: { open_id: oid, page: pagePath }
+        })
+      } catch (_) {}
+    }
+    if (app.globalData && app.globalData.openId) {
+      track(app.globalData.openId)
+    } else if (app.loginIfNeeded) {
+      app.loginIfNeeded().then(track).catch(() => {})
+    }
     // 若仅从全屏图片预览返回，避免触发整页刷新
     if (this._skipNextOnShow) {
       this._skipNextOnShow = false
@@ -299,12 +316,25 @@ Page({
   previewImage(e) {
     const cur = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.current) || ''
     let list = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.list) || []
+    const model = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.model) || ''
     if (typeof list === 'string') {
       // dataset 把数组序列化为逗号拼接字符串的情况
       list = list.split(',').map(s => s.trim()).filter(Boolean)
     }
     if (!Array.isArray(list) || list.length === 0) list = [cur].filter(Boolean)
     if (!cur) return
+    // 上报一次图片预览 PV（包含 frame_model 作为查询参数，便于后台识别）
+    try {
+      const oid = (getApp() && getApp().globalData && getApp().globalData.openId) || ''
+      if (oid) {
+        const qp = model ? `?model=${encodeURIComponent(model)}` : ''
+        wx.request({
+          url: `${app.globalData.apiBaseUrl}/analytics/pageview`,
+          method: 'POST',
+          data: { open_id: oid, page: `/pages/watchlist/preview${qp}` }
+        })
+      }
+    } catch (_) {}
     // 标记：从预览返回时跳过一次 onShow 刷新
     this._skipNextOnShow = true
     wx.previewImage({ current: cur, urls: list })

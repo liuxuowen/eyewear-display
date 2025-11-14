@@ -1396,6 +1396,12 @@ def list_shares():
         q = SalesShare.query
         if salesperson_open_id:
             q = q.filter(SalesShare.salesperson_open_id == salesperson_open_id)
+        # 仅显示已发送的记录
+        try:
+            q = q.filter(SalesShare.is_sent.is_(True))
+        except Exception:
+            # 兼容性保护：若字段不可用则忽略
+            pass
         if customer_open_id:
             # customer_open_ids 中包含该客户；使用 LIKE 简单匹配（JSON 数组字符串），再在内存中过滤精确包含
             like = f"%{customer_open_id}%"
@@ -1573,31 +1579,177 @@ def admin_home():
 @app.route('/admin/pageviews', methods=['GET'])
 def admin_pageviews():
     open_id = (request.args.get('open_id') or '').strip()
-    rows = []
-    grouped = []
-    if open_id:
+    # 结果上下文
+    user_info = None
+    referrals = []
+    referrals_count = 0
+    fav_products = []
+    pv_list = []
+
+    def _is_private_ip(ip: str) -> bool:
         try:
-            q = PageView.query.filter_by(open_id=open_id).order_by(PageView.created_at.desc()).limit(1000)
-            rows = q.all()
+            if not ip:
+                return True
+            ip = ip.strip()
+            return (
+                ip.startswith('10.') or
+                ip.startswith('192.168.') or
+                ip.startswith('127.') or
+                ip.startswith('::1') or
+                (ip.startswith('172.') and 16 <= int(ip.split('.')[1]) <= 31)
+            )
+        except Exception:
+            return False
+
+    # 简单 UA 品牌提取
+    def _ua_device(ua: str) -> str:
+        if not ua:
+            return ''
+        u = ua.lower()
+        if 'iphone' in u or 'ipad' in u or 'macintosh' in u or 'ios' in u:
+            return 'iPhone/iOS'
+        if 'huawei' in u or 'honor' in u or 'huaweibrowser' in u:
+            return 'Huawei/Honor'
+        if 'xiaomi' in u or 'redmi' in u or 'miui' in u:
+            return 'Xiaomi/Redmi'
+        if 'oppo' in u:
+            return 'OPPO'
+        if 'vivo' in u:
+            return 'vivo'
+        if 'oneplus' in u:
+            return 'OnePlus'
+        if 'samsung' in u or 'sm-' in u:
+            return 'Samsung'
+        if 'android' in u:
+            return 'Android'
+        if 'windows' in u:
+            return 'Windows'
+        if 'mac os' in u:
+            return 'macOS'
+        return ''
+
+    # 简单 IP 定位（外网 IP），使用第三方服务，带缓存
+    _IP_LOC_CACHE = {}
+    def _ip_location(ip: str) -> str:
+        try:
+            if not ip or _is_private_ip(ip):
+                return '内网IP'
+            if ip in _IP_LOC_CACHE:
+                return _IP_LOC_CACHE[ip]
+            # 使用 ip-api.com（免费、限流）。生产可替换为内置库或自建服务。
+            url = f"http://ip-api.com/json/{ip}?lang=zh-CN&fields=status,regionName,city"
+            r = requests.get(url, timeout=1.5)
+            if r.ok:
+                j = r.json() or {}
+                if j.get('status') == 'success':
+                    region = (j.get('regionName') or '').strip()
+                    city = (j.get('city') or '').strip()
+                    loc = (region + ' ' + city).strip()
+                    _IP_LOC_CACHE[ip] = loc or ip
+                    return _IP_LOC_CACHE[ip]
+        except Exception:
+            pass
+        return ip or ''
+
+    try:
+        if not open_id:
+            return _admin_response('admin/pageviews.html', open_id=open_id,
+                                   user_info=None, referrals=[], referrals_count=0,
+                                   fav_products=[], pv_list=[], preview_models=[])
+        # 基本信息
+        u = User.query.get(open_id)
+        if u:
+            sales_name = ''
+            sales_open = (u.my_sales_open_id or '').strip()
+            if sales_open:
+                sp = Salesperson.query.filter_by(open_id=sales_open).first()
+                if sp:
+                    sales_name = sp.name or ''
+            user_info = {
+                'open_id': u.open_id,
+                'nickname': u.nickname or '',
+                'avatar_url': u.avatar_url or '',
+                'created_at': u.created_at,
+                'sales_open_id': sales_open,
+                'sales_name': sales_name,
+            }
+        # 转介绍
+        try:
+            rs = (User.query
+                  .with_entities(User.open_id, User.nickname, User.avatar_url, User.created_at)
+                  .filter(User.referrer_open_id == open_id)
+                  .order_by(User.created_at.desc())
+                  .all())
+            referrals = [{
+                'open_id': r.open_id,
+                'nickname': r.nickname or '',
+                'avatar_url': r.avatar_url or '',
+                'created_at': r.created_at,
+            } for r in rs]
+            referrals_count = len(referrals)
+        except Exception:
+            referrals = []
+            referrals_count = 0
+        # 推荐商品列表（去重、仅上架）
+        try:
+            subq = select(Favorite.frame_model).where(Favorite.open_id == open_id)
+            prods = Product.query.filter(Product.frame_model.in_(subq), Product.is_active == '是').all()
+            fav_products = [_serialize_product_with_public_images(p) for p in prods]
+        except Exception:
+            fav_products = []
+        # 访问日志（最新 500 条）
+        try:
+            pv_rows = (PageView.query
+                       .filter_by(open_id=open_id)
+                       .order_by(PageView.created_at.desc())
+                       .limit(500)
+                       .all())
         except Exception as e:
             logger.error('admin pageviews query error: %s', e)
-            rows = []
-        # 按日期分组（以数据库时间为准，约定已是北京时间）
-        from collections import OrderedDict
-        by_date = OrderedDict()
-        for r in rows:
+            pv_rows = []
+        # 提取预览过的镜架型号：路径 /pages/watchlist/preview?model=XXX
+        preview_models_set = set()
+        from urllib.parse import urlparse, parse_qs
+        for r in pv_rows:
             try:
-                if not r.created_at:
-                    d = '未知日期'
-                elif getattr(r.created_at, 'tzinfo', None) is None:
-                    d = r.created_at.date().isoformat()
-                else:
-                    d = r.created_at.astimezone(timezone(CN_UTC_OFFSET)).date().isoformat()
+                p = (r.page or '').strip()
+                if p.startswith('/pages/watchlist/preview'):
+                    q = urlparse(p)
+                    qs = parse_qs(q.query or '')
+                    m = (qs.get('model') or [''])[0].strip()
+                    if m:
+                        preview_models_set.add(m)
             except Exception:
-                d = '未知日期'
-            by_date.setdefault(d, []).append(r)
-        grouped = [{'date': k, 'items': v} for k, v in by_date.items()]
-    return _admin_response('admin/pageviews.html', open_id=open_id, grouped=grouped)
+                pass
+        # 预取 IP 定位
+        uniq_ips = []
+        seen_ip = set()
+        for r in pv_rows:
+            ip = (r.ip or '').strip()
+            if ip and ip not in seen_ip:
+                seen_ip.add(ip)
+                uniq_ips.append(ip)
+        for ip in uniq_ips[:100]:  # 限制最多预查 100 个，避免阻塞
+            _IP_LOC_CACHE.setdefault(ip, _ip_location(ip))
+        # 组装最终列表
+        pv_list = [{
+            'time_str': to_beijing(r.created_at),
+            'page': r.page,
+            'ip': r.ip or '',
+            'ip_loc': _IP_LOC_CACHE.get((r.ip or '').strip(), (r.ip or '')),
+            'device': _ua_device(r.user_agent or ''),
+            'user_agent': r.user_agent or ''
+        } for r in pv_rows]
+    except Exception as e:
+        logger.error('admin pageviews build error: %s', e)
+    return _admin_response('admin/pageviews.html',
+                           open_id=open_id,
+                           user_info=user_info,
+                           referrals=referrals,
+                           referrals_count=referrals_count,
+                           fav_products=fav_products,
+                           pv_list=pv_list,
+                           preview_models=sorted(preview_models_set))
 
 
 @app.route('/admin/sales_shares', methods=['GET'])
@@ -1605,6 +1757,7 @@ def admin_sales_shares():
     sales_open_id = (request.args.get('sales_open_id') or request.args.get('open_id') or '').strip()
     rows = []
     grouped = []
+    sales_info = None
     if sales_open_id:
         try:
             q = SalesShare.query.filter(SalesShare.salesperson_open_id == sales_open_id).order_by(SalesShare.push_time.desc()).limit(1000)
@@ -1612,6 +1765,25 @@ def admin_sales_shares():
         except Exception as e:
             logger.error('admin sales_shares query error: %s', e)
             rows = []
+        # 销售信息（包含用户昵称与头像）
+        try:
+            sp = Salesperson.query.filter_by(open_id=sales_open_id).first()
+            usr = User.query.get(sales_open_id)
+            sales_info = {
+                'open_id': sales_open_id,
+                'name': (sp.name if sp else ''),
+                'nickname': (usr.nickname if usr else ''),
+                'avatar_url': (usr.avatar_url if usr else ''),
+                'user_created_at': (usr.created_at if usr else None)
+            }
+        except Exception:
+            sales_info = {
+                'open_id': sales_open_id,
+                'name': '',
+                'nickname': '',
+                'avatar_url': '',
+                'user_created_at': None
+            }
         # 按推送日期分组（以数据库时间为准，约定已是北京时间）
         from collections import OrderedDict
         by_date = OrderedDict()
@@ -1628,7 +1800,7 @@ def admin_sales_shares():
                 d = '未知日期'
             by_date.setdefault(d, []).append(r)
         grouped = [{'date': k, 'items': v} for k, v in by_date.items()]
-    return _admin_response('admin/sales_shares.html', sales_open_id=sales_open_id, grouped=grouped)
+    return _admin_response('admin/sales_shares.html', sales_open_id=sales_open_id, grouped=grouped, sales_info=sales_info)
 
 if __name__ == '__main__':
     # 仅用于开发。生产请使用 WSGI 服务器（如 gunicorn/uwsgi/waitress）并在反向代理后运行

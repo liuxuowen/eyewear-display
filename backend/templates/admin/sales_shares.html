@@ -22,11 +22,27 @@
 <body>
   <div class="wrap">
     <a class="back" href="/admin">← 返回</a>
-    <h1>推荐分享日志</h1>
-    <div class="muted">sales_open_id：{{ sales_open_id or '（未填写）' }}</div>
+    <h1>推荐分享详情</h1>
+    <div class="muted">销售 OpenID：{{ sales_open_id or '（未填写）' }}</div>
+
+    {% if sales_info %}
+    <div class="card" style="display:flex;align-items:center;gap:12px">
+      {% if sales_info.avatar_url %}
+        <img src="{{ sales_info.avatar_url }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:1px solid #eee" alt="avatar" />
+      {% else %}
+        <div style="width:56px;height:56px;border-radius:50%;background:#fafafa;border:1px solid #eee"></div>
+      {% endif %}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:16px;font-weight:600">{{ sales_info.name or sales_info.nickname or '未命名销售' }}</div>
+        <div class="muted" style="font-size:12px;word-break:break-all">OpenID：{{ sales_info.open_id }}</div>
+        {% if sales_info.nickname %}<div class="small" style="font-size:12px">昵称：{{ sales_info.nickname }}</div>{% endif %}
+        {% if sales_info.user_created_at %}<div class="small" style="font-size:12px">用户创建时间：{{ sales_info.user_created_at|cn_time }}</div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
 
     {% if not grouped %}
-      <p class="muted">暂无数据</p>
+      <p class="muted">暂无分享记录</p>
     {% endif %}
 
     {% for block in grouped %}
@@ -35,40 +51,42 @@
         <table>
           <thead>
             <tr>
-              <th>时间</th>
-              <th>商品数</th>
               <th>备注</th>
-              <th>发送</th>
-              <th>打开</th>
+              <th>推送发送时间</th>
+              <th>首次打开时间</th>
               <th>商品列表</th>
+              <th>打开的 OpenID 列表</th>
             </tr>
           </thead>
           <tbody>
             {% for r in block['items'] %}
             {% set d = r.to_dict() %}
             <tr>
-              <td>
-                <div>推送: {{ d.push_time|cn_time }}</div>
-                {% if d.last_sent_time %}<div class="muted">sent: {{ d.last_sent_time|cn_time }}</div>{% endif %}
-                {% if d.first_open_time %}<div class="muted">first open: {{ d.first_open_time|cn_time }}</div>{% endif %}
-                {% if d.last_open_time %}<div class="muted">last open: {{ d.last_open_time|cn_time }}</div>{% endif %}
-              </td>
-              <td>{{ (d.product_list or [])|length }}</td>
               <td>{{ d.note or '' }}</td>
               <td>
-                <span class="pill">is_sent={{ '是' if d.is_sent else '否' }}</span>
-                <span class="pill">sent_count={{ d.sent_count }}</span>
+                {% if d.last_sent_time %}
+                  {{ d.last_sent_time|cn_time }}
+                {% else %}
+                  {{ d.push_time|cn_time }}
+                {% endif %}
               </td>
-              <td>
-                <span class="pill">open_count={{ d.open_count }}</span>
-                <div class="muted" style="max-width:360px;word-break:break-all">
-                  {{ (d.customer_open_ids or [])|join(', ') }}
-                </div>
-              </td>
+              <td>{{ d.first_open_time and (d.first_open_time|cn_time) or '' }}</td>
               <td>
                 <div class="muted" style="max-width:420px;word-break:break-all">
                   {{ (d.product_list or [])|join(', ') }}
                 </div>
+              </td>
+              <td>
+                {% set ids = d.customer_open_ids or [] %}
+                {% if ids and ids|length > 0 %}
+                  <div style="display:flex;flex-direction:column;gap:4px;max-width:420px;word-break:break-all">
+                    {% for oid in ids %}
+                      <a href="https://yimuliaoran.top/admin/pageviews?open_id={{ oid }}" target="_blank">{{ oid }}</a>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
               </td>
             </tr>
             {% endfor %}
