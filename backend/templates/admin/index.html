@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>后台数据查看</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft Yahei",sans-serif;margin:0;background:#f7f8fa;color:#222}
+    .wrap{max-width:1040px;margin:24px auto;padding:0 16px}
+    h1{font-size:20px;margin:0 0 12px}
+    .card{background:#fff;border:1px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{display:block;font-size:12px;color:#666;margin-bottom:6px}
+    input[type=text]{height:36px;line-height:36px;border:1px solid #ddd;border-radius:6px;padding:0 10px;min-width:300px}
+    button{height:36px;padding:0 14px;border-radius:6px;border:1px solid #1677ff;color:#fff;background:#1677ff;cursor:pointer}
+    .muted{color:#888}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>后台数据查看</h1>
+    <div class="card">
+      <div class="row">
+        <div>
+          <form method="get" action="{{ pv_action }}">
+            <label>客户 open_id</label>
+            <input type="text" name="open_id" placeholder="输入客户 open_id" />
+            <button type="submit">查看访问日志</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div>
+          <form method="get" action="{{ ss_action }}">
+            <label>销售 open_id</label>
+            <input type="text" name="sales_open_id" placeholder="输入销售 open_id" />
+            <button type="submit">查看推荐日志</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <p class="muted">注：时间以 UTC 显示；如需筛选/导出等功能可后续增强。</p>
+  </div>
+</body>
+</html>

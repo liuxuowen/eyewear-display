@@ -9,7 +9,7 @@ import requests
 envfile = Path(__file__).with_name('.env')
 load_dotenv(dotenv_path=envfile)
 
-from flask import Flask, jsonify, request, g, has_request_context
+from flask import Flask, jsonify, request, g, has_request_context, render_template, make_response, url_for
 from flask_cors import CORS
 from config import Config
 from models import db, Product, User, PageView, Favorite, Salesperson, SalesShare
@@ -1516,6 +1516,70 @@ def add_favorites_batch():
     except Exception as e:
         db.session.rollback()
         return handle_error(e, 'Error adding favorites batch')
+
+
+# === 简易后台（PC）数据查看 ===
+def _admin_response(template_name, **context):
+    """渲染管理页面并放宽 CSP 以允许样式/静态资源。"""
+    html = render_template(template_name, **context)
+    resp = make_response(html)
+    # 覆盖默认 CSP，允许样式和本域静态资源
+    resp.headers['Content-Security-Policy'] = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self' 'unsafe-inline'"
+    # PC 页面可缓存短期（如需禁用可改为 no-store）
+    resp.headers.setdefault('Cache-Control', 'no-cache')
+    return resp
+
+
+@app.route('/admin', methods=['GET'])
+def admin_home():
+    return _admin_response('admin/index.html',
+                           pv_action=url_for('admin_pageviews'),
+                           ss_action=url_for('admin_sales_shares'))
+
+
+@app.route('/admin/pageviews', methods=['GET'])
+def admin_pageviews():
+    open_id = (request.args.get('open_id') or '').strip()
+    rows = []
+    grouped = []
+    if open_id:
+        try:
+            q = PageView.query.filter_by(open_id=open_id).order_by(PageView.created_at.desc()).limit(1000)
+            rows = q.all()
+        except Exception as e:
+            logger.error('admin pageviews query error: %s', e)
+            rows = []
+        # 按日期分组（UTC 日期）
+        from collections import OrderedDict
+        by_date = OrderedDict()
+        for r in rows:
+            d = (r.created_at.date().isoformat() if r.created_at else '未知日期')
+            by_date.setdefault(d, []).append(r)
+        grouped = [{'date': k, 'items': v} for k, v in by_date.items()]
+    return _admin_response('admin/pageviews.html', open_id=open_id, grouped=grouped)
+
+
+@app.route('/admin/sales_shares', methods=['GET'])
+def admin_sales_shares():
+    sales_open_id = (request.args.get('sales_open_id') or request.args.get('open_id') or '').strip()
+    rows = []
+    grouped = []
+    if sales_open_id:
+        try:
+            q = SalesShare.query.filter(SalesShare.salesperson_open_id == sales_open_id).order_by(SalesShare.push_time.desc()).limit(1000)
+            rows = q.all()
+        except Exception as e:
+            logger.error('admin sales_shares query error: %s', e)
+            rows = []
+        # 按推送日期分组（UTC 日期）
+        from collections import OrderedDict
+        by_date = OrderedDict()
+        for r in rows:
+            dt = r.push_time or r.last_sent_time or r.first_open_time
+            d = (dt.date().isoformat() if dt else '未知日期')
+            by_date.setdefault(d, []).append(r)
+        grouped = [{'date': k, 'items': v} for k, v in by_date.items()]
+    return _admin_response('admin/sales_shares.html', sales_open_id=sales_open_id, grouped=grouped)
 
 if __name__ == '__main__':
     # 仅用于开发。生产请使用 WSGI 服务器（如 gunicorn/uwsgi/waitress）并在反向代理后运行

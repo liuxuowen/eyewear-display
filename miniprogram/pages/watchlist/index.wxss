@@ -126,14 +126,17 @@
 	margin-top: 12rpx;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 12rpx;
+	gap: 12rpx; /* 两列间距：共两个 gap -> 24rpx */
 }
 .rec-img {
-	width: 200rpx;
+	/* 适配三列：先给一个百分比兜底，再用 calc 精确计算 */
+	width: 32.5%;
+	width: calc((100% - 24rpx) / 3);
 	height: 150rpx;
 	background: #fafafa;
 	border: 1rpx solid #eee;
 	border-radius: 8rpx;
+	box-sizing: border-box; /* 包含描边，避免换行 */
   opacity: 0;
   transition: opacity .28s ease;
 }

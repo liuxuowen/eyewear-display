@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>访问日志 - {{ open_id or '' }}</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft Yahei",sans-serif;margin:0;background:#f7f8fa;color:#222}
+    .wrap{max-width:1120px;margin:24px auto;padding:0 16px}
+    a{color:#1677ff;text-decoration:none}
+    .back{margin-bottom:12px;display:inline-block}
+    h1{font-size:18px;margin:0 0 8px}
+    .muted{color:#888}
+    .card{background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 12px;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #f0f0f0;padding:8px 6px;text-align:left;font-size:14px}
+    th{color:#666;background:#fafafa}
+    .date-head{font-weight:700;margin:12px 0 6px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/admin">← 返回</a>
+    <h1>客户访问日志</h1>
+    <div class="muted">open_id：{{ open_id or '（未填写）' }}</div>
+
+    {% if not grouped %}
+      <p class="muted">暂无数据</p>
+    {% endif %}
+
+    {% for block in grouped %}
+      <div class="card">
+        <div class="date-head">{{ block.date }}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>页面</th>
+              <th>Referer</th>
+              <th>User-Agent</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in block['items'] %}
+            <tr>
+              <td>{{ r.created_at }}</td>
+              <td>{{ r.page }}</td>
+              <td class="muted">{{ r.referer }}</td>
+              <td class="muted">{{ r.user_agent }}</td>
+              <td>{{ r.ip }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>
