@@ -1,6 +1,8 @@
 # test
 import os
 import re
+import json
+import time
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
@@ -352,10 +354,6 @@ def get_products():
     try:
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
-        # try:
-        #     logger.info("/api/products query start page=%s per_page=%s args=%s", page, per_page, dict(request.args))
-        # except Exception:
-        #     pass
 
         # 搜索参数（精确匹配）
         search_field = (request.args.get('search_field') or '').strip()
@@ -507,11 +505,6 @@ def get_products():
 
         products = paginate_query(query, page, per_page)
 
-        # try:
-        #     logger.info("/api/products query done total=%s pages=%s current_page=%s count=%s", products.total, products.pages, products.page, len(products.items))
-        # except Exception:
-        #     pass
-
         return jsonify({
             'status': 'success',
             'data': {
@@ -583,7 +576,6 @@ def upload_avatar():
             content_type = f.mimetype
         else:
             # 远程下载：仅允许微信头像域名，避免滥用
-            import requests as _rq
             from urllib.parse import urlparse
             try:
                 pr = urlparse(remote_url)
@@ -592,7 +584,7 @@ def upload_avatar():
                 if host not in allowed_hosts:
                     logger.warning('avatar remote_url host not allowed: %r (open_id=%r)', host, open_id)
                     return jsonify({'status': 'error', 'message': 'remote host not allowed'}), 400
-                r = _rq.get(remote_url, timeout=5)
+                r = requests.get(remote_url, timeout=5)
                 r.raise_for_status()
                 content_type = r.headers.get('Content-Type', '')
                 if not _allowed_image(content_type):
@@ -617,7 +609,6 @@ def upload_avatar():
             pass
         safe = secure_filename(open_id) or 'user'
         # 使用 open_id 前缀 + 时间戳，避免频繁覆盖；如需覆盖可改为固定名
-        import time
         filename = f"{safe}_{int(time.time())}{ext}"
         save_dir = Path(app.root_path) / 'static' / 'avatars'
         save_dir.mkdir(parents=True, exist_ok=True)
@@ -763,7 +754,6 @@ def add_favorite():
 
         # 幂等插入
         # 生成批次：若请求带 batch_id 则尝试复用；否则新建
-        import time, datetime
         incoming_batch_id = data.get('batch_id')
         batch_id = None
         batch_time = None
@@ -1198,7 +1188,6 @@ def create_share_push():
                 note = note[:10]
         except Exception:
             note = note[:10] if note else None
-        import json
         # 兼容性保护：仅当模型具备 dedup_key 属性时，启用去重逻辑
         has_dedup_attr = hasattr(SalesShare, 'dedup_key')
         # 若携带 dedup_key，先尝试按键查找，避免重复创建
@@ -1211,7 +1200,6 @@ def create_share_push():
                 except Exception:
                     pass
                 return jsonify({'status': 'success', 'data': exist.to_dict(), 'dedup': True})
-        import datetime
         rec_kwargs = {
             'salesperson_open_id': salesperson_open_id,
             'product_list': json.dumps(clean, ensure_ascii=False),
@@ -1277,7 +1265,6 @@ def track_share_open():
         rec = SalesShare.query.get(share_id)
         if not rec:
             return jsonify({'status': 'error', 'message': 'share not found'}), 404
-        import json, datetime
         try:
             existing = json.loads(rec.customer_open_ids) if rec.customer_open_ids else []
             if not isinstance(existing, list):
@@ -1338,7 +1325,6 @@ def track_share_open_by_dedup():
         rec = SalesShare.query.filter_by(dedup_key=dedup_key).first()
         if not rec:
             return jsonify({'status': 'error', 'message': 'share not found by dedup_key'}), 404
-        import json, datetime
         try:
             existing = json.loads(rec.customer_open_ids) if rec.customer_open_ids else []
             if not isinstance(existing, list):
@@ -1531,7 +1517,6 @@ def add_favorites_batch():
         valid_set = {row.frame_model for row in valid}
 
         added = 0
-        import time, datetime
         # 新批次 ID：统一一个 batch_id 赋予本次新增的记录
         new_batch_id = int(time.time())
         batch_time = datetime.datetime.utcnow()
