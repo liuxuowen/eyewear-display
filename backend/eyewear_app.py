@@ -348,6 +348,16 @@ def handle_404(_):
 def healthz():
     return jsonify({'status': 'ok'}), 200
 
+@app.route('/api/system/config', methods=['GET'])
+def get_system_config():
+    """获取系统全局配置（如生产模式开关）"""
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'is_production_mode': app.config.get('IS_PRODUCTION_MODE', False)
+        }
+    })
+
 @app.route('/api/products', methods=['GET'])
 def get_products():
     """获取产品列表"""

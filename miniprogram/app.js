@@ -14,6 +14,10 @@ App({
       this.globalData.debug = debug
       this._log('onLaunch:init', { oid, isSales, hasMySales, mySalesOpenId, debug })
     } catch (e) {}
+    
+    // 获取系统配置（生产模式开关）
+    this.fetchSystemConfig()
+
     // 自动登录（若本地无 openId）
     if (!this.globalData.openId) {
       this.loginIfNeeded()
@@ -149,6 +153,20 @@ App({
     } catch (e) {}
   },
 
+  fetchSystemConfig() {
+    wx.request({
+      url: `${this.globalData.apiBaseUrl}/system/config`,
+      method: 'GET',
+      success: (res) => {
+        if (res && res.data && res.data.status === 'success' && res.data.data) {
+          this.globalData.isProductionMode = !!res.data.data.is_production_mode
+          this._log('fetchSystemConfig:success', { isProductionMode: this.globalData.isProductionMode })
+        }
+      },
+      fail: (e) => this._log('fetchSystemConfig:fail', e)
+    })
+  },
+
   globalData: {
     apiBaseUrl: 'https://yimuliaoran.top/api',
     openId: '',
@@ -157,6 +175,8 @@ App({
     hasMySales: false,
     mySalesOpenId: '',
     // 调试开关
-    debug: false
+    debug: false,
+    // 生产模式开关
+    isProductionMode: false
   }
 })
