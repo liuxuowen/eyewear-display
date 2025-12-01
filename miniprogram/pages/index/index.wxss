@@ -22,7 +22,7 @@
   gap: 12rpx;
   background: #f6f6f6;
   border-radius: 9999rpx;
-  padding: 0 90rpx 0 14rpx; /* 右侧预留空间放“清空”按钮 */
+  padding: 0 14rpx; /* 移除右侧大padding，改为flex布局自然挤压 */
   width: 100%;
   box-sizing: border-box;
   position: relative; /* 供覆盖层定位 */
@@ -32,18 +32,31 @@
   flex: 1;
   font-size: 24rpx;
   min-width: 0; /* 允许在小屏时收缩，避免与按钮重叠 */
+  /* 给输入框加个细边框，更明显的分辨边界 */
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  padding: 0 12rpx;
+  background: #fff;
+  margin-right: 8rpx; /* 与重置按钮的间距 */
 }
 
 .search-clear {
-  position: absolute;
-  right: 20rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #999;
+  position: static; /* 改为流式布局，不再绝对定位 */
+  transform: none;
+  color: #666;
   font-size: 24rpx;
-  padding: 4rpx 8rpx;
-  z-index: 2; /* 确保在输入框之上可点击 */
-  background: transparent;
+  padding: 0 12rpx;
+  z-index: 2;
+  background: #fff;
+  /* 给按钮加个细边框 */
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  white-space: nowrap; /* 防止文字换行 */
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .container {

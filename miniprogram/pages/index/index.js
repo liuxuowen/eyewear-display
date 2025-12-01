@@ -352,6 +352,7 @@ Page({
     }, () => {
       this._updateSearchDisplay()
       this._doSearch()
+      this.openSearchPage()
     })
   },
 

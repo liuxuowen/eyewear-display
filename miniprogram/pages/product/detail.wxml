@@ -15,46 +15,46 @@
   <view class="product-info">
     <view class="basic-info">
       <view class="model-spec-row">
-        <text class="model-inline">型号：{{f.display(product.frame_model)}}</text>
+        <text class="model-inline">镜架型号：{{f.display(product.frame_model)}}</text>
         <text class="spec-inline">镜架尺寸：{{f.unit(product.lens_size, '')}}-{{f.unit(product.nose_bridge_width, '')}}-{{f.unit(product.temple_length, '')}}</text>
       </view>
       <view class="total-price-row">
-        <text class="total">总长：{{f.unit(product.frame_total_length, 'mm')}}</text>
+        <text class="total">镜架总长：{{f.unit(product.frame_total_length, '')}}</text>
         <text class="price">售价：￥{{f.display(product.price)}}</text>
       </view>
     </view>
 
     <view class="specs-info">
       <view class="spec-item">
-        <text class="label">镜片尺寸：</text>
-        <text class="value">{{f.unit(product.lens_size, 'mm')}}</text>
+        <text class="label">镜片大小：</text>
+        <text class="value">{{f.unit(product.lens_size, '')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">鼻梁宽度：</text>
-        <text class="value">{{f.unit(product.nose_bridge_width, 'mm')}}</text>
+        <text class="value">{{f.unit(product.nose_bridge_width, '')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">镜腿长度：</text>
-        <text class="value">{{f.unit(product.temple_length, 'mm')}}</text>
+        <text class="value">{{f.unit(product.temple_length, '')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">镜架高度：</text>
-        <text class="value">{{f.unit(product.frame_height, 'mm')}}</text>
+        <text class="value">{{f.unit(product.frame_height, '')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">包边厚度：</text>
-        <text class="value">{{f.unit(product.frame_thickness, 'mm')}}</text>
+        <text class="value">{{f.unit(product.frame_thickness, '')}}</text>
       </view>
       <view class="spec-item">
         <text class="label">重量：</text>
         <text class="value">{{f.unit(product.weight, 'g')}}</text>
       </view>
       <view class="spec-item">
-        <text class="label">材料：</text>
+        <text class="label">镜架材料：</text>
         <text class="value">{{f.display(product.frame_material)}}</text>
       </view>
       <view class="spec-item">
-        <text class="label">品牌：</text>
+        <text class="label">所属品牌：</text>
         <text class="value">{{f.display(product.brand)}}</text>
       </view>
     </view>

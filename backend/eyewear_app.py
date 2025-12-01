@@ -1529,7 +1529,7 @@ def add_favorites_batch():
         added = 0
         # 新批次 ID：统一一个 batch_id 赋予本次新增的记录
         new_batch_id = int(time.time())
-        batch_time = datetime.datetime.utcnow()
+        batch_time = datetime.utcnow()
         if reset:
             # 替换推荐：清空后全量加入有效集合
             Favorite.query.filter_by(open_id=open_id).delete(synchronize_session=False)
