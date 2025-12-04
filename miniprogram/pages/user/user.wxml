@@ -16,7 +16,7 @@
 	</view>
 
 	<!-- 我的销售卡片（所有角色都显示；无分配则提供联系客服入口） -->
-	<view class="card">
+	<!-- <view class="card">
 		<view class="row" style="justify-content: space-between;">
 			<view>
 				<text class="label">我的销售：</text>
@@ -26,10 +26,10 @@
 				<button wx:if="{{!hasMySales}}" size="mini" type="primary" open-type="contact" session-from="{{kfSessionFrom}}">咨询客服</button>
 			</view>
 		</view>
-	</view>
+	</view> -->
 
 	<!-- 推荐给好友（转发）临时入口 -->
-	<view class="card">
+	<view class="card" wx:if="{{!isSales && enableCustomerReferrals}}">
 		<view class="row" style="justify-content: space-between;">
 			<view style="display:flex;align-items:center;gap:12rpx;">
 				<text class="label">推荐：</text>
@@ -42,7 +42,7 @@
 	</view>
 
 	<!-- 我的转介绍人员列表 -->
-	<view class="card">
+	<view class="card" wx:if="{{!isSales && enableCustomerReferrals}}">
 		<view class="row">
 			<text class="label">我的推荐的好友：</text>
 			<text class="value">共 {{referrals.length}} 人</text>
@@ -66,7 +66,7 @@
 	</view>
 
 	<!-- OpenID 底部居中展示 -->
-	<view class="openid-footer">
+	<view class="openid-footer" style="{{!isSales ? 'opacity: 0;' : ''}}">
 		<text bindtap="copyOpenId">我的ID：{{openId || '--'}} （点击可复制）</text>
 	</view>
 	<!-- 角色信息（仅销售显示） -->

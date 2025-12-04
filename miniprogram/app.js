@@ -160,7 +160,11 @@ App({
       success: (res) => {
         if (res && res.data && res.data.status === 'success' && res.data.data) {
           this.globalData.isProductionMode = !!res.data.data.is_production_mode
-          this._log('fetchSystemConfig:success', { isProductionMode: this.globalData.isProductionMode })
+          this.globalData.enableCustomerReferrals = (res.data.data.enable_customer_referrals !== false) // 默认为 true
+          this._log('fetchSystemConfig:success', { 
+            isProductionMode: this.globalData.isProductionMode,
+            enableCustomerReferrals: this.globalData.enableCustomerReferrals
+          })
         }
       },
       fail: (e) => this._log('fetchSystemConfig:fail', e)
@@ -177,6 +181,8 @@ App({
     // 调试开关
     debug: false,
     // 生产模式开关
-    isProductionMode: false
+    isProductionMode: false,
+    // 客户推荐功能开关
+    enableCustomerReferrals: true
   }
 })

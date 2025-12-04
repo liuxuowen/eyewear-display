@@ -17,6 +17,7 @@ from flask_cors import CORS
 from config import Config
 from models import db, Product, User, PageView, Favorite, Salesperson, SalesShare
 from sqlalchemy import inspect, text, or_, select
+from sqlalchemy.exc import IntegrityError
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -354,7 +355,8 @@ def get_system_config():
     return jsonify({
         'status': 'success',
         'data': {
-            'is_production_mode': app.config.get('IS_PRODUCTION_MODE', False)
+            'is_production_mode': app.config.get('IS_PRODUCTION_MODE', False),
+            'enable_customer_referrals': app.config.get('ENABLE_CUSTOMER_REFERRALS', True)
         }
     })
 
@@ -837,10 +839,18 @@ def upsert_user():
             # 创建新用户时可带上 referrer_open_id
             if referrer_open_id == open_id:
                 referrer_open_id = None  # 自己不能作为自己的介绍人
-            user = User(open_id=open_id, nickname=nickname, avatar_url=avatar_url, referrer_open_id=referrer_open_id)
-            db.session.add(user)
-        else:
-            # 仅当传入新值时更新
+            new_user = User(open_id=open_id, nickname=nickname, avatar_url=avatar_url, referrer_open_id=referrer_open_id)
+            db.session.add(new_user)
+            try:
+                db.session.commit()
+                return jsonify({'status': 'success', 'data': new_user.to_dict()})
+            except IntegrityError:
+                db.session.rollback()
+                # 并发创建导致冲突，重新获取用户并走更新逻辑
+                user = User.query.get(open_id)
+        
+        # 仅当传入新值时更新
+        if user:
             if nickname is not None:
                 user.nickname = nickname
             if avatar_url is not None:
@@ -857,8 +867,11 @@ def upsert_user():
                     pass  # 幂等：相同值不做更新
                 else:
                     return jsonify({'status': 'error', 'message': 'referrer already set and cannot be changed'}), 400
-        db.session.commit()
-        return jsonify({'status': 'success', 'data': user.to_dict()})
+            db.session.commit()
+            return jsonify({'status': 'success', 'data': user.to_dict()})
+        else:
+            # 理论上不应到达此处
+            return jsonify({'status': 'error', 'message': 'User not found after retry'}), 500
     except Exception as e:
         db.session.rollback()
         return handle_error(e, 'Error upserting user')

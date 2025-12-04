@@ -56,12 +56,13 @@ Page({
     favoriteIds: {},
     // 角色与分享选择
     isSales: false,
-  hasMySales: false,
+    hasMySales: false,
     roleReady: false,
     preRouted: false,
     selecting: false,
     selectedMap: {},
     selectedCount: 0,
+    totalCount: 0,
     // 分享包准备状态（用于提前获取 share_id 并将 shid 带入路径）
   // 分享相关旧状态保留（不再用于顶部按钮，但仍支持底部批次打包分享）
   isSharePrepared: false,
@@ -253,7 +254,8 @@ Page({
           const newItems = (items || []).map(it => this._withHighlights(it))
           this.setData({
             products: this.data.products.concat(newItems),
-            hasMore: page < pages
+            hasMore: page < pages,
+            totalCount: total || 0
           })
         } else {
           wx.showToast({

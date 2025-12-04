@@ -15,16 +15,21 @@
 
 <view class="container">
   <!-- 销售分享工具栏 -->
-  <view class="sales-toolbar" wx:if="{{isSales}}" style="position: sticky; top: {{navHeight}}px; z-index: 1001; background: #fff; border-bottom: 1rpx solid #eee;">
-    <block wx:if="{{!selecting}}">
-      <button size="mini" type="primary" class="toolbar-btn" bindtap="toggleSelecting">选择分享</button>
-    </block>
-    <block wx:else>
-      <view class="two-btns">
-        <button size="mini" type="default" class="toolbar-half" bindtap="toggleSelecting">取消</button>
-        <button size="mini" type="primary" class="toolbar-half" disabled="{{selectedCount<=0}}" bindtap="addSelectedToBatch">加入推荐( {{selectedCount}})</button>
-      </view>
-    </block>
+  <view class="sales-toolbar" wx:if="{{isSales}}" style="top: {{navHeight}}px;">
+    <view class="result-info">
+      <text class="result-count">共 {{totalCount}} 款</text>
+    </view>
+    <view class="toolbar-right">
+      <block wx:if="{{!selecting}}">
+        <button size="mini" type="primary" class="toolbar-btn" bindtap="toggleSelecting">选择分享</button>
+      </block>
+      <block wx:else>
+        <view class="two-btns">
+          <button size="mini" type="default" class="toolbar-half" bindtap="toggleSelecting">取消</button>
+          <button size="mini" type="primary" class="toolbar-half" disabled="{{selectedCount<=0}}" bindtap="addSelectedToBatch">加入({{selectedCount}})</button>
+        </view>
+      </block>
+    </view>
   </view>
   <!-- 当未分配销售时立即展示商品列表（不等角色完全就绪）；若已分配销售则等待 roleReady 再决定是否跳转 -->
   <view class="product-list" wx:if="{{isSales || (!hasMySales)}}">
@@ -158,7 +163,7 @@
   <view class="tabbar-spacer"></view>
 </view>
 <!-- 悬浮客服入口 -->
-<button class="float-kf" open-type="contact" session-from="{{kfSessionFrom}}" hover-class="none">
+<button class="float-kf" open-type="contact" session-from="{{kfSessionFrom}}" hover-class="none" wx:if="{{!isSales}}">
   <image class="float-kf-img" src="../../images/cs.png" mode="aspectFit"></image>
   <!-- 无需文字，使用图标展示 -->
 </button>

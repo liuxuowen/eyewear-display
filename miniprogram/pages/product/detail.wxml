@@ -8,7 +8,7 @@
     interval="3000"
   >
     <swiper-item wx:for="{{product.images}}" wx:key="*this">
-      <image src="{{f.thumb(item)}}" data-origin="{{item}}" mode="aspectFit" class="product-image" bindtap="previewImage" data-current="{{item}}"></image>
+      <image src="{{item}}" data-origin="{{item}}" mode="aspectFit" class="product-image" bindtap="previewImage" data-current="{{item}}"></image>
     </swiper-item>
   </swiper>
 
@@ -70,7 +70,7 @@
       <view class="image-gallery">
         <block wx:for="{{product.images}}" wx:key="*this">
           <image
-            src="{{f.thumb(item)}}"
+            src="{{item}}"
             data-origin="{{item}}"
             mode="widthFix"
             class="gallery-image"

@@ -24,6 +24,9 @@ class Config:
     # 业务生产模式开关（控制UI展示等业务逻辑，与 ENV 区分）
     # 默认为 False (非生产模式)，如需开启请在 .env 设置 IS_PRODUCTION_MODE=true
     IS_PRODUCTION_MODE = os.getenv('IS_PRODUCTION_MODE', 'false').lower() in ('1', 'true', 'yes', 'on')
+    # 客户推荐功能开关（控制非销售角色是否显示推荐好友入口）
+    # 默认为 True (显示)，如需关闭请在 .env 设置 ENABLE_CUSTOMER_REFERRALS=false
+    ENABLE_CUSTOMER_REFERRALS = os.getenv('ENABLE_CUSTOMER_REFERRALS', 'true').lower() in ('1', 'true', 'yes', 'on')
 
     # CORS 允许的来源，逗号分隔
     CORS_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*')

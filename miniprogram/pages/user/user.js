@@ -15,6 +15,7 @@ Page({
     mySalesName: '',
     referrals: [],
     kfSessionFrom: '',
+    enableCustomerReferrals: true, // 默认显示，受后台配置控制
     // 已简化为一键获取并直接保存，不再使用草稿字段
   },
 
@@ -60,6 +61,10 @@ Page({
     }
     // 更新客服会话来源
     this._updateKfSessionFrom()
+    // 同步后台配置
+    if (app.globalData && app.globalData.enableCustomerReferrals !== undefined) {
+      this.setData({ enableCustomerReferrals: app.globalData.enableCustomerReferrals })
+    }
     try { if (app && app._log) app._log('user:onShow', { route: (getCurrentPages().slice(-1)[0] || {}).route }) } catch (e) {}
     if (app.globalData.openId && app.globalData.openId !== this.data.openId) {
       this.setData({ openId: app.globalData.openId })

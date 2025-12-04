@@ -20,9 +20,6 @@
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: #f6f6f6;
-  border-radius: 9999rpx;
-  padding: 0 14rpx; /* 移除右侧大padding，改为flex布局自然挤压 */
   width: 100%;
   box-sizing: border-box;
   position: relative; /* 供覆盖层定位 */
@@ -64,30 +61,57 @@
 }
 
 .sales-toolbar {
+  position: sticky;
+  z-index: 1001;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
   display: flex;
-  gap: 12rpx;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12rpx;
-  padding: 8rpx 16rpx;
+  padding: 16rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.03);
+}
+
+.result-info {
+  display: flex;
+  align-items: center;
+}
+
+.result-count {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
 }
 
 /* 工具栏按钮统一尺寸与间距 */
 .toolbar-btn {
-  min-width: 180rpx;
-  height: 64rpx;
-  line-height: 64rpx;
-  padding: 0 20rpx !important;
-  font-size: 28rpx;
+  min-width: 160rpx;
+  height: 60rpx !important;
+  line-height: 60rpx !important;
+  padding: 0 24rpx !important;
+  font-size: 26rpx !important;
+  border-radius: 30rpx !important; /* 圆角更美观 */
+  margin: 0 !important;
 }
 
 /* 两个各占50%的按钮容器 */
 .two-btns {
   display: flex;
-  gap: 12rpx;
-  width: 100%;
+  gap: 16rpx;
 }
 .toolbar-half {
-  flex: 1 1 50%;
+  min-width: 140rpx;
+  height: 60rpx !important;
+  line-height: 60rpx !important;
+  font-size: 26rpx !important;
+  padding: 0 20rpx !important;
+  border-radius: 30rpx !important;
+  margin: 0 !important;
 }
 
 /* 暗色取消按钮 */
