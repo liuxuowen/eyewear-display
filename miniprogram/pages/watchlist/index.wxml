@@ -1,4 +1,6 @@
 <!--pages/watchlist/index.wxml-->
+<image class="page-bg-img" src="/images/background.png" />
+<view class="page-bg-gradient"></view>
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
 <view class="container">
 	<!-- 顶部标题 + 清空（销售） -->

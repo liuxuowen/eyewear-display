@@ -318,11 +318,11 @@
   z-index: 1101;
   width: 150rpx !important;
   height: 96rpx !important;
-  border-radius: 50%;
-  background: #fff;
+  border-radius: 0;
+  background: transparent;
   padding: 0;
   border: none !important;   /* 移除按钮本体边框 */
-  box-shadow: 0 8rpx 5rpx rgba(0,0,0,0.2);
+  box-shadow: none;
   display: flex;            /* 居中图标，避免偏移造成“椭圆”视觉错觉 */
   align-items: center;
   justify-content: center;
@@ -339,5 +339,18 @@
   width: 100%;
   height: 100%;
   display: block;
-  border-radius: 50%;
+  border-radius: 0;
+}
+
+/* Background Styles */
+.page-bg-img {
+  position: fixed;
+  left: -14rpx; /* -7px */
+  top: -22rpx; /* -11px */
+  width: 772rpx; /* 386px */
+  height: 780rpx; /* 390px */
+  opacity: 1;
+  z-index: -1;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
 }

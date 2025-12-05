@@ -80,7 +80,7 @@
   width: 72rpx; /* 36px * 2 */
   height: 52rpx; /* 26px * 2 */
   
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 36rpx; /* 18px * 2 */
   font-weight: 500;
   /* line-height 由内联样式控制 */
@@ -120,7 +120,7 @@
 
 .history-section .section-title text:first-child {
   /* 移除绝对定位 */
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 28rpx; /* 14px * 2 */
   font-weight: 500;
   line-height: 28rpx; /* 14px * 2 */
@@ -130,7 +130,7 @@
 
 .history-section .clear {
   /* 移除绝对定位 */
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   font-weight: 500;
   line-height: 24rpx; /* 12px * 2 */
@@ -171,7 +171,7 @@
   gap: 20rpx; /* 10px * 2 */
   
   /* 字体样式 */
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   font-weight: 500;
   line-height: 24rpx; /* 12px * 2 */
@@ -247,7 +247,7 @@
 }
 
 .advanced-section .section-title text:first-child {
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 28rpx; /* 14px * 2 */
   font-weight: 500;
   line-height: 28rpx;
@@ -255,7 +255,7 @@
 }
 
 .advanced-section .reset-btn {
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   font-weight: 500;
   line-height: 24rpx;
@@ -278,7 +278,7 @@
   width: 96rpx; /* 48px * 2 */
   height: 24rpx; /* 12px * 2 */
   
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   font-weight: normal;
   line-height: 24rpx;
@@ -297,7 +297,7 @@
   border-radius: 6rpx; /* 3.11px * 2 */
   border: 1rpx solid transparent; /* 预留边框位置，防止抖动 */
   
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   color: #333333;
   
@@ -360,7 +360,7 @@
   width: 100%;
   text-align: center;
   
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   font-weight: normal;
   line-height: 24rpx;
@@ -379,7 +379,7 @@
   justify-content: center;
   align-items: center;
   
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 32rpx; /* 16px * 2 */
   font-weight: 500;
   color: #FFFFFF;
@@ -420,7 +420,7 @@
   align-items: center;
   padding: 0 16rpx; /* 8px * 2 */
   
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   font-weight: 500;
   color: #999999;

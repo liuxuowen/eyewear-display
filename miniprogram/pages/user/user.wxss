@@ -1,45 +1,99 @@
 /* pages/user/user.wxss */
+/* 自定义导航栏样式 */
+.custom-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: transparent;
+  z-index: 1000;
+}
+.nav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 标题居中 */
+}
+.nav-title {
+  position: absolute;
+  left: 304rpx; /* 152px * 2 */
+  width: 144rpx; /* 72px * 2 */
+  height: 52rpx; /* 26px * 2 */
+  
+  font-family: 'Source Han Sans CN';
+  font-size: 36rpx; /* 18px * 2 */
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 0px;
+  color: #333333;
+  z-index: 10;
+}
+
 .container {
-	padding: 24rpx;
+  padding: 24rpx;
 }
 .card {
-	background: #fff;
-	border-radius: 12rpx;
-	padding: 24rpx;
-	border: 1rpx solid #eaeaea;
-	box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+  background: #fff;
+  border-radius: 12rpx;
+  /* Top 108px - Nav(~88px) - ContainerPad(12px) = 8px = 16rpx */
+  margin-top: 16rpx;
+  /* Card Padding: Top 10px (20rpx), Left 12px (24rpx) */
+  padding: 20rpx 24rpx;
+  border: 1rpx solid #eaeaea;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
 }
-.avatar-row {
-	display: flex;
-	align-items: center;
-	margin-bottom: 16rpx;
+.profile-row {
+  display: flex;
+  align-items: center;
 }
 .avatar {
-	width: 120rpx;
-	height: 120rpx;
-	border-radius: 50%;
-	background: #f2f2f2;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  background: #f2f2f2;
 }
 .avatar-placeholder {
-	width: 120rpx;
-	height: 120rpx;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #ff4d4f; /* 无头像时提示醒目 */
-	background: #f9f9f9;
-	font-size: 24rpx; /* 修正父级 font-size:0 造成文字不可见 */
-	font-weight: 500;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4d4f; /* 无头像时提示醒目 */
+  background: #f9f9f9;
+  font-size: 24rpx; /* 修正父级 font-size:0 造成文字不可见 */
+  font-weight: 500;
+}
+.profile-fields {
+  margin-left: 24rpx; /* Gap 12px */
+}
+.nick-input {
+  font-family: 'Source Han Sans CN';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  color: #333333;
+  line-height: normal;
+  min-width: 120rpx; /* Ensure clickable area */
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+}
+.nick-placeholder {
+  color: #333333;
+  font-weight: 500;
 }
 .avatar-btn-ghost {
-	padding: 0;
-	margin: 0;
-	background: transparent;
-	border: none;
-	display: block;
-	text-align: left;
-	font-size: 0; /* 避免按钮内联高度影响布局 */
+  width: 80rpx !important;
+  height: 80rpx !important;
+  border-radius: 40rpx;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  display: block;
+  text-align: left;
+  font-size: 0; /* 避免按钮内联高度影响布局 */
+  flex: none;
 }
 .avatar-btn-ghost::after {
 	border: none; /* 去掉按钮默认边框效果 */
@@ -64,10 +118,29 @@
 .referrals-list .row .value.nickname { font-size: 28rpx; }
 .referrals-list .row .value.openid { font-size: 20rpx; }
 
-/* openid 再小一点以便区分 */
-/* .referrals-list .row .value:nth-child(2) { */
-	/* 若需要更细分可用自定义 class，这里保留逻辑位置示例 */
-/* } */
+/* Background Styles */
+.page-bg-img {
+  position: fixed;
+  left: -14rpx; /* -7px */
+  top: -22rpx; /* -11px */
+  width: 772rpx; /* 386px */
+  height: 780rpx; /* 390px */
+  opacity: 1;
+  z-index: -1;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+}
+/* .page-bg-gradient {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 750rpx;
+  height: 368rpx;
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: -1;
+  pointer-events: none;
+} */
 
 .actions {
 	margin-top: 16rpx;

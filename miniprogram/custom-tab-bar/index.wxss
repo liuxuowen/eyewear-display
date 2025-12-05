@@ -43,7 +43,7 @@
 }
 .tab-item .label {
   margin-top: 6rpx; /* 3px * 2 = 6rpx，Icon(8+56=64) + 6 = 70rpx (35px) */
-  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-family: 'Source Han Sans CN';
   font-size: 24rpx; /* 12px * 2 */
   font-weight: 500;
   line-height: normal;

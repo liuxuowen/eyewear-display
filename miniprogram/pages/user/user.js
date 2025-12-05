@@ -16,10 +16,33 @@ Page({
     referrals: [],
     kfSessionFrom: '',
     enableCustomerReferrals: true, // 默认显示，受后台配置控制
+    // 自定义导航尺寸
+    statusBarHeight: 20,
+    navBarHeight: 44,
+    navHeight: 64,
+    capsuleRightWidth: 0,
+    menuHeight: 32,
+    menuTop: 0,
     // 已简化为一键获取并直接保存，不再使用草稿字段
   },
 
   onLoad() {
+    // 计算状态栏/胶囊尺寸
+    try {
+      const sys = wx.getSystemInfoSync()
+      const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null
+      const statusBarHeight = sys.statusBarHeight || 20
+      let navBarHeight = 44
+      if (menu && menu.top && menu.height) {
+        navBarHeight = (menu.top - statusBarHeight) * 2 + menu.height
+      }
+      const navHeight = statusBarHeight + navBarHeight
+      const capsuleRightWidth = menu ? (sys.windowWidth - menu.left + 8) : 80
+      const menuHeight = menu && menu.height ? menu.height : 32
+      const menuTop = menu && menu.top ? menu.top : (statusBarHeight + (navBarHeight - menuHeight) / 2)
+      this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight, menuTop })
+    } catch (e) {}
+
     const oid = app.globalData.openId || ''
     if (oid) {
       this.setData({ openId: oid })

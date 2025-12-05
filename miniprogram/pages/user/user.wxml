@@ -1,4 +1,14 @@
 <!--pages/user/user.wxml-->
+<image class="page-bg-img" src="/images/background.png" />
+<view class="page-bg-gradient"></view>
+<!-- 自定义导航栏 -->
+<view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: 0;">
+  <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
+    <text class="nav-title" style="top: {{menuTop}}px; line-height: {{menuHeight}}px;">个人中心</text>
+  </view>
+</view>
+<view style="height: {{navHeight}}px;"></view>
+
 <view class="container">
 	<!-- 账号信息卡片 -->
 	<view class="card">
@@ -9,7 +19,7 @@
 			</button>
 			<view class="profile-fields">
 				<view class="row">
-					<input type="nickname" class="nick-input" placeholder="授权微信昵称" placeholder-style="{{ (editNickname || nickname) ? 'color:#999;' : 'color:#ff4d4f;' }}" value="{{editNickname || nickname}}" bindinput="onEditNicknameInput" bindblur="onNicknameBlur" bindconfirm="onNicknameConfirm" confirm-type="done" maxlength="20" style="flex:1"/>
+					<input type="nickname" class="nick-input" placeholder="请设置昵称" placeholder-class="nick-placeholder" value="{{nickname}}" bindinput="onEditNicknameInput" bindblur="onNicknameBlur" bindconfirm="onNicknameConfirm" confirm-type="done" maxlength="20"/>
 				</view>
 			</view>
 		</view>

@@ -144,3 +144,16 @@
   border-radius: 12rpx; /* 圆角更美观 */
   background: #f7f7f7; /* 加一点底色避免空白刺眼 */
 }
+
+/* Background Styles */
+.page-bg-img {
+  position: fixed;
+  left: -14rpx; /* -7px */
+  top: -22rpx; /* -11px */
+  width: 772rpx; /* 386px */
+  height: 780rpx; /* 390px */
+  opacity: 1;
+  z-index: -1;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+}
