@@ -9,6 +9,7 @@ Page({
     navHeight: 64,
     capsuleRightWidth: 0,
     menuHeight: 32,
+    menuTop: 0, // 胶囊按钮的 Top 值，用于对齐
     history: [],
   helpText: `最近搜索保留 5 条
 支持按如下字段进行精确匹配或范围匹配：
@@ -51,7 +52,8 @@ Page({
       frame_height: '',
       weight: '',
       price: ''
-    }
+    },
+    focusedField: ''
   },
 
   onLoad() {
@@ -67,7 +69,8 @@ Page({
       const navHeight = statusBarHeight + navBarHeight
       const capsuleRightWidth = menu ? (sys.windowWidth - menu.left + 8) : 80
       const menuHeight = menu && menu.height ? menu.height : 32
-      this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight })
+      const menuTop = menu && menu.top ? menu.top : (statusBarHeight + (navBarHeight - menuHeight) / 2)
+      this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight, menuTop })
     } catch (e) {}
 
     this._loadHistory()
@@ -131,6 +134,44 @@ Page({
 
   onCancel() {
     wx.navigateBack({ delta: 1 })
+  },
+
+  onResetMulti() {
+    this.setData({
+      filters: {
+        frame_model: '',
+        lens_size: '',
+        nose_bridge_width: '',
+        temple_length: '',
+        frame_total_length: '',
+        frame_height: '',
+        weight: '',
+        price: '',
+        brand_info: '',
+        frame_material: ''
+      },
+      selectedMaterials: [],
+      selectedMaterialMap: {},
+      errors: {
+        lens_size: '',
+        nose_bridge_width: '',
+        temple_length: '',
+        frame_total_length: '',
+        frame_height: '',
+        weight: '',
+        price: ''
+      },
+      focusedField: ''
+    })
+  },
+
+  onFocus(e) {
+    const field = e.currentTarget.dataset.field
+    this.setData({ focusedField: field })
+  },
+
+  onBlur(e) {
+    this.setData({ focusedField: '' })
   },
 
   onInputMulti(e) {

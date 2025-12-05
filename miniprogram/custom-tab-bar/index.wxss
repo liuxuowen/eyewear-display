@@ -32,20 +32,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* 改为顶部对齐，以便精确控制 Top */
   color: #666;
 }
 .tab-item .icon {
-  width: 22px;
-  height: 22px;
-  margin-bottom: 2px;
+  width: 56rpx; /* 28px * 2 */
+  height: 56rpx; /* 28px * 2 */
+  margin-top: 8rpx; /* 4px * 2 = 8rpx */
+  margin-bottom: 0;
 }
 .tab-item .label {
-  font-size: 12px;
-  line-height: 14px;
+  margin-top: 6rpx; /* 3px * 2 = 6rpx，Icon(8+56=64) + 6 = 70rpx (35px) */
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: 0px;
 }
 .tab-item .label.active {
-  color: #1a1a1a;
+  color: #E60012;
   font-weight: 500;
 }
 /* 删除独立 safe-bottom，改为用背景和内边距处理 */

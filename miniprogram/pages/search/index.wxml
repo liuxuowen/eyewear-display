@@ -2,12 +2,12 @@
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
 
 <!-- 自定义导航栏：与首页一致的搜索框位置与风格 -->
-<view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
+<view class="custom-nav" style="height: {{navBarHeight}}px; padding-top: 0;">
   <view class="nav-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleRightWidth}}px;">
-    <view class="search-box" style="height: {{menuHeight}}px;">
-      <input class="search-input" style="height: 100%;" disabled="true" placeholder="在下方填写条件后点击“搜索”" value="" />
-    </view>
-    <text class="cancel-btn" style="height: {{menuHeight}}px; line-height: {{menuHeight}}px;" bindtap="onCancel">返回</text>
+    <!-- 返回图标 -->
+    <image class="nav-back-icon" style="top: {{menuTop}}px;" src="../../images/search/back.png" mode="aspectFit" bindtap="onCancel" />
+    <!-- 标题 -->
+    <text class="nav-title" style="top: {{menuTop}}px; line-height: {{menuHeight}}px;">搜索</text>
   </view>
 </view>
 <view style="height: {{navHeight}}px;"></view>
@@ -37,35 +37,24 @@
 
   <!-- 多字段组合搜索（平铺输入） -->
   <view class="advanced-section">
-    <view class="section-title">多字段组合搜索</view>
-    <view class="field-row">
-      <text class="field-label">{{f.getFieldLabel('frame_model')}}</text>
-      <input class="field-input" type="text" placeholder="文本，例如 '98044' 或 'S22612'" value="{{filters.frame_model}}" data-field="frame_model" bindinput="onInputMulti" />
+    <view class="section-title">
+      <text>多条件组合搜索</text>
+      <text class="reset-btn" bindtap="onResetMulti">重置</text>
     </view>
     <view class="field-row">
       <text class="field-label">{{f.getFieldLabel('lens_size')}}</text>
-      <input class="field-input {{errors.lens_size?'error':''}}" type="text" placeholder="数字或范围，例如 50 或 40-45" value="{{filters.lens_size}}" data-field="lens_size" bindinput="onInputMulti" />
-      <view class="field-error" wx:if="{{errors.lens_size}}">{{errors.lens_size}}</view>
-    </view>
-    <view class="field-row">
-      <text class="field-label">{{f.getFieldLabel('nose_bridge_width')}}</text>
-      <input class="field-input {{errors.nose_bridge_width?'error':''}}" type="text" placeholder="数字或范围，例如 18 或 16-20" value="{{filters.nose_bridge_width}}" data-field="nose_bridge_width" bindinput="onInputMulti" />
-      <view class="field-error" wx:if="{{errors.nose_bridge_width}}">{{errors.nose_bridge_width}}</view>
-    </view>
-    <view class="field-row">
-      <text class="field-label">{{f.getFieldLabel('temple_length')}}</text>
-      <input class="field-input {{errors.temple_length?'error':''}}" type="text" placeholder="数字或范围，例如 145 或 140-150" value="{{filters.temple_length}}" data-field="temple_length" bindinput="onInputMulti" />
-      <view class="field-error" wx:if="{{errors.temple_length}}">{{errors.temple_length}}</view>
+      <input class="field-input {{errors.lens_size?'error':''}} {{focusedField==='lens_size'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="数字或范围，例如 50 或 40-45" value="{{filters.lens_size}}" data-field="lens_size" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+      <view class="field-error" wx:if="{{errors.lens_size}}">格式错误</view>
     </view>
     <view class="field-row">
       <text class="field-label">{{f.getFieldLabel('frame_total_length')}}</text>
-      <input class="field-input {{errors.frame_total_length?'error':''}}" type="text" placeholder="数字或范围，例如 140 或 135-145" value="{{filters.frame_total_length}}" data-field="frame_total_length" bindinput="onInputMulti" />
-      <view class="field-error" wx:if="{{errors.frame_total_length}}">{{errors.frame_total_length}}</view>
+      <input class="field-input {{errors.frame_total_length?'error':''}} {{focusedField==='frame_total_length'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="数字或范围，例如 140 或 135-145" value="{{filters.frame_total_length}}" data-field="frame_total_length" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+      <view class="field-error" wx:if="{{errors.frame_total_length}}">格式错误</view>
     </view>
     <view class="field-row">
       <text class="field-label">{{f.getFieldLabel('frame_height')}}</text>
-      <input class="field-input {{errors.frame_height?'error':''}}" type="text" placeholder="数字或范围，例如 42 或 40-45" value="{{filters.frame_height}}" data-field="frame_height" bindinput="onInputMulti" />
-      <view class="field-error" wx:if="{{errors.frame_height}}">{{errors.frame_height}}</view>
+      <input class="field-input {{errors.frame_height?'error':''}} {{focusedField==='frame_height'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="数字或范围，例如 42 或 40-45" value="{{filters.frame_height}}" data-field="frame_height" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+      <view class="field-error" wx:if="{{errors.frame_height}}">格式错误</view>
     </view>
     <!-- 材质复选 -->
     <view class="field-row material-row">
@@ -78,24 +67,40 @@
     </view>
     <view class="field-row">
       <text class="field-label">{{f.getFieldLabel('weight')}}</text>
-      <input class="field-input {{errors.weight?'error':''}}" type="text" placeholder="数字或范围，例如 20 或 18-22" value="{{filters.weight}}" data-field="weight" bindinput="onInputMulti" />
-      <view class="field-error" wx:if="{{errors.weight}}">{{errors.weight}}</view>
+      <input class="field-input {{errors.weight?'error':''}} {{focusedField==='weight'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="数字或范围，例如 20 或 18-22" value="{{filters.weight}}" data-field="weight" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+      <view class="field-error" wx:if="{{errors.weight}}">格式错误</view>
     </view>
     <view class="field-row">
       <text class="field-label">{{f.getFieldLabel('price')}}</text>
-      <input class="field-input {{errors.price?'error':''}}" type="text" placeholder="数字或范围，例如 199 或 100-300" value="{{filters.price}}" data-field="price" bindinput="onInputMulti" />
-      <view class="field-error" wx:if="{{errors.price}}">{{errors.price}}</view>
+      <input class="field-input {{errors.price?'error':''}} {{focusedField==='price'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="数字或范围，例如 199 或 100-300" value="{{filters.price}}" data-field="price" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+      <view class="field-error" wx:if="{{errors.price}}">格式错误</view>
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('frame_model')}}</text>
+      <input class="field-input {{focusedField==='frame_model'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="文本，例如 '98044' 或 'S22612'" value="{{filters.frame_model}}" data-field="frame_model" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('nose_bridge_width')}}</text>
+      <input class="field-input {{errors.nose_bridge_width?'error':''}} {{focusedField==='nose_bridge_width'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="数字或范围，例如 18 或 16-20" value="{{filters.nose_bridge_width}}" data-field="nose_bridge_width" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+      <view class="field-error" wx:if="{{errors.nose_bridge_width}}">格式错误</view>
+    </view>
+    <view class="field-row">
+      <text class="field-label">{{f.getFieldLabel('temple_length')}}</text>
+      <input class="field-input {{errors.temple_length?'error':''}} {{focusedField==='temple_length'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="数字或范围，例如 145 或 140-150" value="{{filters.temple_length}}" data-field="temple_length" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
+      <view class="field-error" wx:if="{{errors.temple_length}}">格式错误</view>
     </view>
     <view class="field-row">
       <text class="field-label">{{f.getFieldLabel('brand_info')}}</text>
-      <input class="field-input" type="text" placeholder="文本，例如 '玛宝路' 或 'suofeia'" value="{{filters.brand_info}}" data-field="brand_info" bindinput="onInputMulti" />
+      <input class="field-input {{focusedField==='brand_info'?'focus':''}}" placeholder-class="field-placeholder" type="text" placeholder="文本，例如 '玛宝路' 或 'suofeia'" value="{{filters.brand_info}}" data-field="brand_info" bindinput="onInputMulti" bindfocus="onFocus" bindblur="onBlur" />
     </view>
-    
-    <button class="btn-search" type="primary" bindtap="onSearchMulti">检索</button>
   </view>
 
-  <view class="help-section">
-    <view class="section-title">使用说明</view>
-    <view class="help-text">{{helpText}}</view>
+  <!-- 底部固定检索按钮组 -->
+  <view class="fixed-footer">
+    <view class="footer-group">
+      <text class="footer-hint">可填单个或多个条件后搜索</text>
+      <button class="btn-search-fixed" bindtap="onSearchMulti">搜索</button>
+    </view>
   </view>
+
 </view>

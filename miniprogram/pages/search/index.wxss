@@ -2,11 +2,93 @@
 @import "../../pages/index/index.wxss";
 
 .search-page {
-  padding: 20rpx;
+  padding: 0;
 }
 
 /* 搜索页头部采用与首页一致的自定义导航样式，直接沿用 index.wxss 中的
    .custom-nav, .nav-row, .search-box, .search-input 定义 */
+
+/* 覆盖 index.wxss 中的 .nav-row，使其支持绝对定位布局 */
+.nav-row {
+  position: relative;
+}
+
+/* 返回图标 */
+.nav-back-icon {
+  position: absolute;
+  /* left: 18px -> 36rpx */
+  left: 36rpx;
+  /* top: 58px -> 116rpx (相对于屏幕顶部)
+     但在 .nav-row 内部定位时，需要减去 statusBarHeight。
+     由于 .nav-row 高度通常为 44px，且位于 statusBar 下方。
+     设计稿 Top 58px 通常是包含状态栏的绝对位置。
+     假设状态栏高度 ~20-44px，这里我们使用 margin-top 或 flex 布局来适配会更稳妥。
+     但为了严格还原设计稿的相对位置（假设设计稿是基于 375x812 的 iPhone X 尺寸，状态栏 44px），
+     58px - 44px = 14px (在导航栏内部的 Top)。
+     为了兼容性，这里使用 flex 布局配合 margin-left 来模拟绝对位置，或者直接使用 absolute。
+     鉴于用户要求绝对坐标还原，这里使用 absolute，但需注意父容器 .nav-row 是 relative。
+     .nav-row 的 padding-top 已经是 statusBarHeight。
+     所以这里的 top 应该是 (58px * 2) - (statusBarHeight * 2)。
+     为了简化，我们假设设计稿的 58px 是相对于屏幕顶部的绝对距离。
+     在 WXSS 中无法直接获取动态 statusBarHeight 进行 calc。
+     因此，最佳实践是：使用 flex 布局模拟位置，或者在 JS 中计算 style。
+     但用户要求 WXSS 实现。
+     我们尝试用 absolute + top: 50% + transform translateY 来垂直居中，
+     或者直接写死一个近似值（通常导航栏内容垂直居中）。
+     
+     用户给出的坐标：
+     Back Icon: Top 58px
+     Title: Top 59px
+     
+     这表明它们几乎在同一水平线上。
+     我们使用 flex 布局来实现水平位置，垂直方向居中即可。
+  */
+  /* 转换为 rpx */
+  width: 52rpx;  /* 26px * 2 */
+  height: 52rpx; /* 26px * 2 */
+  /* 绝对定位还原 */
+  /* 注意：由于父容器 .nav-row 已经有了 padding-top (statusBarHeight)，
+     如果直接写 top: 116rpx 会导致位置偏下。
+     通常设计稿的 58px 是指距离屏幕顶部的距离。
+     在 .custom-nav (fixed) 中，top: 0。
+     所以我们可以直接对 .nav-back-icon 使用 fixed 或者 absolute (相对于 .custom-nav)。
+     这里选择相对于 .nav-row (它在 .custom-nav 内部)。
+     为了精确还原，建议使用 margin-top 方式在 flex 容器中定位，或者
+     忽略父容器 padding，直接 absolute 到 .custom-nav。
+  */
+}
+
+/* 修正：为了精确控制位置，我们在 .nav-row 上取消默认的 flex 居中，改用 absolute */
+.custom-nav .nav-row {
+  display: block; /* 取消 flex，以便内部 absolute 生效 */
+  position: static; /* 让内部 absolute 元素相对于 .custom-nav 定位 */
+}
+
+.nav-back-icon {
+  position: absolute;
+  left: 36rpx; /* 18px * 2 */
+  /* top 由内联样式控制，与胶囊对齐 */
+  width: 52rpx; /* 26px * 2 */
+  height: 52rpx; /* 26px * 2 */
+  z-index: 10;
+}
+
+.nav-title {
+  position: absolute;
+  left: 340rpx; /* 170px * 2 */
+  /* top 由内联样式控制，与胶囊对齐 */
+  width: 72rpx; /* 36px * 2 */
+  height: 52rpx; /* 26px * 2 */
+  
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 36rpx; /* 18px * 2 */
+  font-weight: 500;
+  /* line-height 由内联样式控制 */
+  text-align: center;
+  letter-spacing: 0px;
+  color: #000000;
+  z-index: 10;
+}
 
 .field-selector {
   padding: 10rpx 16rpx;
@@ -20,38 +102,81 @@
   font-size: 26rpx;
 }
 
-.section-title {
-  margin-top: 24rpx;
-  margin-bottom: 12rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #333;
-  font-weight: 600;
+.history-section {
+  /* 相对定位修改：保留设计稿中和前面元素的绝对位置的差 */
+  /* 前面元素（导航栏图标）Top 58px，本元素 Top 108px，差值 50px */
+  /* 但由于导航栏高度占据了空间，我们需要设置 margin-top */
+  /* 假设导航栏底部约 88px (iPhone X)，则 margin-top 约为 20px (40rpx) */
+  margin-top: 40rpx; 
 }
 
-.clear {
-  color: #999;
-  font-size: 24rpx;
+.history-section .section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24rpx; /* Left 12px, Right 12px */
+  height: auto;
+}
+
+.history-section .section-title text:first-child {
+  /* 移除绝对定位 */
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 28rpx; /* 14px * 2 */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px * 2 */
+  letter-spacing: 0em;
+  color: #333333;
+}
+
+.history-section .clear {
+  /* 移除绝对定位 */
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  font-weight: 500;
+  line-height: 24rpx; /* 12px * 2 */
+  letter-spacing: 0em;
+  color: #666666;
 }
 
 .history-list {
+  /* 列表容器 */
+  margin-top: 24rpx; /* 标题下方约 12px */
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx; /* 增加间距，分组更清晰 */
+  gap: 20rpx; /* 10px * 2 */
+  padding-left: 24rpx; /* 对齐左侧 12px */
+  padding-right: 24rpx; /* 确保右侧也有间距 */
 }
 
 .history-chip {
-  background: #fff;
-  border: 2rpx solid #d0d7de; /* 更明显的边框 */
-  border-radius: 12rpx;       /* 圆角卡片 */
-  padding: 10rpx 18rpx;       /* 略大内边距，便于点击 */
-  font-size: 24rpx;
-  color: #333;
-  max-width: 100%;
-  white-space: normal;  /* 允许多行显示 */
-  word-break: break-word;
-  background-clip: padding-box;
+  /* 外框样式 */
+  /* position: absolute; 不能对列表项用绝对定位，否则重叠 */
+  /* 使用 flex 布局还原设计稿的尺寸和样式 */
+  /* width: 101px -> 202rpx (注意：如果是定宽，文字长了怎么办？通常设计稿给的是示例宽度，这里建议 min-width 或 auto) */
+  /* 用户给出了 width: 101px，如果是固定宽度则写死，如果是自适应则 min-width */
+  /* 鉴于这是搜索历史，内容长度不一，建议使用 padding 撑开，样式参考设计稿 */
+  
+  /* 边框与背景 */
+  box-sizing: border-box;
+  border: 1rpx solid #999999; /* 0.5px * 2 = 1rpx */
+  border-radius: 8rpx; /* 4px * 2 */
+  background: #fff; /* 默认背景 */
+  
+  /* 自动布局 */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 12rpx 16rpx; /* 6px 8px -> 12rpx 16rpx */
+  gap: 20rpx; /* 10px * 2 */
+  
+  /* 字体样式 */
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  font-weight: 500;
+  line-height: 24rpx; /* 12px * 2 */
+  letter-spacing: 0em;
+  color: #333333;
 }
 
 .help-section {
@@ -104,68 +229,210 @@
 
 /* 多字段表单样式 */
 .advanced-section {
-  margin-top: 24rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 16rpx;
+  /* 相对定位：保留设计稿中和前面元素的绝对位置的差 */
+  /* 前面元素（Recent Search Title）Top 108px，本元素 Top 214px，差值 106px (212rpx) */
+  /* 但由于中间有动态内容，我们设置一个基础 margin-top */
+  margin-top: 60rpx; 
+  background: transparent;
+  padding: 0;
 }
-.advanced-section > .section-title {
-  /* 让“多字段组合搜索”的标题与“最近搜索”左侧对齐（抵消卡片内边距） */
-  margin-left: -16rpx;
-  margin-right: -16rpx;
-  padding-left: 0;
-  padding-right: 0;
+
+.advanced-section .section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24rpx; /* Left 12px */
+  height: 28rpx; /* 14px * 2 */
+  margin-bottom: 24rpx; /* 标题下方间距 */
+}
+
+.advanced-section .section-title text:first-child {
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 28rpx; /* 14px * 2 */
+  font-weight: 500;
+  line-height: 28rpx;
+  color: #333333;
+}
+
+.advanced-section .reset-btn {
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  font-weight: 500;
+  line-height: 24rpx;
+  color: #666666;
 }
 .field-row {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  padding: 10rpx 0;
+  position: relative;
+  height: 56rpx; /* 28px * 2 */
+  margin-bottom: 26rpx; /* Reduced by ~20% from 32rpx */
+  margin-left: 24rpx; /* 12px * 2 */
+  width: 702rpx; /* 351px * 2 */
+  border-radius: 6rpx; /* 3.11px * 2 */
+  padding: 0;
 }
+
 .field-label {
-  width: 180rpx;
-  color: #333;
-  font-size: 26rpx;
-  flex: 0 0 auto;
+  position: absolute;
+  left: 0;
+  top: 16rpx; /* 8px * 2 */
+  width: 96rpx; /* 48px * 2 */
+  height: 24rpx; /* 12px * 2 */
+  
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  font-weight: normal;
+  line-height: 24rpx;
+  color: #333333;
+  white-space: nowrap;
 }
+
 .field-input {
-  flex: 1 1 auto;
-  background: #f6f6f6;
-  border-radius: 8rpx;
-  padding: 12rpx 16rpx;
-  font-size: 26rpx;
+  position: absolute;
+  left: 120rpx; /* 60px * 2 */
+  top: 0;
+  width: 582rpx; /* 291px * 2 */
+  height: 56rpx; /* 28px * 2 */
+  
+  background: #F6F6F6;
+  border-radius: 6rpx; /* 3.11px * 2 */
+  border: 1rpx solid transparent; /* 预留边框位置，防止抖动 */
+  
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  color: #333333;
+  
+  padding-left: 24rpx; /* 12px * 2 */
+  padding-right: 120rpx; /* Space for error message */
+  box-sizing: border-box;
 }
+
+.field-input.focus {
+  border-color: #333333; /* 聚焦时显示细边框 */
+  background: #FFFFFF; /* 可选：聚焦时背景变白，增强对比 */
+}
+
+.field-placeholder {
+  color: #999999;
+}
+
 .field-input.error {
-  border: 2rpx solid #e74c3c;
-  background: #fff5f5;
+  border: 1rpx solid #ff4d4f;
+  background: #F6F6F6;
 }
+
 .field-error {
-  color: #e74c3c;
-  font-size: 22rpx;
+  position: absolute;
+  right: 24rpx; /* 12px * 2 */
+  top: 0;
+  height: 56rpx;
+  line-height: 56rpx;
+  font-size: 24rpx; /* Same as input */
+  color: #ff4d4f;
+  z-index: 10;
+  pointer-events: none;
 }
+
 .btn-search {
-  margin-top: 16rpx;
+  margin-top: 48rpx;
+}
+
+/* 底部固定区域 */
+.fixed-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #fff; /* 确保背景不透明 */
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
+}
+
+.footer-group {
+  position: relative;
+  width: 702rpx; /* 351px * 2 */
+  margin: 0 auto; /* 居中，左右各 12px */
+  padding-top: 25rpx; /* Increased from 10rpx */
+  padding-bottom: 20rpx;
+}
+
+.footer-hint {
+  display: block;
+  width: 100%;
+  text-align: center;
+  
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  font-weight: normal;
+  line-height: 24rpx;
+  color: #666666;
+  
+  margin-bottom: 20rpx; /* 间距 */
+}
+
+.btn-search-fixed {
+  width: 702rpx !important; /* 351px * 2 */
+  height: 84rpx; /* 42px * 2 */
+  border-radius: 78rpx; /* 39px * 2 */
+  background: #000000;
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 32rpx; /* 16px * 2 */
+  font-weight: 500;
+  color: #FFFFFF;
+  padding: 0;
+  margin: 0;
+}
+
+/* 增加底部内边距，防止内容被遮挡 */
+.search-page {
+  padding: 0;
+  padding-bottom: 300rpx; /* Increased from 200rpx to add more whitespace */
 }
 
 /* 材质标签样式 */
-.material-row { align-items: flex-start; }
+.field-row.material-row {
+  position: relative;
+  height: auto;
+  min-height: 56rpx;
+  margin-bottom: 26rpx; /* Reduced by ~20% from 32rpx */
+}
+
 .material-tags {
+  margin-left: 120rpx; /* 60px * 2 */
+  width: 582rpx; /* 291px * 2 */
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: 16rpx;
 }
 .tag-chip {
-  padding: 8rpx 14rpx;
-  border: 2rpx solid #d0d7de;
-  border-radius: 9999rpx;
-  background: #fff;
-  color: #333;
-  font-size: 24rpx;
-  width: auto;           /* 覆盖 index.wxss 中的 width:100%，让标签按内容自适应宽度 */
+  /* 还原设计稿样式 */
+  height: 56rpx; /* 28px * 2 */
+  border-radius: 8rpx; /* 4px * 2 */
   box-sizing: border-box;
+  border: 1rpx solid #999999; /* 0.5px * 2 */
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16rpx; /* 8px * 2 */
+  
+  font-family: 'Source Han Sans CN', 'PingFang SC', sans-serif;
+  font-size: 24rpx; /* 12px * 2 */
+  font-weight: 500;
+  color: #999999;
+  background: #fff;
+  
+  width: auto;
+  min-width: 64rpx; /* 32px * 2 */
 }
 .tag-chip.on {
+  /* 选中状态：保持高亮色，但圆角需一致 */
   background: #e6f4ff;
   border-color: #1677ff;
   color: #1677ff;
+  border-radius: 8rpx;
 }

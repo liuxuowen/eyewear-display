@@ -4,12 +4,12 @@ Component({
   data: {
     selected: 0,
     color: '#666',
-    selectedColor: '#1a1a1a',
+    selectedColor: '#E60012',
     // 三个 tab（销售或未分配用户）
     fullList: [
       {
         pagePath: 'pages/index/index',
-        text: '商品',
+        text: '首页',
         iconPath: '/images/index.png',
         selectedIconPath: '/images/index_sel.png'
       },
@@ -21,7 +21,7 @@ Component({
       },
       {
         pagePath: 'pages/user/user',
-        text: '个人',
+        text: '我的',
         iconPath: '/images/user.png',
         selectedIconPath: '/images/user_sel.png'
       }
@@ -36,7 +36,7 @@ Component({
       },
       {
         pagePath: 'pages/user/user',
-        text: '个人',
+        text: '我的',
         iconPath: '/images/user.png',
         selectedIconPath: '/images/user_sel.png'
       }
@@ -45,7 +45,7 @@ Component({
     list: [
       {
         pagePath: 'pages/index/index',
-        text: '商品',
+        text: '首页',
         iconPath: '/images/index.png',
         selectedIconPath: '/images/index_sel.png'
       },
@@ -57,7 +57,7 @@ Component({
       },
       {
         pagePath: 'pages/user/user',
-        text: '个人',
+        text: '我的',
         iconPath: '/images/user.png',
         selectedIconPath: '/images/user_sel.png'
       }
