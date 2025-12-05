@@ -5,273 +5,515 @@
   right: 0;
   top: 0;
   z-index: 1000;
-  background: #fff;
-  border-bottom: 1rpx solid #eee;
+  background: transparent;
 }
 
 .nav-row {
-  height: 100%;
-  padding: 0 20rpx;
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.nav-title {
+  position: absolute;
+  left: 340rpx; /* 170px */
+  top: 118rpx;  /* 59px */
+  width: 72rpx; /* 36px */
+  height: 52rpx; /* 26px */
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 36rpx; /* 18px */
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 0px;
+  color: #333333;
+  z-index: 10;
+  line-height: normal;
+}
+
+.search-toolbar {
+  position: fixed;
+  top: 216rpx; /* 108px */
+  left: 0;
+  width: 100%;
+  padding: 0 24rpx; /* 12px padding to match design */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  z-index: 99;
 }
 
 .search-box {
+  position: relative;
+  height: 72rpx; /* 36px */
+  background: #FFFFFF;
+  border: 2rpx solid #B8B8B8; /* 1px */
+  border-radius: 34rpx; /* 17px */
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  width: 100%;
-  box-sizing: border-box;
-  position: relative; /* 供覆盖层定位 */
+  padding: 0 24rpx; /* Left 12px */
+  width: 100%; /* Default full width */
+}
+
+.search-box.sales-mode {
+  width: 486rpx; /* 243px */
 }
 
 .search-input {
   flex: 1;
-  font-size: 24rpx;
-  min-width: 0; /* 允许在小屏时收缩，避免与按钮重叠 */
-  /* 给输入框加个细边框，更明显的分辨边界 */
-  border: 1rpx solid #e0e0e0;
-  border-radius: 8rpx;
-  padding: 0 12rpx;
-  background: #fff;
-  margin-right: 8rpx; /* 与重置按钮的间距 */
+  height: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  color: #333;
+}
+
+.search-placeholder {
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  color: #999999;
+  font-weight: normal;
+}
+
+.search-icon {
+  position: absolute;
+  right: 34rpx; /* 17px */
+  top: 18rpx;   /* 9px */
+  width: 36rpx; /* 18px */
+  height: 36rpx; /* 18px */
+  opacity: 1;
+  z-index: 2;
+}
+
+.share-btn-container {
+  position: absolute;
+  left: 534rpx; /* 267px */
+  top: 0; /* Relative to toolbar top */
+  width: 192rpx; /* 96px */
+  height: 72rpx; /* 36px */
+  background: #FFFFFF;
+  border: 0rpx solid #666666; /* 0.5px */
+  border-radius: 6rpx; /* 3.11px -> ~6rpx */
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.share-btn-img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .search-clear {
-  position: static; /* 改为流式布局，不再绝对定位 */
+  position: static;
   transform: none;
   color: #666;
   font-size: 24rpx;
   padding: 0 12rpx;
   z-index: 2;
-  background: #fff;
-  /* 给按钮加个细边框 */
-  border: 1rpx solid #e0e0e0;
-  border-radius: 8rpx;
-  white-space: nowrap; /* 防止文字换行 */
-  height: 100%;
+  background: #f5f5f5;
+  border-radius: 20rpx;
+  white-space: nowrap;
+  height: 48rpx;
+  line-height: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
+}
+
+.search-result-count {
+  position: fixed;
+  left: 242rpx; /* 121px */
+  top: 309rpx;  /* 154.5px */
+  width: 268rpx; /* 134px */
+  height: 22rpx; /* 11px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 22rpx; /* 11px */
+  font-weight: normal;
+  line-height: 22rpx; /* 11px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #999999;
+  z-index: 99;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .container {
   padding: 20rpx;
-}
-
-.sales-toolbar {
-  position: sticky;
-  z-index: 1001;
-  background: #fff;
-  border-bottom: 1rpx solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16rpx 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.03);
-}
-
-.result-info {
-  display: flex;
-  align-items: center;
-}
-
-.result-count {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-}
-
-/* 工具栏按钮统一尺寸与间距 */
-.toolbar-btn {
-  min-width: 160rpx;
-  height: 60rpx !important;
-  line-height: 60rpx !important;
-  padding: 0 24rpx !important;
-  font-size: 26rpx !important;
-  border-radius: 30rpx !important; /* 圆角更美观 */
-  margin: 0 !important;
-}
-
-/* 两个各占50%的按钮容器 */
-.two-btns {
-  display: flex;
-  gap: 16rpx;
-}
-.toolbar-half {
-  min-width: 140rpx;
-  height: 60rpx !important;
-  line-height: 60rpx !important;
-  font-size: 26rpx !important;
-  padding: 0 20rpx !important;
-  border-radius: 30rpx !important;
-  margin: 0 !important;
-}
-
-/* 暗色取消按钮 */
-.btn-cancel {
-  background-color: #33333339 !important;
-  color: #fff !important;
-  border: none !important;
-}
-.btn-cancel::after {
-  border: none !important;
+  /* 顶部留白：NavHeight + SearchToolbarHeight(36px=72rpx) + CountText + Gap */
+  /* Original: 308rpx. New text at 152px (304rpx). Content should start below that. */
+  /* Let's increase padding-top to accommodate the new text line */
+  padding-top: 345rpx; /* 172.5px */
 }
 
 .product-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 24rpx; /* 12px gap between items */
 }
 
 .product-item {
-  background: #fff;
-  border-radius: 10rpx;
-  padding: 20rpx;
-  display: flex;
-  gap: 20rpx;
-  border: 1rpx solid #d0d7de; /* 更明显的细边框 */
-  /* 可选：在深色背景上也清晰 */
-  background-clip: padding-box;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
   position: relative;
-  align-items: flex-start; /* 确保右侧信息区域按需增高，不被图片高度限制 */
+  width: 702rpx; /* 351px */
+  height: 362rpx; /* 181px */
+  border-radius: 16rpx; /* 8px */
+  background: #FFFFFF;
+  box-shadow: 0 20rpx 40rpx 0 rgba(185, 185, 185, 0.1);
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .product-image {
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: 8rpx;
+  position: absolute;
+  left: 40rpx; /* 20px */
+  top: 40rpx;  /* 20px */
+  width: 176rpx; /* 88px */
+  height: 176rpx; /* 88px */
+  border-radius: 16rpx; /* 8px */
+  background-color: #f7f7f7;
 }
 
-.product-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
+/* Reset intermediate containers to not interfere with absolute positioning */
+.product-info,
+.product-title,
+.product-specs,
+.info-row,
+.spec-item,
+.content {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: contents; /* Allows children to be positioned relative to product-item */
 }
 
-.product-title {
-  font-size: 28rpx;
+/* --- Model Title --- */
+.model-label {
+  position: absolute;
+  left: 248rpx; /* 124px */
+  top: 50rpx;   /* 25px */
+  width: 84rpx; /* 42px */
+  height: 28rpx; /* 14px */
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
   font-weight: bold;
+  color: #333333;
+  line-height: 28rpx;
+}
+
+.model-val {
+  position: absolute;
+  left: 324rpx; /* 162px */
+  top: 42rpx;   /* 21px */
+  height: 40rpx; /* 20px */
+  font-family: 'DIN';
+  font-size: 40rpx; /* 20px */
+  font-weight: 500;
+  color: #333333;
+  line-height: 40rpx;
+  white-space: nowrap;
+}
+
+/* --- Common Label Styles --- */
+.label {
+  position: absolute;
+  width: 48rpx; /* 24px */
+  height: 24rpx; /* 12px */
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  color: #666666;
+  line-height: 24rpx;
+}
+
+/* --- Common Value Styles --- */
+.content {
+  position: absolute;
+  height: 28rpx; /* 14px */
+  font-family: 'DIN';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  color: #333333;
+  line-height: 28rpx;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
-.product-price {
-  color: #e74c3c;
-  font-size: 32rpx;
-  font-weight: bold;
+/* --- Row 1: Size --- */
+.label-size {
+  left: 248rpx; /* 124px */
+  top: 114rpx;  /* 57px */
+}
+.val-size {
+  left: 316rpx; /* 158px */
+  top: 112rpx;  /* 56px */
 }
 
-.product-specs {
+/* --- Row 2: Price & Brand --- */
+.label-price {
+  left: 248rpx; /* 124px */
+  top: 162rpx;  /* 81px */
+}
+.val-price {
+  left: 316rpx; /* 158px */
+  top: 160rpx;  /* 80px */
+}
+
+.label-brand {
+  position: absolute;
+  left: 430rpx; /* 215px */
+  top: 162rpx;  /* 81px */
+  width: 48rpx; /* 24px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+.val-brand {
+  position: absolute;
+  left: 498rpx; /* 249px */
+  top: 162rpx;  /* 81px */
+  width: 72rpx; /* 36px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+/* --- Row 3: Total Length & Height --- */
+.label-total {
+  position: absolute;
+  left: 248rpx; /* 124px */
+  top: 210rpx;  /* 105px */
+  width: 48rpx; /* 24px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+.val-total {
+  position: absolute;
+  left: 316rpx; /* 158px */
+  top: 208rpx;  /* 104px */
+  width: 44rpx; /* 22px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.label-height {
+  position: absolute;
+  left: 430rpx; /* 215px */
+  top: 210rpx;  /* 105px */
+  width: 48rpx; /* 24px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+.val-height {
+  position: absolute;
+  left: 498rpx; /* 249px */
+  top: 210rpx;  /* 105px */
+  width: 30rpx; /* 15px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+/* --- Row 4: Weight & Material --- */
+.label-weight {
+  position: absolute;
+  left: 248rpx; /* 124px */
+  top: 254rpx;  /* 127px */
+  width: 48rpx; /* 24px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+.val-weight {
+  position: absolute;
+  left: 316rpx; /* 158px */
+  top: 254rpx;  /* 127px */
+  width: 68rpx; /* 34px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.label-mat {
+  position: absolute;
+  left: 430rpx; /* 215px */
+  top: 254rpx;  /* 127px */
+  width: 48rpx; /* 24px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+.val-mat {
+  position: absolute;
+  left: 498rpx; /* 249px */
+  top: 250rpx;  /* 125px */
+  height: auto;
   display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-  font-size: 24rpx;
-  color: #666;
-  overflow: visible; /* 允许内部多行内容完全展示 */
+  flex-wrap: wrap;
+  gap: 20rpx; /* 10px */
 }
 
-/* 允许文字换行，避免长文本被单行截断导致“看不见”的错觉 */
-.product-specs text {
-  white-space: normal;
-  word-break: break-word;
+/* --- Row 5: Notes --- */
+.label-notes {
+  position: absolute;
+  left: 248rpx; /* 124px */
+  top: 298rpx;  /* 149px */
+  width: 48rpx; /* 24px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
 }
-.product-specs view {
-  overflow: visible;
+.val-notes {
+  position: absolute;
+  left: 316rpx; /* 158px */
+  top: 298rpx;  /* 149px */
+  width: 120rpx; /* 60px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 高亮匹配片段 */
+/* Helper classes for highlights and tags */
 .hl {
-  color: #e74c3c;
-  font-weight: bold;
+  color: #0084FF;
 }
 
-.fav-wrap {
-  margin-left: auto;
-}
-.fav-btn {
-  line-height: 1.8;
-  padding: 8rpx 16rpx;
-}
-.fav-on {
-  color: #e74c3c;
-  border-color: #e74c3c;
-}
-.price-row {
-  margin-top: 4rpx;
-}
-
-/* 规格成对展示（两列各50%） */
-.spec-pair-row { display: flex; align-items: baseline; }
-.spec-item {
-  width: 50%;
-  box-sizing: border-box;
-  display: flex;
-  gap: 6rpx;
-  align-items: baseline;
-}
-.spec-item:first-child { padding-right: 8rpx; }
-.spec-item:last-child { padding-left: 8rpx; }
-
-/* 重量 + 材质同一行（两列各50%） */
-.wm-row { display: flex; align-items: flex-start; }
-.weight-col, .material-col {
-  width: 50%;
-  box-sizing: border-box;
-}
-.weight-col { padding-right: 8rpx; }
-.material-col { padding-left: 8rpx; display: flex; flex-wrap: wrap; gap: 6rpx 8rpx; }
-.material-col .mat-label { flex: 0 0 auto; }
-.mat-none { color: #999; }
-
-/* 材质标签展示（两列） */
-.mat-row { display: flex; gap: 12rpx; align-items: flex-start; }
-.mat-row > text { flex: 0 0 auto; }
-.mat-tags {
-  flex: 1 1 auto;
-  display: flex;          /* 从两列网格改为自适应换行 */
-  flex-wrap: wrap;        /* 自动换行 */
-  gap: 6rpx 8rpx;         /* 紧凑间距 */
-}
 .tag-chip {
-  padding: 2rpx 10rpx;          /* 更小的内边距，降低高度与宽度 */
-  border: 1rpx solid #d0d7de;   /* 细边框 */
-  border-radius: 10rpx;         /* 更紧凑的圆角 */
-  background: #fff;
-  color: #333;
-  font-size: 18rpx;             /* 更小字号 */
-  width: auto;                  /* 自适应内容宽度，取消两列等宽 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16rpx; /* 8px horizontal padding approx */
+  height: 32rpx; /* 16px */
+  background: transparent;
+  border: 1rpx solid #999999; /* 0.5px */
+  border-radius: 8rpx; /* 4px */
   box-sizing: border-box;
-  text-align: center;
-  line-height: 1.4;             /* 更紧凑的行高 */
+  
+  /* Text styles */
+  font-family: 'Source Han Sans CN', 'Source Han Sans', 'DIN';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  color: #333333;
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
 }
 .tag-chip.on {
-  background: #e6f4ff;
-  border-color: #1677ff;
-  color: #1677ff;
+  color: #0084FF;
+  border-color: #0084FF;
+  background: rgba(0, 132, 255, 0.1);
+}
+.mat-tags {
+  display: flex;
+  gap: 20rpx; /* 10px */
 }
 
 .select-box {
   position: absolute;
-  left: 12rpx;
-  top: 12rpx;
-  width: 32rpx;
-  height: 32rpx;
-  border-radius: 6rpx;
-  border: 2rpx solid #ccc;
-  background: #fff;
+  left: 630rpx; /* 315px */
+  top: 40rpx;   /* 20px */
+  width: 32rpx; /* 16px */
+  height: 32rpx; /* 16px */
+  border-radius: 6rpx; /* 3.11px -> ~6rpx */
+  opacity: 1;
+  box-sizing: border-box;
+  border: 2rpx solid #999999; /* 1px */
+  background: transparent;
+  z-index: 10; /* Ensure it's clickable and visible */
 }
 .select-box.on {
-  border-color: #e74c3c;
-  background: #e74c3c;
+  background: #333333;
+  border-color: #333333;
+}
+
+.select-icon {
+  position: absolute;
+  left: 6rpx; /* 3.11px */
+  top: 6rpx;  /* 3.11px */
+  width: 20rpx; /* 9.78px */
+  height: 20rpx; /* 9.78px */
+  display: block;
 }
 
 .load-more {
@@ -343,14 +585,76 @@
 }
 
 /* Background Styles */
-.page-bg-img {
+.fixed-header-bg {
   position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 345rpx; /* 172.5px - Match container padding-top */
+  z-index: 90; /* Higher than product list (default 0), lower than toolbar (99) */
+  background: #fff; /* Opaque background to hide scrolling content */
+  overflow: hidden; /* Clip the background image */
+}
+
+.page-bg-img {
+  position: absolute;
   left: -14rpx; /* -7px */
   top: -22rpx; /* -11px */
   width: 772rpx; /* 386px */
   height: 780rpx; /* 390px */
   opacity: 1;
-  z-index: -1;
+  z-index: 1;
   -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
   mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+}
+
+/* Selection Bar */
+.selection-bar {
+  position: fixed;
+  left: 0;
+  /* 使用 px 单位与底部 tab bar 高度 (50px) 保持一致，避免 rpx 在不同宽度屏幕下换算偏差导致遮挡或缝隙 */
+  bottom: calc(50px + env(safe-area-inset-bottom));
+  width: 100%;
+  height: 108rpx; /* 54px */
+  background: #FFFFFF;
+  z-index: 1000;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
+}
+
+.selection-count {
+  position: absolute;
+  left: 32rpx; /* 16px */
+  top: 34rpx; /* 17px */
+  width: auto; /* Allow auto width */
+  height: 40rpx; /* 20px */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px default */
+  color: #333333;
+  white-space: nowrap; /* Prevent wrapping */
+}
+
+.add-to-watchlist-btn {
+  position: absolute;
+  left: 500rpx; /* 250px */
+  top: 25rpx; /* 12px */
+  width: 220rpx; /* 110px */
+  height: 70rpx; /* 35px */
+  border-radius: 78rpx; /* 39px */
+  background: #000000;
+  opacity: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 32rpx; /* 14px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #FFFFFF;
 }

@@ -46,7 +46,7 @@ Page({
     hasMore: true,
     isLoading: false,
     searchQuery: '',
-    searchPlaceholder: '参数过滤（支持所有数字及文本类字段）',
+    searchPlaceholder: '点击进入细节搜索',
     searchField: (config && config.defaultSearchField) || 'frame_model',
     // 多字段过滤条件（可为空对象/空值表示未启用）
     filters: null,
@@ -114,7 +114,8 @@ Page({
       const navHeight = statusBarHeight + navBarHeight
       const capsuleRightWidth = menu ? (sys.windowWidth - menu.left + 8) : 80
       const menuHeight = menu && menu.height ? menu.height : 32
-      this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight })
+      const menuTop = menu && menu.top ? menu.top : (statusBarHeight + (navBarHeight - menuHeight) / 2)
+      this.setData({ statusBarHeight, navBarHeight, navHeight, capsuleRightWidth, menuHeight, menuTop })
     } catch (e) {}
     // 若全局配置存在自定义 searchPlaceholder 则覆盖
     try {
