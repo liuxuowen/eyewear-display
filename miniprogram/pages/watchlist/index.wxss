@@ -42,29 +42,413 @@
 	padding: 12rpx 0 12rpx 20rpx; /* 与第一行一致右侧贴边 */
 	min-height: 64rpx;
 }
-.rec-card {
-	background: #fff;
-	border: 1rpx solid #e3e3e3;
-	border-radius: 12rpx;
-	padding: 20rpx 24rpx 24rpx 24rpx;
-	margin: 0 20rpx 20rpx 20rpx;
-	box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+.batch-card {
+  width: 702rpx; /* 351px */
+  border-radius: 16rpx; /* 8px */
+  background: #FFFFFF;
+  box-shadow: 0 20rpx 40rpx 0 rgba(185, 185, 185, 0.1);
+  margin: 0 auto 24rpx auto;
+  padding-bottom: 24rpx;
+  box-sizing: border-box;
+  position: relative;
 }
+
+.rec-card {
+  position: relative;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 24rpx;
+  margin: 0;
+  box-shadow: none;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.rec-card:last-child {
+  border-bottom: none;
+}
+
+/* New Product Detail Styles */
+.rec-row-top {
+  position: relative;
+  height: 224rpx; /* 112px to accommodate 5 rows */
+  width: 100%;
+  margin-bottom: 24rpx;
+}
+
+.rec-label-model {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-model {
+  position: absolute;
+  left: 140rpx; /* 70px */
+  top: 0;
+  /* width: 86rpx; 43px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.rec-label-price {
+  position: absolute;
+  left: 328rpx; /* 164px */
+  top: 0;
+  /* width: 84rpx; 42px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-price {
+  position: absolute;
+  left: 468rpx; /* 234px */
+  top: 0;
+  /* width: 78rpx; 39px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+/* Row 2 Styles */
+.rec-label-size {
+  position: absolute;
+  left: 0;
+  top: 48rpx; /* 24px */
+  /* width: 140rpx; 70px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-size {
+  position: absolute;
+  left: 140rpx; /* 70px */
+  top: 48rpx; /* 24px */
+  /* width: 148rpx; 74px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.rec-label-length {
+  position: absolute;
+  left: 328rpx; /* 164px */
+  top: 48rpx; /* 24px */
+  /* width: 140rpx; 70px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-length {
+  position: absolute;
+  left: 468rpx; /* 234px */
+  top: 48rpx; /* 24px */
+  /* width: 116rpx; 58px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+/* Row 3 Styles */
+.rec-label-height {
+  position: absolute;
+  left: 0;
+  top: 96rpx; /* 48px */
+  /* width: 140rpx; 70px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-height {
+  position: absolute;
+  left: 140rpx; /* 70px */
+  top: 96rpx; /* 48px */
+  /* width: 98rpx; 49px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.rec-label-weight {
+  position: absolute;
+  left: 330rpx; /* 165px */
+  top: 96rpx; /* 48px */
+  /* width: 84rpx; 42px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-weight {
+  position: absolute;
+  left: 470rpx; /* 235px */
+  top: 96rpx; /* 48px */
+  /* width: 60rpx; 30px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'DIN';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+/* Row 4 Styles */
+.rec-label-material {
+  position: absolute;
+  left: 0;
+  top: 144rpx; /* 72px */
+  /* width: 84rpx; 42px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-material {
+  position: absolute;
+  left: 140rpx; /* 70px */
+  top: 144rpx; /* 72px */
+  /* width: 66rpx; 33px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.rec-label-lens-size {
+  position: absolute;
+  left: 330rpx; /* 165px */
+  top: 144rpx; /* 72px */
+  /* width: 140rpx; 70px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-lens-size {
+  position: absolute;
+  left: 470rpx; /* 235px */
+  top: 144rpx; /* 72px */
+  /* width: 24rpx; 12px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+/* Row 5 Styles */
+.rec-label-thickness {
+  position: absolute;
+  left: 0;
+  top: 192rpx; /* 96px */
+  /* width: 84rpx; 42px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-thickness {
+  position: absolute;
+  left: 140rpx; /* 70px */
+  top: 192rpx; /* 96px */
+  /* width: 24rpx; 12px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.rec-label-brand {
+  position: absolute;
+  left: 330rpx; /* 165px */
+  top: 192rpx; /* 96px */
+  /* width: 84rpx; 42px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: normal;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #666666;
+}
+
+.rec-value-brand {
+  position: absolute;
+  left: 470rpx; /* 235px */
+  top: 192rpx; /* 96px */
+  /* width: 24rpx; 12px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.rec-info-block {
+  margin-top: 0; 
+}
+
 .batch-header {
-	display: flex;
-	align-items: baseline;
-	gap: 12rpx;
-	padding: 12rpx 20rpx 0 20rpx;
-	color: #666;
+  position: relative;
+  height: 88rpx;
+  width: 100%;
+}
+.batch-decoration {
+  position: absolute;
+  left: 18rpx; /* 9px (Centered: 351px - 333px = 18px / 2 = 9px) */
+  top: 44rpx; /* 22px */
+  width: 666rpx; /* 333px */
+  height: 44rpx; /* 22px */
+  border-radius: 8rpx; /* 4px */
+  opacity: 1;
+  background: #333333;
 }
 .batch-title {
-	font-size: 26rpx;
-	font-weight: 600;
-	color: #333;
+  position: absolute;
+  left: 8rpx; /* 4px */
+  top: 8rpx; /* 4px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #FFFFFF;
+  z-index: 10;
+  display: block;
 }
 .batch-time {
-	font-size: 22rpx;
-	color: #888;
+  position: absolute;
+  left: 380rpx; /* 190px */
+  top: 8rpx; /* 4px */
+  height: 28rpx; /* 14px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px */
+  text-align: right;
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #FFFFFF;
+  z-index: 10;
+  display: block;
 }
 .rec-model {
 	font-size: 30rpx;
@@ -132,7 +516,8 @@
 	/* 适配三列：先给一个百分比兜底，再用 calc 精确计算 */
 	width: 32.5%;
 	width: calc((100% - 24rpx) / 3);
-	height: 150rpx;
+	height: auto;
+	aspect-ratio: 1;
 	background: #fafafa;
 	border: 1rpx solid #eee;
 	border-radius: 8rpx;
@@ -144,10 +529,260 @@
   opacity: 1;
 }
 .rec-actions {
-	margin-top: 16rpx;
-	text-align: right;
+  position: relative;
+  width: 100%;
+  height: 56rpx; /* 28px */
+  z-index: 10;
+  margin-top: 30rpx;
+  margin-bottom: 30rpx;
+  padding: 0;
+  display: flex;
+  justify-content: flex-end;
 }
+
+.rec-actions.customer-mode {
+  height: 0;
+  margin-bottom: -20rpx;
+}
+
+.rec-divider {
+  position: absolute;
+  left: 2rpx; /* 1px */
+  top: 86rpx; /* 56rpx + 30rpx */
+  width: 650rpx; /* 325px */
+  height: 0px;
+  opacity: 1;
+  border: 0.5px solid #999999;
+}
+
+.rec-divider-customer {
+  position: absolute;
+  left: 2rpx; /* 1px */
+  top: 0;
+  width: 650rpx; /* 325px */
+  height: 0px;
+  opacity: 1;
+  border: 0.5px solid #999999;
+}
+
 .fav-btn.fav-on {
-	border-color: #ff7875;
-	color: #ff4d4f;
+  height: 100% !important;
+  border-radius: 6.22rpx; /* 3.11px */
+  opacity: 1;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 16rpx 24rpx; /* 8px 12px */
+  gap: 20rpx; /* 10px */
+  background: #FFFFFF;
+  box-sizing: border-box;
+  border: 1rpx solid #E60012; /* 0.5px */
+  
+  /* Text Styles */
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: 500;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #E60012;
+  margin: 0;
+}
+
+/* Watchlist Header Styles */
+.watchlist-fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 290rpx; /* Reduced from 335rpx */
+  z-index: 90;
+  background: #fff;
+  overflow: hidden;
+}
+
+.page-bg-img {
+  position: absolute;
+  left: -14rpx; /* -7px */
+  top: -22rpx; /* -11px */
+  width: 772rpx; /* 386px */
+  height: 780rpx; /* 390px */
+  opacity: 1;
+  z-index: 1;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+}
+
+.watchlist-count-text {
+  position: absolute;
+  left: 24rpx; /* 12px */
+  top: 216rpx; /* 108px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 32rpx; /* 16px */
+  font-weight: 500;
+  line-height: 32rpx; /* 16px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+  z-index: 10;
+}
+
+.watchlist-clear-btn {
+  position: absolute;
+  right: 24rpx;
+  top: 196rpx; /* 98px */
+  height: 72rpx; /* 36px */
+  border-radius: 6.22rpx; /* 3.11px */
+  opacity: 1;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 16rpx 24rpx; /* 8px 12px */
+  gap: 16rpx; /* 8px */
+  z-index: 10;
+  background: #FFFFFF;
+  box-sizing: border-box;
+  border: 1rpx solid #666666; /* 0.5px */
+}
+
+.watchlist-clear-btn .clear-btn-icon {
+  width: 32rpx;
+  height: 32rpx;
+  display: block;
+}
+
+.watchlist-clear-btn text {
+  position: static;
+  /* width: 96rpx; 48px */
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: 500;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+  z-index: 1;
+}
+
+/* Adjust container padding */
+.container {
+  padding-top: 290rpx;
+}
+
+/* Bottom Bar */
+.watchlist-bottom-bar {
+  position: fixed;
+  left: 0;
+  bottom: calc(50px + env(safe-area-inset-bottom));
+  width: 100%;
+  height: 108rpx; /* 54px */
+  background: #FFFFFF;
+  z-index: 1000;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
+  /* Use absolute positioning for children as requested */
+  display: block; 
+}
+
+.note-label {
+  position: absolute;
+  left: 32rpx; /* 16px */
+  top: 34rpx; /* 17px */
+  height: 40rpx; /* 20px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.watchlist-bottom-bar .note-input {
+  position: absolute;
+  left: 120rpx; /* 60px */
+  top: 26rpx; /* 13px */
+  width: 296rpx; /* 148px */
+  height: 56rpx; /* 28px */
+  border-radius: 6.22rpx; /* 3.11px */
+  opacity: 1;
+  background: #F6F6F6;
+  padding: 0 20rpx;
+  font-size: 26rpx;
+  line-height: 56rpx;
+}
+
+.watchlist-bottom-bar .success-btn {
+  position: absolute;
+  left: 490rpx; /* 245px */
+  top: 12rpx; /* 6px */
+  width: 224rpx !important; /* 112px */
+  height: 84rpx !important; /* 42px */
+  border-radius: 78rpx !important; /* 39px */
+  opacity: 1;
+  background: #000000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 28rpx !important;
+  font-weight: 500 !important;
+  color: #FFFFFF !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  border: none !important;
+}
+
+/* Customer Mode Overrides */
+.rec-row-top.customer-mode {
+  height: 96rpx; /* 2 rows * 48rpx approx */
+}
+
+.rec-row-top.customer-mode .rec-label-model,
+.rec-row-top.customer-mode .rec-value-model,
+.rec-row-top.customer-mode .rec-label-price,
+.rec-row-top.customer-mode .rec-value-price,
+.rec-row-top.customer-mode .rec-label-weight,
+.rec-row-top.customer-mode .rec-value-weight,
+.rec-row-top.customer-mode .rec-label-material,
+.rec-row-top.customer-mode .rec-value-material,
+.rec-row-top.customer-mode .rec-label-thickness,
+.rec-row-top.customer-mode .rec-value-thickness,
+.rec-row-top.customer-mode .rec-label-brand,
+.rec-row-top.customer-mode .rec-value-brand {
+  display: none;
+}
+
+/* Row 1: Size & Length */
+.rec-row-top.customer-mode .rec-label-size,
+.rec-row-top.customer-mode .rec-value-size,
+.rec-row-top.customer-mode .rec-label-length,
+.rec-row-top.customer-mode .rec-value-length {
+  top: 0;
+}
+
+/* Row 2: Lens Size (Left) & Height (Right) */
+/* Lens Size was Row 4 Right (Left 330, Top 144) -> Move to Row 2 Left (Left 0, Top 48) */
+.rec-row-top.customer-mode .rec-label-lens-size {
+  left: 0;
+  top: 48rpx;
+}
+.rec-row-top.customer-mode .rec-value-lens-size {
+  left: 140rpx;
+  top: 48rpx;
+}
+
+/* Height was Row 3 Left (Left 0, Top 96) -> Move to Row 2 Right (Left 328, Top 48) */
+.rec-row-top.customer-mode .rec-label-height {
+  left: 328rpx; /* Match other right-side labels */
+  top: 48rpx;
+}
+.rec-row-top.customer-mode .rec-value-height {
+  left: 468rpx; /* Match other right-side values */
+  top: 48rpx;
 }

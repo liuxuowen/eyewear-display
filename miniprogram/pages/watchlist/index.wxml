@@ -1,19 +1,29 @@
 <!--pages/watchlist/index.wxml-->
-<image class="page-bg-img" src="/images/background.png" />
-<view class="page-bg-gradient"></view>
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
-<view class="container">
-	<!-- 顶部标题 + 清空（销售） -->
-	<view class="watchlist-header" wx:if="{{!empty}}">
-		<text class="wl-count">已推荐共 {{totalCount}} 款镜架</text>
-		<button wx:if="{{isSales}}" size="mini" class="action-btn danger-btn" bindtap="clearAllFavorites">一键清空推荐</button>
-	</view>
 
-	<!-- 销售备注 + 一键打包转发（第二行） -->
-	<view wx:if="{{isSales && !empty}}" class="share-row">
-		<input class="note-input" placeholder="备注(可选，0-10字)" maxlength="10" value="{{salesShareNote}}" bindinput="onNoteInput"/>
-		<button size="mini" class="action-btn success-btn" open-type="share" bindtap="prepareShareAllPackage">一键打包转发</button>
-	</view>
+<!-- Custom Nav -->
+<view class="custom-nav" style="height: {{navHeight}}px; padding-top: 0;">
+  <view class="nav-row" style="height: {{navHeight}}px;">
+    <text class="nav-title">{{isSales ? '推荐' : '为您推荐'}}</text>
+  </view>
+</view>
+
+<!-- Fixed Header Background & Content -->
+<view class="watchlist-fixed-header">
+    <image class="page-bg-img" src="/images/background.png" />
+    <view class="page-bg-gradient"></view>
+    
+    <!-- Count Text -->
+    <view class="watchlist-count-text" wx:if="{{!empty}}">{{isSales ? '已推荐共' : '为您精心推荐'}} {{totalCount}} 款镜架</view>
+
+    <!-- Clear Button -->
+    <view class="watchlist-clear-btn" wx:if="{{isSales && !empty}}" bindtap="clearAllFavorites">
+        <image class="clear-btn-icon" src="/images/watchlist/clear.png" />
+        <text>一键清空</text>
+    </view>
+</view>
+
+<view class="container">
 
 	<view wx:if="{{empty}}" class="empty">
 		<block wx:if="{{isSales}}">
@@ -31,31 +41,69 @@
 	<!-- 推荐列表分批次布局 -->
 	<view wx:else>
 		<block wx:for="{{batches}}" wx:key="batch_id" wx:for-index="bidx" wx:for-item="batch">
-			<view class="batch-header">
-				<text class="batch-title">{{ isSales ? '推荐批次' : (bidx === 0 ? '最新推荐' : '历史推荐') }}</text>
-				<text class="batch-time">{{ batch.batch_time || '' }}</text>
-			</view>
-			<block wx:for="{{batch.items}}" wx:key="frame_model" wx:for-item="item">
-				<view class="rec-card">
-					<view class="rec-model {{bidx == 0 ? 'latest' : 'old'}}">{{item.frame_model}}</view>
-					<view class="rec-line">镜架尺寸：{{f.unit(item.lens_size, '')}}-{{f.unit(item.nose_bridge_width, '')}}-{{f.unit(item.temple_length, '')}}</view>
-					<view class="rec-line">镜架总长：{{f.unit(item.frame_total_length, '')}}</view>
-					<view class="rec-line">镜架高度：{{f.unit(item.frame_height, '')}}</view>
-					<view class="rec-images" wx:if="{{item.images && item.images.length}}">
-						<block wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
-							<image class="rec-img {{imageLoadedMap[img] ? 'loaded' : ''}}" src="{{imageSrcMap[img] || f.thumb(img)}}" mode="aspectFit" lazy-load="true" bindtap="previewImage" binderror="onImageError" bindload="onImageLoad" data-img="{{img}}" data-current="{{img}}" data-list="{{item.images}}" data-model="{{item.frame_model}}"></image>
-						</block>
-					</view>
-					<view class="rec-actions">
-						<button wx:if="{{isSales}}" class="fav-btn fav-on" size="mini" type="default" catchtap="removeFavorite" data-model="{{item.frame_model}}">移出推荐</button>
-					</view>
-				</view>
-			</block>
+            <view class="batch-card">
+                <view class="batch-header">
+                    <view class="batch-decoration">
+                        <text class="batch-title">{{ isSales ? '推荐批次' : (bidx === 0 ? '最新推荐' : '历史推荐') }}</text>
+                        <text class="batch-time">{{ batch.batch_time || '' }}</text>
+                    </view>
+                </view>
+                <block wx:for="{{batch.items}}" wx:key="frame_model" wx:for-item="item" wx:for-index="idx">
+                    <view class="rec-card">
+                        <view class="rec-row-top {{isSales ? '' : 'customer-mode'}}">
+                            <text class="rec-label-model">型号</text>
+                            <text class="rec-value-model">{{item.frame_model}}</text>
+                            <text class="rec-label-price">售价</text>
+                            <text class="rec-value-price">¥{{item.price}}</text>
+                            
+                            <text class="rec-label-size">镜架尺寸</text>
+                            <text class="rec-value-size">{{f.unit(item.lens_size, '')}}-{{f.unit(item.nose_bridge_width, '')}}-{{f.unit(item.temple_length, '')}}</text>
+                            <text class="rec-label-length">镜架总长</text>
+                            <text class="rec-value-length">{{f.unit(item.frame_total_length, '')}} mm</text>
+                            
+                            <text class="rec-label-height">镜片高度</text>
+                            <text class="rec-value-height">{{f.unit(item.frame_height, '')}} mm</text>
+                            <text class="rec-label-weight">重量</text>
+                            <text class="rec-value-weight">{{f.unit(item.weight, '')}} g</text>
+                            
+                            <text class="rec-label-material">材质</text>
+                            <text class="rec-value-material">{{item.frame_material}}</text>
+                            <text class="rec-label-lens-size">镜片大小</text>
+                            <text class="rec-value-lens-size">{{f.unit(item.lens_size, '')}} mm</text>
+                            
+                            <text class="rec-label-thickness">包边</text>
+                            <text class="rec-value-thickness">{{f.unit(item.frame_thickness, '')}}</text>
+                            <text class="rec-label-brand">品牌</text>
+                            <text class="rec-value-brand">{{item.brand || '--'}}</text>
+                        </view>
+                        
+                        <view class="rec-info-block">
+                            <view class="rec-images" wx:if="{{item.images && item.images.length}}">
+                                <block wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
+                                    <image class="rec-img {{imageLoadedMap[img] ? 'loaded' : ''}}" src="{{imageSrcMap[img] || f.thumb(img)}}" mode="aspectFit" lazy-load="true" bindtap="previewImage" binderror="onImageError" bindload="onImageLoad" data-img="{{img}}" data-current="{{img}}" data-list="{{item.images}}" data-model="{{item.frame_model}}"></image>
+                                </block>
+                            </view>
+                            <view class="rec-actions {{!isSales ? 'customer-mode' : ''}}">
+                                <view wx:if="{{isSales}}" class="fav-btn fav-on" catchtap="removeFavorite" data-model="{{item.frame_model}}">移出推荐</view>
+                                <view class="rec-divider" wx:if="{{isSales && idx < batch.items.length - 1}}"></view>
+                                <view class="rec-divider-customer" wx:if="{{!isSales && idx < batch.items.length - 1}}"></view>
+                            </view>
+                        </view>
+                    </view>
+                </block>
+            </view>
 		</block>
 
 		<view class="loading" wx:if="{{isLoading}}">加载中...</view>
 	</view>
 
 	<!-- 预留底部空间，避免内容被自定义 tabBar 遮挡 -->
-	<view class="tabbar-spacer"></view>
+	<view class="tabbar-spacer" style="height: {{isSales ? 'calc(110px + env(safe-area-inset-bottom))' : 'calc(20rpx + env(safe-area-inset-bottom))'}};"></view>
+</view>
+
+<!-- Fixed Bottom Bar for Sales -->
+<view class="watchlist-bottom-bar" wx:if="{{isSales && !empty}}">
+    <text class="note-label">备注：</text>
+    <input class="note-input" placeholder="可选，0-10字" maxlength="10" value="{{salesShareNote}}" bindinput="onNoteInput"/>
+    <button class="action-btn success-btn" open-type="share" bindtap="prepareShareAllPackage">一键转发</button>
 </view>

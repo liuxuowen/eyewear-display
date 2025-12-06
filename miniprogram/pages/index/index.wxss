@@ -19,7 +19,7 @@
   position: absolute;
   left: 340rpx; /* 170px */
   top: 118rpx;  /* 59px */
-  width: 72rpx; /* 36px */
+  /* width: 72rpx; 36px */
   height: 52rpx; /* 26px */
   font-family: 'Source Han Sans CN', 'Source Han Sans';
   font-size: 36rpx; /* 18px */

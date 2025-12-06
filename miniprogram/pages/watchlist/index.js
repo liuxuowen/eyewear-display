@@ -26,6 +26,21 @@ Page({
     // 图片是否完成加载（用于渐显）
     imageLoadedMap: {}
   },
+  onLoad(options) {
+    // 计算状态栏与胶囊按钮，精确适配不同机型
+    try {
+      const sys = wx.getSystemInfoSync()
+      const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null
+      const statusBarHeight = sys.statusBarHeight || 20
+      let navBarHeight = 44
+      if (menu && menu.top && menu.height) {
+        // 导航栏高度 = 两倍(菜单顶部到状态栏底部的间距) + 胶囊高度
+        navBarHeight = (menu.top - statusBarHeight) * 2 + menu.height
+      }
+      const navHeight = statusBarHeight + navBarHeight
+      this.setData({ statusBarHeight, navBarHeight, navHeight })
+    } catch (e) {}
+  },
   onShow() {
     // 同步选中自定义 tabBar 到“推荐”
     try {
@@ -284,7 +299,7 @@ Page({
     let title = count > 0 ? `推荐${count}款镜架` : '精品镜架推荐'
     let path = '/pages/index/index'
     if (!isSales || !sid || count === 0) {
-      return { title, path }
+      return { title, path, imageUrl: '/images/watchlist/recommend.png' }
     }
     const encSkus = encodeURIComponent(skus.join(','))
     const sidEnc = encodeURIComponent(sid)
@@ -310,7 +325,7 @@ Page({
         }
       })
     }
-    return { title, path }
+    return { title, path, imageUrl: '/images/watchlist/recommend.png' }
   },
   // 图片全屏预览
   previewImage(e) {

@@ -77,9 +77,8 @@
   position: absolute;
   left: 340rpx; /* 170px * 2 */
   /* top 由内联样式控制，与胶囊对齐 */
-  width: 72rpx; /* 36px * 2 */
+  /* width: 72rpx; 36px * 2 */
   height: 52rpx; /* 26px * 2 */
-  
   font-family: 'Source Han Sans CN';
   font-size: 36rpx; /* 18px * 2 */
   font-weight: 500;

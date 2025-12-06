@@ -2,5 +2,6 @@
   "usingComponents": {},
   "backgroundColor": "#f6f6f6",
   "backgroundTextStyle": "dark",
-  "navigationBarTitleText": "为你推荐"
+  "navigationBarTitleText": "推荐",
+  "navigationStyle": "custom"
 }
