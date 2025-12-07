@@ -1,4 +1,8 @@
 /* pages/user/user.wxss */
+page {
+  background: #F6F7FB;
+}
+
 /* 自定义导航栏样式 */
 .custom-nav {
   position: fixed;
@@ -32,6 +36,128 @@
 .container {
   padding: 24rpx;
 }
+.profile-card {
+  position: relative;
+  width: 702rpx; /* 351px */
+  height: 220rpx; /* 90px */
+  border-radius: 18rpx; /* 9px */
+  background: #FFFFFF;
+  margin-top: 16rpx;
+  box-sizing: border-box;
+  /* Keep padding for content alignment */
+  padding: 0 24rpx;
+  /* display: flex; Removed to allow absolute positioning of children without flex interference */
+  /* align-items: center; */
+  border: 1rpx solid rgba(255, 255, 255, 0.2); /* Optional: subtle border */
+  box-shadow: 0px 10px 20px 0px rgba(185, 185, 185, 0.3);
+}
+
+.profile-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  border-radius: 18rpx;
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%);
+  mask-image: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%);
+}
+
+.profile-gradient {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  border-radius: 18rpx;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.08) 100%);
+  pointer-events: none;
+}
+
+.profile-row {
+  position: absolute;
+  top: 24rpx; /* 12px padding top */
+  left: 0rpx; /*  */
+  right: 24rpx;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.id-card {
+  position: absolute;
+  left: 24rpx; /* 12px (Aligned with padding) */
+  top: 100rpx; /* 50px */
+  width: 654rpx; /* 327px */
+  height: 80rpx; /* 40px */
+  border-radius: 18rpx; /* 9px */
+  opacity: 1;
+  background: linear-gradient(180deg, #000000 0%, #444444 100%);
+  box-shadow: 0px 20rpx 40rpx 0px rgba(185, 185, 185, 0.1);
+  z-index: 3;
+}
+
+.id-text {
+  position: absolute;
+  left: 20rpx; /* 10px */
+  top: 28rpx; /* 14px (64px - 50px) */
+  width: 490rpx; /* 245px */
+  height: 24rpx; /* 12px */
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: normal;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0px;
+  font-variation-settings: "opsz" auto;
+  color: #FFFFFF;
+  opacity: 1;
+}
+
+.copy-icon {
+  position: absolute;
+  left: 598rpx; /* 299px */
+  top: 24rpx; /* 12px (62px - 50px) */
+  width: 32rpx; /* 16px */
+  height: 32rpx; /* 16px */
+  opacity: 1;
+}
+
+
+.avatar-btn-ghost {
+  position: relative; /* For badge positioning */
+  width: 80rpx !important;
+  height: 80rpx !important;
+  /* border-radius: 40rpx; Removed to allow badge in corner to be visible */
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  display: block;
+  text-align: left;
+  font-size: 0;
+  flex: none;
+  overflow: visible;
+}
+
+.avatar {
+  width: 80rpx; /* 40px */
+  height: 80rpx; /* 40px */
+  border-radius: 40rpx;
+  background: #f2f2f2;
+}
+
+.avatar-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24rpx; /* 12px */
+  height: 24rpx; /* 12px */
+}
+
 .card {
   background: #fff;
   border-radius: 12rpx;
@@ -41,59 +167,6 @@
   padding: 20rpx 24rpx;
   border: 1rpx solid #eaeaea;
   box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
-}
-.profile-row {
-  display: flex;
-  align-items: center;
-}
-.avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 40rpx;
-  background: #f2f2f2;
-}
-.avatar-placeholder {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ff4d4f; /* 无头像时提示醒目 */
-  background: #f9f9f9;
-  font-size: 24rpx; /* 修正父级 font-size:0 造成文字不可见 */
-  font-weight: 500;
-}
-.profile-fields {
-  margin-left: 24rpx; /* Gap 12px */
-}
-.nick-input {
-  font-family: 'Source Han Sans CN';
-  font-size: 28rpx; /* 14px */
-  font-weight: 500;
-  color: #333333;
-  line-height: normal;
-  min-width: 120rpx; /* Ensure clickable area */
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-}
-.nick-placeholder {
-  color: #333333;
-  font-weight: 500;
-}
-.avatar-btn-ghost {
-  width: 80rpx !important;
-  height: 80rpx !important;
-  border-radius: 40rpx;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  border: none;
-  display: block;
-  text-align: left;
-  font-size: 0; /* 避免按钮内联高度影响布局 */
-  flex: none;
 }
 .avatar-btn-ghost::after {
 	border: none; /* 去掉按钮默认边框效果 */
@@ -170,11 +243,139 @@
 }
 .profile-fields {
 	flex: 1;
+  margin-left: 20rpx;
 }
 .nick-input {
-	border: 1rpx solid #e0e0e0;
-	padding: 12rpx 20rpx;
-	border-radius: 8rpx;
-	background: #fafafa;
-	margin-left: 0; /* 取消过度左移，避免压到头像区域 */
+  position: static;
+  height: 24rpx; /* 12px */
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 24rpx; /* 12px */
+  font-weight: 500;
+  line-height: 24rpx; /* 12px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+  z-index: 0;
+  
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  min-height: 24rpx; /* Ensure input is visible */
+}
+
+.role-tag {
+  position: absolute;
+  left: 500rpx; /* 260px */
+  top: 25rpx; /* 22px */
+  width: 150rpx; /* 80px */
+  height: 38rpx; /* 19px */
+  border-radius: 8rpx; /* 4px */
+  opacity: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0; /* Padding handled by flex centering or specific dimensions */
+  background: #333333;
+  box-sizing: border-box;
+}
+
+.role-text {
+  position: static;
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 22rpx; /* 11px */
+  font-weight: normal;
+  line-height: 22rpx; /* 11px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #FFFFFF;
+  z-index: 0;
+}
+
+.referral-card {
+  position: relative;
+  width: 702rpx; /* 351px */
+  height: 128rpx; /* 64px */
+  border-radius: 18rpx; /* 9px */
+  background: #FFFFFF;
+  box-shadow: 0px 20rpx 40rpx 0px rgba(185, 185, 185, 0.1);
+  margin-top: 16rpx;
+  box-sizing: border-box;
+  overflow: hidden; /* Ensure decoration doesn't spill */
+}
+
+.referral-icon {
+  position: absolute;
+  left: 30rpx; /* 15px */
+  top: 44rpx; /* 22px */
+  width: 40rpx; /* 20px */
+  height: 40rpx; /* 20px */
+  opacity: 1;
+  z-index: 0;
+}
+
+.referral-content {
+  position: absolute;
+  left: 90rpx; /* 18px */
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx; /* Space between title and count */
+  z-index: 1;
+}
+
+.referral-text {
+  position: static; /* Reset absolute positioning */
+  height: 28rpx; /* 14px */
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #212121;
+}
+
+.referral-count {
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 22rpx; /* 11px */
+  font-weight: normal;
+  line-height: 22rpx; /* 11px */
+  text-align: left; /* Align with title */
+  letter-spacing: 0em;
+  font-variation-settings: "opsz" auto;
+  color: #333333;
+}
+
+.referral-btn {
+  position: absolute;
+  left: 494rpx; /* 247px */
+  top: 32rpx; /* 16px */
+  width: 184rpx !important; /* 92px */
+  height: 64rpx !important; /* 32px */
+  border-radius: 78rpx; /* 39px */
+  background: #000000;
+  padding: 18rpx 36rpx; /* 9px 18px */
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+.referral-btn-text {
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 28rpx; /* 14px */
+  font-weight: 500;
+  line-height: 28rpx; /* 14px */
+  text-align: center;
+  letter-spacing: 0em;
+  color: #FFFFFF;
 }

@@ -9,7 +9,7 @@ Component({
     fullList: [
       {
         pagePath: 'pages/index/index',
-        text: '首页',
+        text: '商品',
         iconPath: '/images/index.png',
         selectedIconPath: '/images/index_sel.png'
       },
@@ -45,7 +45,7 @@ Component({
     list: [
       {
         pagePath: 'pages/index/index',
-        text: '首页',
+        text: '商品',
         iconPath: '/images/index.png',
         selectedIconPath: '/images/index_sel.png'
       },

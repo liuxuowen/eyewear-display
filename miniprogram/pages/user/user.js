@@ -23,10 +23,17 @@ Page({
     capsuleRightWidth: 0,
     menuHeight: 32,
     menuTop: 0,
+    bgImageUrl: '',
     // 已简化为一键获取并直接保存，不再使用草稿字段
   },
 
   onLoad() {
+    // 设置背景图 URL (基于 apiBaseUrl 拼接)
+    if (app.globalData.apiBaseUrl) {
+      const domain = app.globalData.apiBaseUrl.replace(/\/api\/?$/, '')
+      this.setData({ bgImageUrl: `${domain}/static/resources/my_background.png` })
+    }
+
     // 计算状态栏/胶囊尺寸
     try {
       const sys = wx.getSystemInfoSync()
@@ -326,9 +333,15 @@ Page({
     const oid = app.globalData.openId || this.data.openId || ''
     const refParam = oid ? `?ref=${encodeURIComponent(oid)}` : ''
     const path = `/pages/index/index${refParam}`
+    let imageUrl = ''
+    if (app.globalData.apiBaseUrl) {
+      const domain = app.globalData.apiBaseUrl.replace(/\/api\/?$/, '')
+      imageUrl = `${domain}/static/resources/referral.png`
+    }
     return {
       title: '给你推荐一个眼镜展示小程序',
-      path
+      path,
+      imageUrl
     }
   }
   ,

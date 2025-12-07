@@ -298,8 +298,15 @@ Page({
     const count = skus.length
     let title = count > 0 ? `推荐${count}款镜架` : '精品镜架推荐'
     let path = '/pages/index/index'
+
+    let imageUrl = '/images/watchlist/recommend.png'
+    if (app.globalData.apiBaseUrl) {
+      const domain = app.globalData.apiBaseUrl.replace(/\/api\/?$/, '')
+      imageUrl = `${domain}/static/resources/recommend.png`
+    }
+
     if (!isSales || !sid || count === 0) {
-      return { title, path, imageUrl: '/images/watchlist/recommend.png' }
+      return { title, path, imageUrl }
     }
     const encSkus = encodeURIComponent(skus.join(','))
     const sidEnc = encodeURIComponent(sid)
@@ -325,7 +332,7 @@ Page({
         }
       })
     }
-    return { title, path, imageUrl: '/images/watchlist/recommend.png' }
+    return { title, path, imageUrl }
   },
   // 图片全屏预览
   previewImage(e) {

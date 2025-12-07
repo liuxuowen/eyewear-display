@@ -11,17 +11,29 @@
 
 <view class="container">
 	<!-- 账号信息卡片 -->
-	<view class="card">
+	<view class="profile-card">
+    <view class="profile-bg" style="background-image: url('{{bgImageUrl}}');"></view>
+    <view class="profile-gradient"></view>
 		<view class="profile-row">
 			<button class="avatar-btn-ghost" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="none">
-				<image class="avatar" src="{{avatarUrl}}" mode="aspectFill" wx:if="{{avatarUrl}}" bindload="onAvatarLoad" binderror="onAvatarError"/>
-				<view class="avatar-placeholder" wx:if="{{!avatarUrl}}">授权头像</view>
+				<image class="avatar" src="{{avatarUrl || '/images/my/default.png'}}" mode="aspectFill" bindload="onAvatarLoad" binderror="onAvatarError"/>
+        <image class="avatar-badge" src="/images/my/edit.png" wx:if="{{!avatarUrl}}" />
 			</button>
 			<view class="profile-fields">
 				<view class="row">
 					<input type="nickname" class="nick-input" placeholder="请设置昵称" placeholder-class="nick-placeholder" value="{{nickname}}" bindinput="onEditNicknameInput" bindblur="onNicknameBlur" bindconfirm="onNicknameConfirm" confirm-type="done" maxlength="20"/>
 				</view>
 			</view>
+      <!-- Sales Role Tag -->
+      <view class="role-tag" wx:if="{{isSales}}">
+        <text class="role-text">身份：销售</text>
+      </view>
+
+      <!-- ID Card -->
+      <view class="id-card" bindtap="copyOpenId">
+        <text class="id-text">我的ID丨{{openId || '--'}}</text>
+        <image class="copy-icon" src="/images/my/copy.png" />
+      </view>
 		</view>
 	</view>
 
@@ -39,20 +51,19 @@
 	</view> -->
 
 	<!-- 推荐给好友（转发）临时入口 -->
-	<view class="card" wx:if="{{!isSales && enableCustomerReferrals}}">
-		<view class="row" style="justify-content: space-between;">
-			<view style="display:flex;align-items:center;gap:12rpx;">
-				<text class="label">推荐：</text>
-				<text class="value">转发给好友建立推荐关系</text>
-			</view>
-			<view>
-				<button type="primary" size="mini" open-type="share">推荐好友</button>
-			</view>
-		</view>
+	<view class="referral-card" wx:if="{{!isSales && enableCustomerReferrals}}">
+    <image class="referral-icon" src="/images/my/info.png" />
+    <view class="referral-content">
+      <text class="referral-text">点击预览推荐页并分享</text>
+      <text class="referral-count">我的推荐的好友：共 {{referrals.length}} 人</text>
+    </view>
+    <button class="referral-btn" open-type="share">
+      <text class="referral-btn-text">推荐好友</text>
+    </button>
 	</view>
 
 	<!-- 我的转介绍人员列表 -->
-	<view class="card" wx:if="{{!isSales && enableCustomerReferrals}}">
+	<!-- <view class="card" wx:if="{{!isSales && enableCustomerReferrals}}">
 		<view class="row">
 			<text class="label">我的推荐的好友：</text>
 			<text class="value">共 {{referrals.length}} 人</text>
@@ -73,14 +84,14 @@
 		<view class="row" wx:else>
 			<text class="value">暂无好友加入</text>
 		</view>
-	</view>
+	</view> -->
 
 	<!-- OpenID 底部居中展示 -->
-	<view class="openid-footer" style="{{!isSales ? 'opacity: 0;' : ''}}">
+	<!-- <view class="openid-footer" style="{{!isSales ? 'opacity: 0;' : ''}}">
 		<text bindtap="copyOpenId">我的ID：{{openId || '--'}} （点击可复制）</text>
-	</view>
+	</view> -->
 	<!-- 角色信息（仅销售显示） -->
-	<view class="openid-footer" wx:if="{{isSales}}">
+	<!--<view class="openid-footer" wx:if="{{isSales}}">
 		<text>角色：销售（可分享推荐商品）</text>
-	</view>
+	</view> -->
 </view>

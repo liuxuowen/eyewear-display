@@ -27,14 +27,13 @@
 
 	<view wx:if="{{empty}}" class="empty">
 		<block wx:if="{{isSales}}">
-			推荐列表为空，请返回商品页添加推荐商品
+			推荐列表为空，请返回商品页面添加推荐商品
 		</block>
 		<block wx:elif="{{hasMySales}}">
-			尚无推荐，请联系销售 <text class="sales-name">{{mySalesName || '您的销售'}}</text>
+			推荐列表为空
 		</block>
 		<block wx:else>
-			尚无推荐，请联系客服
-			<button class="kf-btn" size="mini" open-type="contact" session-from="sal:自然|ref:自然" hover-class="none">联系客服</button>
+			推荐列表为空，请返回商品页面浏览
 		</block>
 	</view>
 
