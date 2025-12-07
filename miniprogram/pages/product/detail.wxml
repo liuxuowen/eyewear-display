@@ -1,85 +1,120 @@
 <!--detail.wxml-->
+<!-- Custom Nav -->
+<view class="custom-nav" style="height: {{navHeight}}px;">
+  <image class="nav-background-img" src="/images/background.png" />
+  <image class="nav-back" src="/images/detail/back.png" bindtap="goBack" />
+  <text class="nav-title">镜架详情</text>
+</view>
+<!-- Spacer -->
+<view style="height: {{navHeight}}px;"></view>
+
 <image class="page-bg-img" src="/images/background.png" />
 <view class="page-bg-gradient"></view>
 <wxs src="../../utils/filters.wxs" module="f"></wxs>
 <view class="container">
-  <swiper class="product-swiper"
-    indicator-dots="{{true}}"
-    autoplay="{{true}}"
-    circular="{{true}}"
-    interval="3000"
-  >
-    <swiper-item wx:for="{{product.images}}" wx:key="*this">
-      <image src="{{item}}" data-origin="{{item}}" mode="aspectFit" class="product-image" bindtap="previewImage" data-current="{{item}}"></image>
-    </swiper-item>
-  </swiper>
+  <view class="product-card">
+    <swiper class="product-swiper"
+      indicator-dots="{{false}}"
+      autoplay="{{false}}"
+      circular="{{true}}"
+      current="{{currentImageIndex}}"
+      bindchange="onSwiperChange"
+    >
+      <swiper-item wx:for="{{product.images}}" wx:key="*this">
+        <image src="{{f.thumb(item)}}" data-origin="{{item}}" mode="aspectFit" class="product-image" bindtap="previewImage" data-current="{{item}}" data-list="{{product.images}}"></image>
+      </swiper-item>
+    </swiper>
 
-  <view class="product-info">
-    <view class="basic-info">
-      <view class="model-spec-row">
-        <text class="model-inline">镜架型号：{{f.display(product.frame_model)}}</text>
-        <text class="spec-inline">镜架尺寸：{{f.unit(product.lens_size, '')}}-{{f.unit(product.nose_bridge_width, '')}}-{{f.unit(product.temple_length, '')}}</text>
+    <scroll-view class="thumbnail-list" scroll-x enable-flex>
+      <view class="thumbnail-item {{currentImageIndex === index ? 'active' : ''}}"
+            wx:for="{{product.images}}"
+            wx:key="*this"
+            bindtap="onThumbnailTap"
+            data-index="{{index}}">
+        <image src="{{item}}" mode="aspectFill" class="thumb-img"></image>
       </view>
-      <view class="total-price-row">
-        <text class="total">镜架总长：{{f.unit(product.frame_total_length, '')}}</text>
-        <text class="price">售价：￥{{f.display(product.price)}}</text>
-      </view>
+    </scroll-view>
+
+    <!-- New Model & Size Row -->
+    <view class="info-row-model-size">
+      <text class="label-model">型号：</text>
+      <text class="value-model">{{f.display(product.frame_model)}}</text>
+      <text class="label-size">镜架尺寸：</text>
+      <text class="value-size">{{f.unit(product.lens_size, '')}}-{{f.unit(product.nose_bridge_width, '')}}-{{f.unit(product.temple_length, '')}}</text>
     </view>
 
-    <view class="specs-info">
-      <view class="spec-item">
-        <text class="label">镜片大小：</text>
-        <text class="value">{{f.unit(product.lens_size, '')}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">鼻梁宽度：</text>
-        <text class="value">{{f.unit(product.nose_bridge_width, '')}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">镜腿长度：</text>
-        <text class="value">{{f.unit(product.temple_length, '')}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">镜架高度：</text>
-        <text class="value">{{f.unit(product.frame_height, '')}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">包边厚度：</text>
-        <text class="value">{{f.unit(product.frame_thickness, '')}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">重量：</text>
-        <text class="value">{{f.unit(product.weight, 'g')}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">镜架材料：</text>
-        <text class="value">{{f.display(product.frame_material)}}</text>
-      </view>
-      <view class="spec-item">
-        <text class="label">所属品牌：</text>
-        <text class="value">{{f.display(product.brand)}}</text>
-      </view>
+    <!-- New Total Length & Price Row -->
+    <view class="info-row-total-price">
+      <text class="label-total">总长：</text>
+      <text class="value-total">{{f.unit(product.frame_total_length, '')}}mm</text>
+      <text class="label-price">售价：</text>
+      <text class="value-price">￥{{f.display(product.price)}}</text>
     </view>
 
-    <view class="notes">
-      <text class="notes-title">备注信息</text>
-      <text class="notes-content">{{f.display(product.notes)}}</text>
+    <!-- Separator Line -->
+    <view class="separator-line"></view>
+
+    <!-- Lens Size & Nose Bridge Width Row -->
+    <view class="info-row-lens-nose">
+      <text class="label-lens">镜片大小：</text>
+      <text class="value-lens">{{f.unit(product.lens_size, '')}}mm</text>
+      <text class="label-nose">鼻梁宽度：</text>
+      <text class="value-nose">{{f.unit(product.nose_bridge_width, '')}}mm</text>
     </view>
 
-    <!-- 底部顺序展示所有轮播图 -->
-    <view wx:if="{{product.images && product.images.length}}" class="image-gallery-section">
-      <text class="section-title">镜架展示</text>
-      <view class="image-gallery">
-        <block wx:for="{{product.images}}" wx:key="*this">
-          <image
-            src="{{item}}"
-            data-origin="{{item}}"
-            mode="widthFix"
-            class="gallery-image"
-            bindtap="previewImage"
-            data-current="{{item}}"
-          ></image>
-        </block>
+    <!-- Temple Length & Frame Height Row -->
+    <view class="info-row-temple-height">
+      <text class="label-temple">镜腿长度：</text>
+      <text class="value-temple">{{f.unit(product.temple_length, '')}}mm</text>
+      <text class="label-height">镜架高度：</text>
+      <text class="value-height">{{f.unit(product.frame_height, '')}}mm</text>
+    </view>
+
+    <!-- Frame Thickness & Weight Row -->
+    <view class="info-row-thickness-weight">
+      <text class="label-thickness">包边厚度：</text>
+      <text class="value-thickness">{{f.unit(product.frame_thickness, '')}}mm</text>
+      <text class="label-weight">重量：</text>
+      <text class="value-weight">{{f.unit(product.weight, 'g')}}</text>
+    </view>
+
+    <!-- Material & Brand Row -->
+    <view class="info-row-material-brand">
+      <text class="label-material">镜架材料：</text>
+      <text class="value-material">{{f.display(product.frame_material)}}</text>
+      <text class="label-brand">所属品牌：</text>
+      <text class="value-brand">{{f.display(product.brand)}}</text>
+    </view>
+
+    <!-- Separator Line -->
+    <view class="separator-line"></view>
+    
+    <!-- Notes Section -->
+    <view class="info-col-notes">
+      <text class="label-notes">备注信息</text>
+      <text class="value-notes">{{f.display(product.notes)}}</text>
+    </view>
+
+    <!-- Separator Line -->
+    <view class="separator-line"></view>
+
+    <view class="product-info-content">
+      <!-- 底部顺序展示所有轮播图 -->
+      <view wx:if="{{product.images && product.images.length}}" class="image-gallery-section">
+        <text class="section-title">镜架各色号展示</text>
+        <view class="image-gallery">
+          <block wx:for="{{product.images}}" wx:key="*this">
+            <image
+              src="{{item}}"
+              data-origin="{{item}}"
+              mode="widthFix"
+              class="gallery-image"
+              bindtap="previewImage"
+              data-current="{{item}}"
+              data-list="{{product.images}}"
+            ></image>
+          </block>
+        </view>
       </view>
     </view>
   </view>

@@ -1,4 +1,5 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "镜架详情"
+  "navigationBarTitleText": "镜架详情",
+  "navigationStyle": "custom"
 }

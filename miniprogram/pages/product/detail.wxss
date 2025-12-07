@@ -1,12 +1,27 @@
 /* detail.wxss */
+page {
+  background: #F6F7FB;
+}
+
 .container {
   padding-bottom: 40rpx;
 }
 
-.product-swiper {
+.product-card {
+  position: relative;
   width: 100%;
-  height: 600rpx;
-  background: #fff;
+  background: #F6F7FB;
+  padding-bottom: 40rpx;
+  overflow: hidden;
+}
+
+.product-swiper {
+  width: 750rpx; /* 373px */
+  height: 750rpx; /* 375px */
+  margin-left: 0rpx; /* 1px */
+  background:#F6F7FB;
+  border: 1rpx solid #292828;
+  box-sizing: border-box;
 }
 
 .product-image {
@@ -14,10 +29,356 @@
   height: 100%;
 }
 
-.product-info {
-  padding: 30rpx;
-  background: #fff;
+.thumbnail-list {
+  width: 100%;
+  height: 60rpx; /* 30px */
+  margin-top: 20rpx; /* Gap between main image and thumbs */
+  white-space: nowrap;
+  padding-left: 24rpx; /* 12px */
+  box-sizing: border-box;
+}
+
+.thumbnail-item {
+  display: inline-block;
+  width: 60rpx; /* 30px */
+  height: 60rpx; /* 30px */
+  margin-right: 20rpx; /* Gap 10px */
+  border-radius: 2rpx; /* 1px */
+  overflow: hidden;
+  vertical-align: top;
+  opacity: 1;
+}
+
+.thumbnail-item.active {
+  border: 2rpx solid #000000; /* 1px */
+  box-sizing: border-box;
+}
+
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.info-row-model-size {
+  position: relative;
+  width: 100%;
+  height: 28rpx;
   margin-top: 20rpx;
+}
+
+.info-row-total-price {
+  position: relative;
+  width: 100%;
+  height: 28rpx;
+  margin-top: 20rpx;
+}
+
+.label-total {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #8D97A3;
+  line-height: 28rpx;
+}
+
+.value-total {
+  position: absolute;
+  left: 108rpx;
+  top: -2rpx;
+  font-size: 28rpx;
+  color: #1D1D1F;
+  line-height: 28rpx;
+  font-weight: bold;
+}
+
+.label-price {
+  position: absolute;
+  left: 336rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #8D97A3;
+  line-height: 28rpx;
+}
+
+.value-price {
+  position: absolute;
+  left: 476rpx;
+  top: -2rpx;
+  font-size: 28rpx;
+  color: #1D1D1F;
+  line-height: 28rpx;
+  font-weight: bold;
+}
+
+.separator-line {
+  position: relative;
+  margin-top: 20rpx;
+  left: 24rpx;
+  width: 702rpx;
+  height: 0;
+  opacity: 1;
+  border: 1rpx solid #999999;
+}
+
+.info-row-lens-nose {
+  position: relative;
+  width: 100%;
+  height: 28rpx;
+  margin-top: 20rpx;
+}
+
+.label-lens {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-lens {
+  position: absolute;
+  left: 144rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.label-nose {
+  position: absolute;
+  left: 334rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-nose {
+  position: absolute;
+  left: 454rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.info-row-temple-height {
+  position: relative;
+  width: 100%;
+  height: 28rpx;
+  margin-top: 20rpx;
+}
+
+.label-temple {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-temple {
+  position: absolute;
+  left: 144rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.label-height {
+  position: absolute;
+  left: 334rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-height {
+  position: absolute;
+  left: 454rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.info-row-thickness-weight {
+  position: relative;
+  width: 100%;
+  height: 28rpx;
+  margin-top: 20rpx;
+}
+
+.label-thickness {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-thickness {
+  position: absolute;
+  left: 144rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.label-weight {
+  position: absolute;
+  left: 334rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-weight {
+  position: absolute;
+  left: 454rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.info-row-material-brand {
+  position: relative;
+  width: 100%;
+  height: 28rpx;
+  margin-top: 20rpx;
+}
+
+.label-material {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-material {
+  position: absolute;
+  left: 144rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.label-brand {
+  position: absolute;
+  left: 334rpx;
+  top: 0;
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 24rpx;
+  font-weight: normal;
+}
+
+.value-brand {
+  position: absolute;
+  left: 454rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 28rpx;
+  font-weight: 500;
+}
+
+.info-col-notes {
+  position: relative;
+  width: 100%;
+  height: 80rpx;
+  margin-top: 20rpx;
+}
+
+.label-notes {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333333;
+  line-height: 28rpx;
+}
+
+.value-notes {
+  position: absolute;
+  left: 24rpx;
+  top: 40rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333333;
+  line-height: 28rpx;
+}
+
+.product-info-content {
+  padding: 0;
+  background: #F6F7FB;
+  margin-top: 20rpx;
+}
+
+.label-model {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #8D97A3;
+  line-height: 28rpx;
+}
+
+.value-model {
+  position: absolute;
+  left: 108rpx;
+  top: -2rpx;
+  font-size: 28rpx;
+  color: #1D1D1F;
+  line-height: 28rpx;
+  font-weight: bold;
+}
+
+.label-size {
+  position: absolute;
+  left: 336rpx;
+  top: 0;
+  font-size: 28rpx;
+  color: #8D97A3;
+  line-height: 28rpx;
+}
+
+.value-size {
+  position: absolute;
+  left: 476rpx;
+  top: -2rpx;
+  font-size: 28rpx;
+  color: #1D1D1F;
+  line-height: 28rpx;
+  font-weight: bold;
 }
 
 .basic-info {
@@ -121,27 +482,26 @@
 
 /* 底部图片顺序展示样式 */
 .section-title {
+  position: relative;
+  left: 24rpx;
   font-size: 28rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: 500;
+  color: #333333;
+  line-height: 28rpx;
   display: block;
-  margin-top: 30rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #eee; /* 作为分隔线 */
-  margin-bottom: 10rpx;
+  margin-bottom: 20rpx;
 }
 
 .image-gallery {
-  margin-top: 0; /* 分隔线移动到标题上，避免重复 */
+  margin-top: 0;
   display: flex;
   flex-direction: column;
-  gap: 20rpx; /* 图片之间留白 */
+  /* gap: 20rpx; 图片之间留白 */
 }
 
 .gallery-image {
-  width: 100%;
+  width: 750rpx;
   display: block;
-  border-radius: 12rpx; /* 圆角更美观 */
   background: #f7f7f7; /* 加一点底色避免空白刺眼 */
 }
 
@@ -156,4 +516,54 @@
   z-index: -1;
   -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
   mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 100%);
+}
+
+/* Custom Nav Styles */
+.custom-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  overflow: hidden;
+  background: #F6F7FB; /* Ensure opacity to cover scrolling content */
+}
+
+.nav-background-img {
+  position: absolute;
+  left: -14rpx;
+  top: -22rpx;
+  width: 772rpx;
+  height: 780rpx;
+  z-index: 1; /* Bring forward as requested */
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.02) 100%);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.02) 100%);
+}
+
+.nav-title {
+  position: absolute;
+  left: 152px;
+  top: 59px;
+  width: 72px;
+  height: 26px;
+  opacity: 1;
+  font-family: 'Source Han Sans CN', 'Source Han Sans';
+  font-size: 18px;
+  font-weight: 500;
+  line-height: normal;
+  text-align: center;
+  letter-spacing: 0px;
+  font-variation-settings: "opsz" auto;
+  color: #000000;
+  z-index: 10; /* Ensure title is above background */
+}
+
+.nav-back {
+  position: absolute;
+  left: 18px;
+  top: 58px;
+  width: 26px;
+  height: 26px;
+  opacity: 1;
+  z-index: 1001;
 }

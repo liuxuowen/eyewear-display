@@ -3,13 +3,46 @@ const app = getApp()
 Page({
   data: {
     product: null,
-    model: ''
+    model: '',
+    currentImageIndex: 0
+  },
+
+  onSwiperChange(e) {
+    this.setData({ currentImageIndex: e.detail.current })
+  },
+
+  onThumbnailTap(e) {
+    const index = e.currentTarget.dataset.index
+    this.setData({ currentImageIndex: index })
   },
 
   onLoad(options) {
     const { model } = options
     this.setData({ model: model || '' })
     this.loadProduct(model)
+
+    // Calculate nav height
+    try {
+      const sys = wx.getSystemInfoSync()
+      const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null
+      const statusBarHeight = sys.statusBarHeight || 20
+      let navBarHeight = 44
+      if (menu && menu.top && menu.height) {
+        navBarHeight = (menu.top - statusBarHeight) * 2 + menu.height
+      }
+      // Extend nav height by 20rpx (approx 10px)
+      const navHeight = statusBarHeight + navBarHeight + 10
+      this.setData({ statusBarHeight, navBarHeight, navHeight })
+    } catch (e) {}
+  },
+
+  goBack() {
+    const pages = getCurrentPages();
+    if (pages.length > 1) {
+      wx.navigateBack();
+    } else {
+      wx.switchTab({ url: '/pages/index/index' });
+    }
   },
 
   loadProduct(model) {
