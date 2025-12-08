@@ -534,7 +534,7 @@
   height: 56rpx; /* 28px */
   z-index: 10;
   margin-top: 30rpx;
-  margin-bottom: 30rpx;
+  margin-bottom: 45rpx;
   padding: 0;
   display: flex;
   justify-content: flex-end;
@@ -542,7 +542,7 @@
 
 .rec-actions.customer-mode {
   height: 0;
-  margin-bottom: -20rpx;
+  margin-bottom: -5rpx;
 }
 
 .rec-divider {
@@ -552,7 +552,7 @@
   width: 650rpx; /* 325px */
   height: 0px;
   opacity: 1;
-  border: 0.5px solid #F6F6F6;
+  border: 0.5px solid #d4d4d4;
 }
 
 .rec-divider-customer {
@@ -562,7 +562,7 @@
   width: 650rpx; /* 325px */
   height: 0px;
   opacity: 1;
-  border: 0.5px solid #F6F6F6;
+  border: 0.5px solid #d4d4d4;
 }
 
 .fav-btn.fav-on {
