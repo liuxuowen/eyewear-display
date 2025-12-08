@@ -20,7 +20,7 @@ page {
   height: 750rpx; /* 375px */
   margin-left: 0rpx; /* 1px */
   background:#F6F7FB;
-  border: 1rpx solid #292828;
+  border: 1rpx solid #F6F6F6;
   box-sizing: border-box;
 }
 
@@ -63,14 +63,52 @@ page {
 .info-row-model-size {
   position: relative;
   width: 100%;
-  height: 28rpx;
-  margin-top: 20rpx;
+  height: 34rpx;
+  margin-top: 40rpx;
+}
+
+.label-model {
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  font-size: 30rpx;
+  color: #8D97A3;
+  line-height: 30rpx;
+}
+
+.value-model {
+  position: absolute;
+  left: 128rpx;
+  top: -4rpx;
+  font-size: 34rpx;
+  color: #1D1D1F;
+  line-height: 34rpx;
+  font-weight: bold;
+}
+
+.label-size {
+  position: absolute;
+  left: 336rpx;
+  top: 0;
+  font-size: 30rpx;
+  color: #8D97A3;
+  line-height: 30rpx;
+}
+
+.value-size {
+  position: absolute;
+  left: 486rpx;
+  top: -4rpx;
+  font-size: 34rpx;
+  color: #1D1D1F;
+  line-height: 34rpx;
+  font-weight: bold;
 }
 
 .info-row-total-price {
   position: relative;
   width: 100%;
-  height: 28rpx;
+  height: 34rpx;
   margin-top: 20rpx;
 }
 
@@ -78,18 +116,18 @@ page {
   position: absolute;
   left: 24rpx;
   top: 0;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #8D97A3;
-  line-height: 28rpx;
+  line-height: 30rpx;
 }
 
 .value-total {
   position: absolute;
-  left: 108rpx;
-  top: -2rpx;
-  font-size: 28rpx;
+  left: 128rpx;
+  top: -4rpx;
+  font-size: 34rpx;
   color: #1D1D1F;
-  line-height: 28rpx;
+  line-height: 34rpx;
   font-weight: bold;
 }
 
@@ -97,18 +135,18 @@ page {
   position: absolute;
   left: 336rpx;
   top: 0;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #8D97A3;
-  line-height: 28rpx;
+  line-height: 30rpx;
 }
 
 .value-price {
   position: absolute;
-  left: 476rpx;
-  top: -2rpx;
-  font-size: 28rpx;
+  left: 486rpx;
+  top: -4rpx;
+  font-size: 34rpx;
   color: #1D1D1F;
-  line-height: 28rpx;
+  line-height: 34rpx;
   font-weight: bold;
 }
 
@@ -119,13 +157,13 @@ page {
   width: 702rpx;
   height: 0;
   opacity: 1;
-  border: 1rpx solid #999999;
+  border: 1rpx solid #F6F6F6;
 }
 
 .info-row-lens-nose {
   position: relative;
   width: 100%;
-  height: 28rpx;
+  height: 30rpx;
   margin-top: 20rpx;
 }
 
@@ -133,19 +171,19 @@ page {
   position: absolute;
   left: 24rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-lens {
   position: absolute;
-  left: 144rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 154rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
@@ -153,26 +191,26 @@ page {
   position: absolute;
   left: 334rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-nose {
   position: absolute;
-  left: 454rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 464rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
 .info-row-temple-height {
   position: relative;
   width: 100%;
-  height: 28rpx;
+  height: 30rpx;
   margin-top: 20rpx;
 }
 
@@ -180,19 +218,19 @@ page {
   position: absolute;
   left: 24rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-temple {
   position: absolute;
-  left: 144rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 154rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
@@ -200,26 +238,26 @@ page {
   position: absolute;
   left: 334rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-height {
   position: absolute;
-  left: 454rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 464rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
 .info-row-thickness-weight {
   position: relative;
   width: 100%;
-  height: 28rpx;
+  height: 30rpx;
   margin-top: 20rpx;
 }
 
@@ -227,19 +265,19 @@ page {
   position: absolute;
   left: 24rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-thickness {
   position: absolute;
-  left: 144rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 154rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
@@ -247,26 +285,26 @@ page {
   position: absolute;
   left: 334rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-weight {
   position: absolute;
-  left: 454rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 464rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
 .info-row-material-brand {
   position: relative;
   width: 100%;
-  height: 28rpx;
+  height: 30rpx;
   margin-top: 20rpx;
 }
 
@@ -274,19 +312,19 @@ page {
   position: absolute;
   left: 24rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-material {
   position: absolute;
-  left: 144rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 154rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
@@ -294,19 +332,19 @@ page {
   position: absolute;
   left: 334rpx;
   top: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666666;
-  line-height: 24rpx;
+  line-height: 26rpx;
   font-weight: normal;
 }
 
 .value-brand {
   position: absolute;
-  left: 454rpx;
-  top: 0;
-  font-size: 28rpx;
+  left: 464rpx;
+  top: -4rpx;
+  font-size: 30rpx;
   color: #333333;
-  line-height: 28rpx;
+  line-height: 30rpx;
   font-weight: 500;
 }
 
@@ -340,144 +378,7 @@ page {
 .product-info-content {
   padding: 0;
   background: #F6F7FB;
-  margin-top: 20rpx;
-}
-
-.label-model {
-  position: absolute;
-  left: 24rpx;
-  top: 0;
-  font-size: 28rpx;
-  color: #8D97A3;
-  line-height: 28rpx;
-}
-
-.value-model {
-  position: absolute;
-  left: 108rpx;
-  top: -2rpx;
-  font-size: 28rpx;
-  color: #1D1D1F;
-  line-height: 28rpx;
-  font-weight: bold;
-}
-
-.label-size {
-  position: absolute;
-  left: 336rpx;
-  top: 0;
-  font-size: 28rpx;
-  color: #8D97A3;
-  line-height: 28rpx;
-}
-
-.value-size {
-  position: absolute;
-  left: 476rpx;
-  top: -2rpx;
-  font-size: 28rpx;
-  color: #1D1D1F;
-  line-height: 28rpx;
-  font-weight: bold;
-}
-
-.basic-info {
-  padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #eee;
-  margin-bottom: 20rpx;
-}
-
-.model { /* legacy, kept for compatibility */ }
-
-.model-spec-row {
-  display: flex;
-  align-items: baseline;
-  gap: 24rpx; /* 留出一些距离 */
-  flex-wrap: nowrap; /* 固定为一行 */
-  margin-bottom: 10rpx;
-}
-
-.model-inline {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333;      /* 更深的颜色 */
-  font-weight: 600;
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.spec-inline {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333;      /* 更深的颜色 */
-  font-weight: 600;
-  flex: 1 1 0;      /* 两侧各占一半 */
-  min-width: 0;
-}
-
-.total-price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 24rpx;        /* 与 model-spec-row 保持一致的间距 */
-  flex-wrap: nowrap; /* 固定为一行 */
-}
-
-/* total 与 price 同理处理为 50/50 */
-.total {
-  font-size: 28rpx;
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.price {
-  color: #e74c3c;
-  font-size: 32rpx;
-  /* 颜色与字号保持不变 */
-  /* 改为与 total 50/50 分栏，并在本栏内右对齐 */
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.specs-info {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
-}
-
-.spec-item {
-  display: flex;
-  align-items: center;
-}
-
-.label {
-  color: #666;
-  font-size: 26rpx;
-  min-width: 140rpx;
-}
-
-.value {
-  font-size: 26rpx;
-  color: #333;
-}
-
-.notes {
-  margin-top: 30rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #eee;
-}
-
-.notes-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333;
-  display: block;
-  margin-bottom: 10rpx;
-}
-
-.notes-content {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.6;
+  margin-top: 0rpx;
 }
 
 /* 底部图片顺序展示样式 */

@@ -4,7 +4,7 @@
 <!-- Custom Nav -->
 <view class="custom-nav" style="height: {{navHeight}}px; padding-top: 0;">
   <view class="nav-row" style="height: {{navHeight}}px;">
-    <text class="nav-title">{{isSales ? '推荐' : '为您推荐'}}</text>
+    <text class="nav-title {{!isSales ? 'nav-title-customer' : ''}}">{{isSales ? '推荐' : '为您推荐'}}</text>
   </view>
 </view>
 

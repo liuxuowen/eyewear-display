@@ -61,7 +61,7 @@
   padding: 24rpx;
   margin: 0;
   box-shadow: none;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 0rpx solid #f0f0f0;
 }
 .rec-card:last-child {
   border-bottom: none;
@@ -552,7 +552,7 @@
   width: 650rpx; /* 325px */
   height: 0px;
   opacity: 1;
-  border: 0.5px solid #999999;
+  border: 0.5px solid #F6F6F6;
 }
 
 .rec-divider-customer {
@@ -562,7 +562,7 @@
   width: 650rpx; /* 325px */
   height: 0px;
   opacity: 1;
-  border: 0.5px solid #999999;
+  border: 0.5px solid #F6F6F6;
 }
 
 .fav-btn.fav-on {
@@ -785,4 +785,10 @@
 .rec-row-top.customer-mode .rec-value-height {
   left: 468rpx; /* Match other right-side values */
   top: 48rpx;
+}
+
+/* Customer Mode Nav Title Override */
+.nav-title-customer {
+  left: 304rpx !important; /* 152px * 2 - Center for 4 chars */
+  width: 144rpx !important; /* 72px * 2 */
 }
