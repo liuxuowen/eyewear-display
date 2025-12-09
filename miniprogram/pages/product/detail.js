@@ -1,4 +1,5 @@
 const app = getApp()
+// console.log('Detail page script executing')
 
 Page({
   data: {
@@ -17,12 +18,14 @@ Page({
   },
 
   onLoad(options) {
+    // console.log('Detail onLoad options:', options)
     const { model } = options
     this.setData({ model: model || '' })
     this.loadProduct(model)
 
     // Calculate nav height
     try {
+      // console.log('Calculating nav height')
       const sys = wx.getSystemInfoSync()
       const menu = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null
       const statusBarHeight = sys.statusBarHeight || 20
@@ -33,7 +36,10 @@ Page({
       // Extend nav height by 20rpx (approx 10px)
       const navHeight = statusBarHeight + navBarHeight + 10
       this.setData({ statusBarHeight, navBarHeight, navHeight })
-    } catch (e) {}
+      // console.log('Nav height calculated:', navHeight)
+    } catch (e) {
+      console.error('Nav height calc error:', e)
+    }
   },
 
   goBack() {
@@ -46,6 +52,7 @@ Page({
   },
 
   loadProduct(model) {
+    // console.log('loadProduct:', model)
     wx.showLoading({
       title: '加载中...'
     })
@@ -53,6 +60,7 @@ Page({
     wx.request({
       url: `${app.globalData.apiBaseUrl}/products/${model}`,
       success: (res) => {
+        // console.log('Product loaded success:', res)
         if (res.data.status === 'success') {
           this.setData({
             product: res.data.data
@@ -64,7 +72,8 @@ Page({
           })
         }
       },
-      fail: () => {
+      fail: (err) => {
+        console.error('Product load fail:', err)
         wx.showToast({
           title: '网络错误',
           icon: 'none'

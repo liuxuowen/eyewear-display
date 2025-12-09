@@ -295,8 +295,16 @@ Page({
 
   goToDetail(e) {
     const { model } = e.currentTarget.dataset
+    // console.log('goToDetail model:', model, typeof model)
+    if (!model) return
+    const url = `/pages/product/detail?model=${model}`
+    // console.log('Navigating to:', url)
     wx.navigateTo({
-      url: `/pages/product/detail?model=${model}`
+      url: url,
+      fail: (err) => {
+        console.error('nav fail', err)
+        wx.showToast({ title: '跳转失败', icon: 'none' })
+      }
     })
   },
 

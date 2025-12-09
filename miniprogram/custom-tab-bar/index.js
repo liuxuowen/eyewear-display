@@ -134,11 +134,16 @@ Component({
         
         // 检查当前页面是否在新的 tab 列表中，若不在则跳转到列表第一项
         const cur = this._currentRoute()
-        const hasCurrent = list.some(i => i.pagePath === cur)
-        if (!hasCurrent && list.length > 0) {
-          const dest = '/' + list[0].pagePath
-          this._dbg('autoRedirect', { from: cur, to: dest })
-          wx.switchTab({ url: dest })
+        // 只有当当前页面属于“所有可能的Tab页面”之一，但不在“当前允许的Tab列表”中时，才执行跳转
+        // 防止非Tab页面（如详情页）被误判并强制跳转
+        const isTabPage = this.data.fullList.some(i => i.pagePath === cur)
+        if (isTabPage) {
+          const hasCurrent = list.some(i => i.pagePath === cur)
+          if (!hasCurrent && list.length > 0) {
+            const dest = '/' + list[0].pagePath
+            this._dbg('autoRedirect', { from: cur, to: dest })
+            wx.switchTab({ url: dest })
+          }
         }
       })
     },
