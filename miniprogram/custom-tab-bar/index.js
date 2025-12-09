@@ -41,6 +41,21 @@ Component({
         selectedIconPath: '/images/user_sel.png'
       }
     ],
+    // 两个 tab（未分配销售的普通用户）：商品 + 我的
+    customerNoSalesList: [
+      {
+        pagePath: 'pages/index/index',
+        text: '商品',
+        iconPath: '/images/index.png',
+        selectedIconPath: '/images/index_sel.png'
+      },
+      {
+        pagePath: 'pages/user/user',
+        text: '我的',
+        iconPath: '/images/user.png',
+        selectedIconPath: '/images/user_sel.png'
+      }
+    ],
     // 默认先展示完整 tab，等待角色加载后再切换，避免首屏空白
     list: [
       {
@@ -103,17 +118,27 @@ Component({
     _refreshByRole() {
       const isSales = !!(app && app.globalData && app.globalData.isSales)
       const hasMySales = !!(app && app.globalData && app.globalData.hasMySales)
-      const useReduced = (!isSales && hasMySales)
-      const list = useReduced ? this.data.reducedList : this.data.fullList
-      this._dbg('refreshByRole', { isSales, hasMySales, useReduced, listLen: (list || []).length })
+      
+      let list = this.data.fullList
+      if (!isSales) {
+        if (hasMySales) {
+          list = this.data.reducedList
+        } else {
+          list = this.data.customerNoSalesList
+        }
+      }
+
+      this._dbg('refreshByRole', { isSales, hasMySales, listLen: (list || []).length })
       this.setData({ list }, () => {
         this.setSelectedByRoute()
-        // 如果当前是 index 页面且被隐藏，则跳转到“推荐”
+        
+        // 检查当前页面是否在新的 tab 列表中，若不在则跳转到列表第一项
         const cur = this._currentRoute()
-        const hasIndex = list.some(i => i.pagePath === 'pages/index/index')
-        if (!hasIndex && cur === 'pages/index/index') {
-          this._dbg('redirectFromIndexToWatchlist', { cur })
-          wx.switchTab({ url: '/pages/watchlist/index' })
+        const hasCurrent = list.some(i => i.pagePath === cur)
+        if (!hasCurrent && list.length > 0) {
+          const dest = '/' + list[0].pagePath
+          this._dbg('autoRedirect', { from: cur, to: dest })
+          wx.switchTab({ url: dest })
         }
       })
     },
