@@ -16,7 +16,7 @@ from flask import Flask, jsonify, request, g, has_request_context, render_templa
 from flask_cors import CORS
 from config import Config
 from models import db, Product, User, PageView, Favorite, Salesperson, SalesShare
-from sqlalchemy import inspect, text, or_, select
+from sqlalchemy import inspect, text, or_, select, func
 from sqlalchemy.exc import IntegrityError
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
@@ -432,6 +432,13 @@ def get_products():
         if multi_filters:
             # 同时应用多字段过滤（AND）
             for f, v in multi_filters.items():
+                if f == 'frame_model':
+                    # 镜架型号：忽略大小写的子串匹配（如搜索 123 可匹配到 s123）
+                    needle = (v or '').strip().lower()
+                    like = f"%{needle}%"
+                    query = query.filter(func.lower(Product.frame_model).like(like))
+                    logger.debug("apply fuzzy filter frame_model (case-insensitive contains) like %s", like)
+                    continue
                 if f == 'other_info':
                     # 其他信息：恢复为品牌或备注任一模糊匹配
                     like = f"%{v}%"
@@ -480,6 +487,12 @@ def get_products():
             if not search_field or search_field not in allowed_fields:
                 search_field = app.config.get('DEFAULT_SEARCH_FIELD', 'frame_model')
             col = getattr(Product, search_field, None)
+            if search_field == 'frame_model':
+                # 镜架型号：忽略大小写的子串匹配（如搜索 123 可匹配到 s123）
+                needle = (search_value or '').strip().lower()
+                like = f"%{needle}%"
+                query = query.filter(func.lower(Product.frame_model).like(like))
+                logger.debug("apply single fuzzy frame_model (case-insensitive contains) like %s", like)
             if search_field == 'other_info':
                 like = f"%{search_value}%"
                 query = query.filter(or_(Product.brand.like(like), Product.notes.like(like)))
