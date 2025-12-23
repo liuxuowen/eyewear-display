@@ -296,7 +296,8 @@ Page({
     const sid = (getApp().globalData && getApp().globalData.openId) || ''
     const skus = this._getAllRecommendedSkus(50)
     const count = skus.length
-    let title = count > 0 ? `推荐${count}款镜架` : '精品镜架推荐'
+    // let title = count > 0 ? `推荐${count}款镜架` : '精品镜架推荐'
+    let title = '您的专属镜架选好啦～'
     let path = '/pages/index/index'
 
     let imageUrl = '/images/watchlist/recommend.png'

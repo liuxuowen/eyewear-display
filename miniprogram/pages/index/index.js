@@ -863,7 +863,8 @@ Page({
     const selectedMap = this.data.selectedMap || {}
     // 默认路径（无分享包）
     let path = '/pages/index/index'
-    let title = selectedCount > 0 ? `推荐${selectedCount}款镜架` : '精品镜架推荐'
+    // let title = selectedCount > 0 ? `推荐${selectedCount}款镜架` : '精品镜架推荐'
+    let title = '您的专属镜架选好啦～'
     // 若为销售选择状态下分享，需先向后端登记分享，获取 share_id
     if (isSales && selecting && selectedCount > 0) {
       const skus = Object.keys(selectedMap)
